@@ -153,7 +153,7 @@ function PostsTab() {
   const [posts, setPosts] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<any>(null);
-  const [form, setForm] = useState({ title: "", slug: "", content: "", category: "story" as string, status: "draft" as string, excerpt: "", featured_image: "" });
+  const [form, setForm] = useState({ title: "", slug: "", content: "", category: "story" as string, status: "draft" as string, excerpt: "", featured_image: "", audio_url: "", homepage_section: "none" });
 
   const load = () => {
     supabase.from("blog_posts").select("*").order("created_at", { ascending: false }).then(({ data }) => {
@@ -165,13 +165,13 @@ function PostsTab() {
 
   const openCreate = () => {
     setEditingPost(null);
-    setForm({ title: "", slug: "", content: "", category: "story", status: "draft", excerpt: "", featured_image: "" });
+    setForm({ title: "", slug: "", content: "", category: "story", status: "draft", excerpt: "", featured_image: "", audio_url: "", homepage_section: "none" });
     setDialogOpen(true);
   };
 
   const openEdit = (post: any) => {
     setEditingPost(post);
-    setForm({ title: post.title, slug: post.slug, content: post.content, category: post.category, status: post.status, excerpt: post.excerpt || "", featured_image: post.featured_image || "" });
+    setForm({ title: post.title, slug: post.slug, content: post.content, category: post.category, status: post.status, excerpt: post.excerpt || "", featured_image: post.featured_image || "", audio_url: post.audio_url || "", homepage_section: post.homepage_section || "none" });
     setDialogOpen(true);
   };
 
@@ -215,6 +215,7 @@ function PostsTab() {
             <Input placeholder="Slug (url-friendly)" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
             <Input placeholder="Excerpt" value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} />
             <Input placeholder="Featured image URL" value={form.featured_image} onChange={(e) => setForm({ ...form, featured_image: e.target.value })} />
+            <Input placeholder="Audio file URL (optional)" value={form.audio_url} onChange={(e) => setForm({ ...form, audio_url: e.target.value })} />
             <div className="flex gap-4">
               <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -231,6 +232,20 @@ function PostsTab() {
                 <SelectContent>
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Homepage Section</label>
+              <Select value={form.homepage_section} onValueChange={(v) => setForm({ ...form, homepage_section: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="hero">Hero (main banner)</SelectItem>
+                  <SelectItem value="featured_stories">Featured AI Fictions</SelectItem>
+                  <SelectItem value="featured_collections">Featured Collections</SelectItem>
+                  <SelectItem value="best_ai_tools">Best AI Tools</SelectItem>
+                  <SelectItem value="news_articles">News & Articles</SelectItem>
                 </SelectContent>
               </Select>
             </div>

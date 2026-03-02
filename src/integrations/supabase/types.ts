@@ -46,12 +46,14 @@ export type Database = {
       }
       blog_posts: {
         Row: {
+          audio_url: string | null
           author_id: string | null
           category: Database["public"]["Enums"]["post_category"]
           content: string
           created_at: string
           excerpt: string | null
           featured_image: string | null
+          homepage_section: string | null
           id: string
           is_featured: boolean
           published_at: string | null
@@ -63,12 +65,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          audio_url?: string | null
           author_id?: string | null
           category?: Database["public"]["Enums"]["post_category"]
           content?: string
           created_at?: string
           excerpt?: string | null
           featured_image?: string | null
+          homepage_section?: string | null
           id?: string
           is_featured?: boolean
           published_at?: string | null
@@ -80,12 +84,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          audio_url?: string | null
           author_id?: string | null
           category?: Database["public"]["Enums"]["post_category"]
           content?: string
           created_at?: string
           excerpt?: string | null
           featured_image?: string | null
+          homepage_section?: string | null
           id?: string
           is_featured?: boolean
           published_at?: string | null
