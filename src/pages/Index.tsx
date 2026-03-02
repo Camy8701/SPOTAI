@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Layout from "@/components/layout/Layout";
 import SectionNavigation from "@/components/SectionNavigation";
 import AnimateInView from "@/components/AnimateInView";
+import AutoScrollCarousel from "@/components/AutoScrollCarousel";
 
 const carouselImages = [
   { src: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&q=80", alt: "AI concept art 1" },
@@ -124,8 +125,11 @@ const Index = () => {
         </div>
       </AnimateInView>
 
-      {/* Featured AI Fictions Carousel */}
-      <section className="py-16 bg-background border-t border-border" id="featured-stories">
+      {/* Recent Winners Carousel */}
+      <section
+        className="py-16 bg-background border-t border-border"
+        id="featured-stories"
+      >
         <AnimateInView>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center mb-12">
@@ -134,13 +138,7 @@ const Index = () => {
                 <p className="text-muted-foreground">Curated collection of outstanding AI narratives</p>
               </div>
             </div>
-            <div className="flex gap-6 overflow-x-auto pb-4">
-              {carouselImages.map((img, i) => (
-                <div key={i} className="flex-shrink-0 w-80 aspect-video rounded-lg overflow-hidden">
-                  <img src={img.src} alt={img.alt} className="w-full h-full object-cover" loading="lazy" />
-                </div>
-              ))}
-            </div>
+            <AutoScrollCarousel images={carouselImages} speed={30} />
           </div>
         </AnimateInView>
       </section>
