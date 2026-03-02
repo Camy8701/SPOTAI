@@ -1,61 +1,90 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
-interface CarouselImage {
-  src: string;
-  alt: string;
+interface CarouselPost {
+  id: string;
+  title: string;
+  slug: string;
+  featured_image: string | null;
+  audio_url?: string | null;
+  excerpt?: string | null;
 }
 
 interface AutoScrollCarouselProps {
-  images: CarouselImage[];
+  posts: CarouselPost[];
   speed?: number;
   className?: string;
+  onListen?: (src: string, title: string) => void;
 }
 
-export default function AutoScrollCarousel({ images, speed = 20, className = "" }: AutoScrollCarouselProps) {
-  const [duplicatedImages, setDuplicatedImages] = useState<CarouselImage[]>([]);
+export default function AutoScrollCarousel({ posts, speed = 20, className = "", onListen }: AutoScrollCarouselProps) {
+  const [duplicated, setDuplicated] = useState<CarouselPost[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
   useEffect(() => {
-    setDuplicatedImages([...images, ...images, ...images]);
-  }, [images]);
+    if (posts.length > 0) {
+      setDuplicated([...posts, ...posts, ...posts]);
+    }
+  }, [posts]);
 
   useEffect(() => {
     if (containerRef.current) {
       setWidth(containerRef.current.scrollWidth - containerRef.current.offsetWidth);
     }
-  }, [duplicatedImages]);
+  }, [duplicated]);
+
+  if (posts.length === 0) {
+    return <p className="text-center text-muted-foreground py-8">No featured stories yet.</p>;
+  }
 
   return (
     <div className={`overflow-hidden ${className}`} ref={containerRef}>
       <motion.div
         className="flex gap-6"
-        animate={{
-          x: [-width / 3, (-width * 2) / 3],
-        }}
-        transition={{
-          x: {
-            duration: speed,
-            repeat: Infinity,
-            repeatType: "loop",
-            ease: "linear",
-          },
-        }}
+        animate={{ x: [-width / 3, (-width * 2) / 3] }}
+        transition={{ x: { duration: speed, repeat: Infinity, repeatType: "loop", ease: "linear" } }}
       >
-        {duplicatedImages.map((image, index) => (
+        {duplicated.map((post, index) => (
           <motion.div
-            key={index}
+            key={`${post.id}-${index}`}
             className="min-w-[560px] h-[400px] relative rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-r from-blue-600 to-red-600 p-[2px]"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3 }}
           >
             <div className="absolute inset-0 bg-black rounded-lg overflow-hidden m-[1px]">
               <img
-                src={image.src || "/placeholder.svg"}
-                alt={image.alt}
+                src={post.featured_image || "/placeholder.svg"}
+                alt={post.title}
                 className="w-full h-full object-cover"
               />
+              {/* Overlay with title and buttons */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-6">
+                <h3 className="text-white font-bold text-xl mb-1 drop-shadow-lg line-clamp-2">{post.title}</h3>
+                {post.excerpt && <p className="text-gray-300 text-sm mb-3 line-clamp-1">{post.excerpt}</p>}
+                <div className="flex gap-3">
+                  <Link to={`/post/${post.slug}`} onClick={(e) => e.stopPropagation()}>
+                    <motion.button
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm shadow-lg"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Read
+                    </motion.button>
+                  </Link>
+                  {post.audio_url && onListen && (
+                    <motion.button
+                      className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg font-medium text-sm shadow-lg"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => { e.stopPropagation(); onListen(post.audio_url!, post.title); }}
+                    >
+                      Listen
+                    </motion.button>
+                  )}
+                </div>
+              </div>
             </div>
           </motion.div>
         ))}
