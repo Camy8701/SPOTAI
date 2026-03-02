@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Calculator, Type, Upload, X, Moon, Sun, LogOut } from "lucide-react";
+import { Search, Calculator, Type, Upload, X, Moon, Sun, LogOut, LayoutDashboard, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 
 const Header = () => {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
   const [searchQuery, setSearchQuery] = useState("");
   const { user, profile, signOut } = useAuth();
+  const { isAdmin } = useRole();
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -106,6 +108,14 @@ const Header = () => {
 
           {user ? (
             <div className="hidden md:flex items-center gap-2">
+              <Link to="/dashboard" className="p-2 rounded-md hover:bg-secondary transition-colors" title="My Dashboard">
+                <LayoutDashboard className="h-4 w-4" />
+              </Link>
+              {isAdmin && (
+                <Link to="/admin" className="p-2 rounded-md hover:bg-secondary transition-colors" title="Admin Dashboard">
+                  <Shield className="h-4 w-4" />
+                </Link>
+              )}
               <span className="text-sm text-foreground font-medium truncate max-w-[120px]">
                 {profile?.display_name || user.email?.split("@")[0]}
               </span>
