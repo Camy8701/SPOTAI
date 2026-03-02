@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Search, Calculator, Type, Upload, X, Moon, Sun } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, Calculator, Type, Upload, X, Moon, Sun, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
   const [searchQuery, setSearchQuery] = useState("");
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const toggleDark = () => {
@@ -101,11 +104,26 @@ const Header = () => {
             {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
 
-          <Link to="/auth">
-            <button className="hidden md:inline-flex bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium h-10 items-center transition-colors">
-              Sign In
-            </button>
-          </Link>
+          {user ? (
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-sm text-foreground font-medium truncate max-w-[120px]">
+                {profile?.display_name || user.email?.split("@")[0]}
+              </span>
+              <button
+                onClick={async () => { await signOut(); navigate("/"); }}
+                className="p-2 rounded-md hover:bg-secondary transition-colors"
+                title="Sign Out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <Link to="/auth">
+              <button className="hidden md:inline-flex bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium h-10 items-center transition-colors">
+                Sign In
+              </button>
+            </Link>
+          )}
 
           {/* Utility Tools - Desktop */}
           <div className="hidden lg:flex items-center space-x-3">
