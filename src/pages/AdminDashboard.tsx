@@ -214,8 +214,44 @@ function PostsTab() {
             <Input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             <Input placeholder="Slug (url-friendly)" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
             <Input placeholder="Excerpt" value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} />
-            <Input placeholder="Featured image URL" value={form.featured_image} onChange={(e) => setForm({ ...form, featured_image: e.target.value })} />
-            <Input placeholder="Audio file URL (optional)" value={form.audio_url} onChange={(e) => setForm({ ...form, audio_url: e.target.value })} />
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Featured Image</label>
+              <div className="flex gap-2">
+                <Input placeholder="Image URL" value={form.featured_image} onChange={(e) => setForm({ ...form, featured_image: e.target.value })} className="flex-1" />
+                <label className="cursor-pointer">
+                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const path = `posts/${Date.now()}-${file.name}`;
+                    const { error } = await supabase.storage.from("media").upload(path, file);
+                    if (error) { toast({ title: "Upload failed", description: error.message, variant: "destructive" }); return; }
+                    const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
+                    setForm((f) => ({ ...f, featured_image: pub.publicUrl }));
+                    toast({ title: "Image uploaded" });
+                  }} />
+                  <span className="inline-flex items-center px-3 py-2 bg-secondary text-foreground rounded-md text-sm font-medium hover:bg-muted transition-colors">Upload</span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Audio File (optional)</label>
+              <div className="flex gap-2">
+                <Input placeholder="Audio URL" value={form.audio_url} onChange={(e) => setForm({ ...form, audio_url: e.target.value })} className="flex-1" />
+                <label className="cursor-pointer">
+                  <input type="file" accept="audio/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const path = `audio/${Date.now()}-${file.name}`;
+                    const { error } = await supabase.storage.from("media").upload(path, file);
+                    if (error) { toast({ title: "Upload failed", description: error.message, variant: "destructive" }); return; }
+                    const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
+                    setForm((f) => ({ ...f, audio_url: pub.publicUrl }));
+                    toast({ title: "Audio uploaded" });
+                  }} />
+                  <span className="inline-flex items-center px-3 py-2 bg-secondary text-foreground rounded-md text-sm font-medium hover:bg-muted transition-colors">Upload</span>
+                </label>
+              </div>
+            </div>
             <div className="flex gap-4">
               <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>

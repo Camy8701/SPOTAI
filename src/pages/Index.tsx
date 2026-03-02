@@ -9,11 +9,7 @@ import AutoScrollCarousel from "@/components/AutoScrollCarousel";
 import AudioPlayer from "@/components/AudioPlayer";
 import { supabase } from "@/integrations/supabase/client";
 
-const carouselImages = [
-  { src: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&q=80", alt: "AI concept art 1" },
-  { src: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&q=80", alt: "AI concept art 2" },
-  { src: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600&q=80", alt: "AI concept art 3" },
-];
+// removed static carouselImages - now using DB data
 
 const staticAiTools = [
   {
@@ -28,6 +24,7 @@ const staticAiTools = [
 
 const Index = () => {
   const [heroPosts, setHeroPosts] = useState<any[]>([]);
+  const [featuredStories, setFeaturedStories] = useState<any[]>([]);
   const [featuredCollections, setFeaturedCollections] = useState<any[]>([]);
   const [newsArticles, setNewsArticles] = useState<any[]>([]);
   const [aiToolsPosts, setAiToolsPosts] = useState<any[]>([]);
@@ -37,6 +34,9 @@ const Index = () => {
     // Fetch posts by homepage_section
     supabase.from("blog_posts").select("*").eq("status", "published").eq("homepage_section", "hero").order("created_at", { ascending: false }).limit(1)
       .then(({ data }) => { if (data) setHeroPosts(data); });
+
+    supabase.from("blog_posts").select("id,title,slug,featured_image,audio_url,excerpt").eq("status", "published").eq("homepage_section", "featured_stories").order("created_at", { ascending: false }).limit(10)
+      .then(({ data }) => { if (data) setFeaturedStories(data); });
 
     supabase.from("blog_posts").select("*").eq("status", "published").eq("homepage_section", "featured_collections").order("created_at", { ascending: false }).limit(6)
       .then(({ data }) => { if (data) setFeaturedCollections(data); });
@@ -114,7 +114,7 @@ const Index = () => {
                 <p className="text-muted-foreground">Curated collection of outstanding AI narratives</p>
               </div>
             </div>
-            <AutoScrollCarousel images={carouselImages} speed={30} />
+            <AutoScrollCarousel posts={featuredStories} speed={30} onListen={(src, title) => setAudio({ src, title })} />
           </div>
         </AnimateInView>
       </section>
