@@ -406,7 +406,7 @@ const Index = () => {
               </p>
             </div>
             <div className="text-center">
-              <Link to="/quizzes">
+              <Link to="/quiz">
                 <motion.button
                   className="bg-pink-500 hover:bg-pink-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg"
                   whileHover={{ scale: 1.05, y: -2 }}
