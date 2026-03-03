@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { Book, Grid, Package, FileText, Gamepad2, Newspaper, PenSquare } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -22,7 +21,6 @@ const sections = [
 ];
 
 const SectionNavigation = () => {
-  const [showCreateMenu, setShowCreateMenu] = useState(false);
   const { user } = useAuth();
 
   return (
@@ -32,54 +30,20 @@ const SectionNavigation = () => {
           {sections.map((section) => {
             if ((section as any).isCreatePost) {
               return (
-                <div key={section.name} className="relative flex flex-col items-center space-y-2 flex-shrink-0">
-                  <button
-                    onClick={() => {
-                      if (!user) {
-                        window.location.href = "/auth";
-                        return;
-                      }
-                      setShowCreateMenu(!showCreateMenu);
-                    }}
+                <Link
+                  key={section.name}
+                  to={user ? "/create-post" : "/auth"}
+                  className="flex flex-col items-center space-y-2 flex-shrink-0"
+                >
+                  <motion.div
+                    className={`${section.color} w-14 h-14 rounded-full flex items-center justify-center text-white`}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    <motion.div
-                      className={`${section.color} w-14 h-14 rounded-full flex items-center justify-center text-white`}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <section.icon size={24} />
-                    </motion.div>
-                  </button>
+                    <section.icon size={24} />
+                  </motion.div>
                   <span className="text-xs text-center font-medium text-foreground">{section.name}</span>
-
-                  <AnimatePresence>
-                    {showCreateMenu && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                        className="absolute top-full mt-2 z-50 bg-card border border-border rounded-xl shadow-xl overflow-hidden w-48"
-                      >
-                        <Link
-                          to="/create-post?type=post"
-                          className="flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-foreground text-sm font-medium"
-                          onClick={() => setShowCreateMenu(false)}
-                        >
-                          <PenSquare size={16} />
-                          Create a Post
-                        </Link>
-                        <Link
-                          to="/create-post?type=question"
-                          className="flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-sm font-medium border-t border-border"
-                          onClick={() => setShowCreateMenu(false)}
-                        >
-                          <span className="w-2 h-2 rounded-full bg-destructive flex-shrink-0" />
-                          <span className="text-foreground">Ask a Question</span>
-                        </Link>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                </Link>
               );
             }
 

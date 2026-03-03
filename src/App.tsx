@@ -18,6 +18,11 @@ import NotFound from "./pages/NotFound";
 import BlogPost from "./pages/BlogPost";
 import Library from "./pages/Library";
 import CreatePost from "./pages/CreatePost";
+import Marketplace from "./pages/Marketplace";
+import Popular from "./pages/Popular";
+import Messages from "./pages/Messages";
+import Communities from "./pages/Communities";
+import Groups from "./pages/Groups";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +47,11 @@ const App = () => (
             <Route path="/post/:slug" element={<BlogPost />} />
             <Route path="/library" element={<Library />} />
             <Route path="/create-post" element={<CreatePost />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/popular" element={<Popular />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/communities" element={<Communities />} />
+            <Route path="/groups" element={<Groups />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

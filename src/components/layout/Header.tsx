@@ -1,11 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Calculator, Type, Upload, X, Moon, Sun, LogOut, LayoutDashboard, Shield } from "lucide-react";
+import { Search, Calculator, Type, Upload, X, Moon, Sun, LogOut, LayoutDashboard, Shield, Menu } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
 
-const Header = () => {
+interface HeaderProps {
+  onToggleSidebar?: () => void;
+}
+
+const Header = ({ onToggleSidebar }: HeaderProps) => {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
   const [searchQuery, setSearchQuery] = useState("");
   const { user, profile, signOut } = useAuth();
@@ -18,7 +22,6 @@ const Header = () => {
     setDark(!dark);
   };
 
-  // Keyboard shortcut Cmd+K / Ctrl+K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -36,22 +39,32 @@ const Header = () => {
 
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50">
-      <div className="max-w-full mx-auto px-6 lg:px-12 flex items-center h-16">
-        {/* Left - Logo & Social Links */}
-        <div className="flex items-center flex-shrink-0">
-          <Link to="/" className="flex-shrink-0 mr-8">
-            <motion.div
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-md"
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              whileTap={{ scale: 0.95 }}
+      <div className="max-w-full mx-auto px-4 lg:px-8 flex items-center h-16">
+        {/* Left - Burger Menu + Brand */}
+        <div className="flex items-center flex-shrink-0 gap-3">
+          <button
+            onClick={onToggleSidebar}
+            className="p-2 rounded-lg hover:bg-secondary transition-colors"
+            aria-label="Toggle sidebar"
+          >
+            <Menu className="h-6 w-6 text-foreground" />
+          </button>
+
+          <Link to="/" className="flex items-center gap-2">
+            <span
+              className="text-xl font-extrabold tracking-tight"
+              style={{
+                background: "linear-gradient(135deg, hsl(217 91% 60%), hsl(271 81% 56%), hsl(330 81% 60%), hsl(25 95% 53%))",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
             >
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-              </svg>
-            </motion.div>
+              The Kave
+            </span>
           </Link>
 
-          <nav className="hidden md:flex md:items-center md:space-x-6">
+          <nav className="hidden md:flex md:items-center md:space-x-6 ml-6">
             <a
               href="https://www.youtube.com/channel/UC6D5mUGNBRB80j_5A-QkazA"
               target="_blank"
@@ -206,26 +219,14 @@ const Header = () => {
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Utility Tools
             </span>
-            <Link
-              to="/tip-calculator"
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 shadow-md whitespace-nowrap"
-            >
-              <Calculator size={14} />
-              <span>Tip Calculator</span>
+            <Link to="/tip-calculator" className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 shadow-md whitespace-nowrap">
+              <Calculator size={14} /><span>Tip Calculator</span>
             </Link>
-            <Link
-              to="/character-counter"
-              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 shadow-md whitespace-nowrap"
-            >
-              <Type size={14} />
-              <span>Character Counter</span>
+            <Link to="/character-counter" className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 shadow-md whitespace-nowrap">
+              <Type size={14} /><span>Character Counter</span>
             </Link>
-            <Link
-              to="/file-converter"
-              className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 shadow-md whitespace-nowrap"
-            >
-              <Upload size={14} />
-              <span>File Converter</span>
+            <Link to="/file-converter" className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 shadow-md whitespace-nowrap">
+              <Upload size={14} /><span>File Converter</span>
             </Link>
           </div>
         </div>
