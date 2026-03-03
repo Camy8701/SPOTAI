@@ -4,56 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import {
-  FileText,
-  Users,
-  BarChart3,
-  Heart,
-  Bookmark,
-  MessageSquare,
-  HelpCircle,
-  ArrowLeft,
-  LogOut,
-  RefreshCw,
-  CheckCircle2,
-  AlertTriangle,
-  TrendingUp,
-  Eye,
-  PenLine,
-  Crown,
-  ShoppingCart,
-  DollarSign,
-  Calendar,
-  Gift,
-  BookOpen,
-  Headphones,
-  Upload,
+  FileText, Users, BarChart3, Heart, Bookmark, MessageSquare, HelpCircle,
+  ArrowLeft, LogOut, RefreshCw, CheckCircle2, AlertTriangle, TrendingUp,
+  Eye, PenLine, Crown, Gift, BookOpen, Headphones, Upload,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 type Tab = "analytics" | "posts" | "users" | "quiz" | "freebies";
@@ -96,7 +58,6 @@ function AnalyticsOverviewTab() {
       supabase.from("freebies").select("id", { count: "exact", head: true }).eq("type", "podcast"),
       supabase.from("group_members").select("id", { count: "exact", head: true }).eq("status", "pending"),
       supabase.from("media").select("id", { count: "exact", head: true }),
-      // Recent data
       supabase.from("likes").select("*, blog_posts(title)").order("created_at", { ascending: false }).limit(10),
       supabase.from("comments").select("*, blog_posts(title), profiles(display_name)").order("created_at", { ascending: false }).limit(10),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(10),
@@ -131,109 +92,103 @@ function AnalyticsOverviewTab() {
 
   useEffect(() => { load(); }, []);
 
-  const hasAlerts = stats.drafts > 3 || stats.pendingMembers > 0;
-
   return (
     <div className="space-y-8">
-      {/* Section Title + Refresh */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-black tracking-tight uppercase">Platform Analytics</h2>
+          <h2 className="text-2xl font-bold text-foreground">Platform Analytics</h2>
           <p className="text-sm text-muted-foreground">Complete overview of everything happening on the platform</p>
         </div>
-        <Button variant="outline" size="sm" onClick={load} disabled={loading} className="gap-2 rounded-full border-2 border-foreground">
+        <Button variant="outline" size="sm" onClick={load} disabled={loading} className="gap-2">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
       </div>
 
-      {/* ── Row 1: Core Metrics ── */}
+      {/* Core Metrics */}
       <div>
-        <h3 className="text-lg font-black uppercase tracking-tight mb-4">Content Command Center</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Content</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { icon: FileText, value: stats.posts, label: "Total Posts", sub: `${stats.published} published`, bg: "hsl(150,76%,78%)" },
-            { icon: Users, value: stats.users, label: "Users", sub: "Registered", bg: "hsl(270,67%,80%)" },
-            { icon: Heart, value: stats.likes, label: "Likes", sub: `${stats.comments} comments`, bg: "hsl(45,100%,70%)" },
-            { icon: MessageSquare, value: stats.messages, label: "Messages", sub: `${stats.conversations} conversations`, bg: "hsl(200,80%,78%)" },
-            { icon: HelpCircle, value: stats.quizResults, label: "Quiz Plays", sub: "Completed", bg: "hsl(330,70%,80%)" },
-            { icon: Gift, value: stats.freebies, label: "Freebies", sub: `${stats.ebooks} ebooks · ${stats.podcasts} pods`, bg: "hsl(20,90%,78%)" },
+            { icon: FileText, value: stats.posts, label: "Posts", sub: `${stats.published} published` },
+            { icon: Users, value: stats.users, label: "Users", sub: "Registered" },
+            { icon: Heart, value: stats.likes, label: "Likes", sub: `${stats.comments} comments` },
+            { icon: MessageSquare, value: stats.messages, label: "Messages", sub: `${stats.conversations} conversations` },
+            { icon: HelpCircle, value: stats.quizResults, label: "Quiz Plays", sub: "Completed" },
+            { icon: Gift, value: stats.freebies, label: "Freebies", sub: `${stats.ebooks} ebooks · ${stats.podcasts} pods` },
           ].map((card) => (
-            <div key={card.label} className="rounded-xl border-2 border-dashed border-border p-4" style={{ backgroundColor: card.bg }}>
-              <card.icon className="h-6 w-6 mb-2 text-foreground/70" />
-              <div className="text-3xl font-black">{card.value}</div>
-              <div className="text-xs font-bold uppercase tracking-wider mt-1">{card.label}</div>
-              <div className="text-xs text-foreground/60 mt-0.5">{card.sub}</div>
+            <div key={card.label} className="rounded-xl border border-border bg-card p-4">
+              <card.icon className="h-5 w-5 mb-2 text-muted-foreground" />
+              <div className="text-3xl font-bold text-foreground">{card.value}</div>
+              <div className="text-xs font-medium text-foreground mt-1">{card.label}</div>
+              <div className="text-xs text-muted-foreground">{card.sub}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── Row 2: Social & Community Metrics ── */}
+      {/* Social & Community */}
       <div>
-        <h3 className="text-lg font-black uppercase tracking-tight mb-4">Social & Community</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Social & Community</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {[
-            { icon: Users, value: stats.communities, label: "Communities", sub: `${stats.communityMembers} members`, bg: "hsl(170,60%,78%)" },
-            { icon: Crown, value: stats.groups, label: "Groups", sub: `${stats.groupMembers} members`, bg: "hsl(290,60%,80%)" },
-            { icon: MessageSquare, value: stats.conversations, label: "Conversations", sub: "Active DMs", bg: "hsl(210,70%,80%)" },
-            { icon: Bookmark, value: stats.saved, label: "Saved Posts", sub: "By readers", bg: "hsl(50,90%,75%)" },
-            { icon: Upload, value: stats.mediaFiles, label: "Media Files", sub: "Uploaded", bg: "hsl(130,50%,78%)" },
+            { icon: Users, value: stats.communities, label: "Communities", sub: `${stats.communityMembers} members` },
+            { icon: Crown, value: stats.groups, label: "Groups", sub: `${stats.groupMembers} members` },
+            { icon: MessageSquare, value: stats.conversations, label: "Conversations", sub: "Active DMs" },
+            { icon: Bookmark, value: stats.saved, label: "Saved Posts", sub: "By readers" },
+            { icon: Upload, value: stats.mediaFiles, label: "Media Files", sub: "Uploaded" },
           ].map((card) => (
-            <div key={card.label} className="rounded-xl border-2 border-dashed border-border p-4" style={{ backgroundColor: card.bg }}>
-              <card.icon className="h-6 w-6 mb-2 text-foreground/70" />
-              <div className="text-3xl font-black">{card.value}</div>
-              <div className="text-xs font-bold uppercase tracking-wider mt-1">{card.label}</div>
-              <div className="text-xs text-foreground/60 mt-0.5">{card.sub}</div>
+            <div key={card.label} className="rounded-xl border border-border bg-card p-4">
+              <card.icon className="h-5 w-5 mb-2 text-muted-foreground" />
+              <div className="text-3xl font-bold text-foreground">{card.value}</div>
+              <div className="text-xs font-medium text-foreground mt-1">{card.label}</div>
+              <div className="text-xs text-muted-foreground">{card.sub}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── Alerts ── */}
+      {/* Alerts */}
       <div>
-        <h3 className="text-lg font-black uppercase tracking-tight mb-4 flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5" /> Platform Alerts
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className={`rounded-xl border-2 border-dashed border-border p-5 text-center ${stats.drafts > 3 ? "bg-[hsl(45,100%,85%)]" : "bg-[hsl(150,76%,88%)]"}`}>
-            <PenLine className="h-8 w-8 mx-auto mb-2 text-foreground/60" />
-            <div className="text-2xl font-black">{stats.drafts}</div>
-            <p className="text-sm font-bold">Unpublished Drafts</p>
-            {stats.drafts > 3 && <p className="text-xs text-foreground/60 mt-1">Consider reviewing and publishing</p>}
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Alerts</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded-xl border border-border bg-card p-5 text-center">
+            <PenLine className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+            <div className="text-2xl font-bold text-foreground">{stats.drafts}</div>
+            <p className="text-sm font-medium text-foreground">Unpublished Drafts</p>
+            {stats.drafts > 3 && <p className="text-xs text-muted-foreground mt-1">Consider reviewing and publishing</p>}
           </div>
-          <div className={`rounded-xl border-2 border-dashed border-border p-5 text-center ${stats.pendingMembers > 0 ? "bg-[hsl(20,90%,85%)]" : "bg-[hsl(150,76%,88%)]"}`}>
-            <Users className="h-8 w-8 mx-auto mb-2 text-foreground/60" />
-            <div className="text-2xl font-black">{stats.pendingMembers}</div>
-            <p className="text-sm font-bold">Pending Group Requests</p>
-            {stats.pendingMembers > 0 && <p className="text-xs text-foreground/60 mt-1">Members awaiting approval</p>}
+          <div className="rounded-xl border border-border bg-card p-5 text-center">
+            <Users className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+            <div className="text-2xl font-bold text-foreground">{stats.pendingMembers}</div>
+            <p className="text-sm font-medium text-foreground">Pending Group Requests</p>
+            {stats.pendingMembers > 0 && <p className="text-xs text-muted-foreground mt-1">Members awaiting approval</p>}
           </div>
-          <div className="rounded-xl border-2 border-dashed border-border p-5 text-center bg-[hsl(150,76%,88%)]">
-            {hasAlerts ? (
+          <div className="rounded-xl border border-border bg-card p-5 text-center">
+            {stats.drafts > 3 || stats.pendingMembers > 0 ? (
               <>
-                <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-foreground/60" />
-                <p className="text-sm font-bold">Action Required</p>
-                <p className="text-xs text-foreground/60 mt-1">Review items above</p>
+                <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm font-medium text-foreground">Action Required</p>
+                <p className="text-xs text-muted-foreground mt-1">Review items above</p>
               </>
             ) : (
               <>
-                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-foreground/60" />
-                <p className="text-sm font-bold">All Clear!</p>
-                <p className="text-xs text-foreground/60 mt-1">Platform running smoothly</p>
+                <CheckCircle2 className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm font-medium text-foreground">All Clear</p>
+                <p className="text-xs text-muted-foreground mt-1">Platform running smoothly</p>
               </>
             )}
           </div>
         </div>
       </div>
 
-      {/* ── Recent Activity Feed ── */}
+      {/* Recent Activity */}
       <div>
-        <h3 className="text-lg font-black uppercase tracking-tight mb-4">Recent Activity</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Recent Activity</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Recent Users */}
-          <div className="rounded-xl border-2 border-dashed border-border p-5">
-            <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
-              <Users className="h-4 w-4 text-blue-500" /> New User Signups
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h4 className="font-semibold text-sm flex items-center gap-2 mb-3">
+              <Users className="h-4 w-4 text-muted-foreground" /> New User Signups
             </h4>
             <div className="space-y-2">
               {recentUsers.slice(0, 6).map((u) => (
@@ -244,7 +199,7 @@ function AnalyticsOverviewTab() {
                     ) : (
                       <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold">{(u.display_name || "?")[0]}</div>
                     )}
-                    <span className="font-medium">{u.display_name || "Anonymous"}</span>
+                    <span className="font-medium text-foreground">{u.display_name || "Anonymous"}</span>
                   </div>
                   <span className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</span>
                 </div>
@@ -253,15 +208,14 @@ function AnalyticsOverviewTab() {
             </div>
           </div>
 
-          {/* Recent Messages */}
-          <div className="rounded-xl border-2 border-dashed border-border p-5">
-            <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
-              <MessageSquare className="h-4 w-4 text-green-500" /> Recent Messages
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h4 className="font-semibold text-sm flex items-center gap-2 mb-3">
+              <MessageSquare className="h-4 w-4 text-muted-foreground" /> Recent Messages
             </h4>
             <div className="space-y-2">
               {recentMessages.slice(0, 6).map((m) => (
                 <div key={m.id} className="text-sm border-b border-border pb-2">
-                  <span className="font-medium line-clamp-1">{m.content}</span>
+                  <span className="font-medium text-foreground line-clamp-1">{m.content}</span>
                   <div className="text-xs text-muted-foreground">{new Date(m.created_at).toLocaleString()}</div>
                 </div>
               ))}
@@ -269,15 +223,14 @@ function AnalyticsOverviewTab() {
             </div>
           </div>
 
-          {/* Recent Likes */}
-          <div className="rounded-xl border-2 border-dashed border-border p-5">
-            <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
-              <Heart className="h-4 w-4 text-red-500" /> Recent Likes
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h4 className="font-semibold text-sm flex items-center gap-2 mb-3">
+              <Heart className="h-4 w-4 text-muted-foreground" /> Recent Likes
             </h4>
             <div className="space-y-2">
               {recentLikes.slice(0, 5).map((l) => (
                 <div key={l.id} className="text-sm border-b border-border pb-2">
-                  <span className="font-medium">{(l.blog_posts as any)?.title || "Unknown post"}</span>
+                  <span className="font-medium text-foreground">{(l.blog_posts as any)?.title || "Unknown post"}</span>
                   <div className="text-xs text-muted-foreground">{new Date(l.created_at).toLocaleString()}</div>
                 </div>
               ))}
@@ -285,15 +238,14 @@ function AnalyticsOverviewTab() {
             </div>
           </div>
 
-          {/* Recent Comments */}
-          <div className="rounded-xl border-2 border-dashed border-border p-5">
-            <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
-              <MessageSquare className="h-4 w-4 text-purple-500" /> Recent Comments
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h4 className="font-semibold text-sm flex items-center gap-2 mb-3">
+              <MessageSquare className="h-4 w-4 text-muted-foreground" /> Recent Comments
             </h4>
             <div className="space-y-2">
               {recentComments.slice(0, 5).map((c) => (
                 <div key={c.id} className="text-sm border-b border-border pb-2">
-                  <span className="font-medium line-clamp-1">{c.content}</span>
+                  <span className="font-medium text-foreground line-clamp-1">{c.content}</span>
                   <div className="text-xs text-muted-foreground">
                     by {(c.profiles as any)?.display_name || "Anonymous"} on {(c.blog_posts as any)?.title || "Unknown"} • {new Date(c.created_at).toLocaleString()}
                   </div>
@@ -305,40 +257,38 @@ function AnalyticsOverviewTab() {
         </div>
       </div>
 
-      {/* ── Content Breakdown ── */}
+      {/* Content Breakdown */}
       <div>
-        <h3 className="text-lg font-black uppercase tracking-tight mb-4">Content Breakdown</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Content Breakdown</h3>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Post Status */}
-          <div className="rounded-xl border-2 border-dashed border-border p-5">
-            <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
-              <FileText className="h-4 w-4" /> Post Status
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h4 className="font-semibold text-sm flex items-center gap-2 mb-3">
+              <FileText className="h-4 w-4 text-muted-foreground" /> Post Status
             </h4>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm">Published</span>
-                <Badge className="bg-[hsl(150,76%,78%)] text-foreground hover:bg-[hsl(150,76%,70%)]">{stats.published}</Badge>
+                <span className="text-sm text-foreground">Published</span>
+                <Badge variant="secondary">{stats.published}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">Drafts</span>
+                <span className="text-sm text-foreground">Drafts</span>
                 <Badge variant="outline">{stats.drafts}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">Total saved by users</span>
+                <span className="text-sm text-foreground">Total saved by users</span>
                 <Badge variant="secondary">{stats.saved}</Badge>
               </div>
             </div>
           </div>
 
-          {/* Recent Posts */}
-          <div className="rounded-xl border-2 border-dashed border-border p-5">
-            <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
-              <Eye className="h-4 w-4" /> Latest Posts
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h4 className="font-semibold text-sm flex items-center gap-2 mb-3">
+              <Eye className="h-4 w-4 text-muted-foreground" /> Latest Posts
             </h4>
             <div className="space-y-2">
               {topPosts.slice(0, 5).map((p) => (
                 <div key={p.id} className="text-sm border-b border-border pb-2 flex items-center justify-between">
-                  <span className="font-medium line-clamp-1 flex-1">{p.title}</span>
+                  <span className="font-medium text-foreground line-clamp-1 flex-1">{p.title}</span>
                   <Badge variant={p.status === "published" ? "default" : "outline"} className="ml-2 text-xs">{p.status}</Badge>
                 </div>
               ))}
@@ -346,23 +296,22 @@ function AnalyticsOverviewTab() {
             </div>
           </div>
 
-          {/* Freebies Breakdown */}
-          <div className="rounded-xl border-2 border-dashed border-border p-5">
-            <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
-              <Gift className="h-4 w-4" /> Freebies Library
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h4 className="font-semibold text-sm flex items-center gap-2 mb-3">
+              <Gift className="h-4 w-4 text-muted-foreground" /> Freebies Library
             </h4>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm flex items-center gap-1"><BookOpen className="h-3 w-3" /> Ebooks</span>
-                <Badge className="bg-[hsl(200,80%,78%)] text-foreground hover:bg-[hsl(200,80%,70%)]">{stats.ebooks}</Badge>
+                <span className="text-sm text-foreground flex items-center gap-1"><BookOpen className="h-3 w-3" /> Ebooks</span>
+                <Badge variant="secondary">{stats.ebooks}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm flex items-center gap-1"><Headphones className="h-3 w-3" /> Podcasts</span>
-                <Badge className="bg-[hsl(330,70%,80%)] text-foreground hover:bg-[hsl(330,70%,72%)]">{stats.podcasts}</Badge>
+                <span className="text-sm text-foreground flex items-center gap-1"><Headphones className="h-3 w-3" /> Podcasts</span>
+                <Badge variant="secondary">{stats.podcasts}</Badge>
               </div>
               {recentFreebies.length > 0 && (
                 <div className="border-t border-border pt-2 mt-2">
-                  <p className="text-xs font-bold uppercase mb-1">Latest</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Latest</p>
                   {recentFreebies.slice(0, 3).map((f) => (
                     <div key={f.id} className="text-xs text-muted-foreground">{f.title} ({f.type})</div>
                   ))}
@@ -373,10 +322,10 @@ function AnalyticsOverviewTab() {
         </div>
       </div>
 
-      {/* ── Platform Summary Bar ── */}
-      <div className="rounded-xl border-2 border-dashed border-border p-5 bg-muted/30">
-        <h3 className="text-lg font-black uppercase tracking-tight mb-3 flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" /> Platform Summary
+      {/* Platform Summary */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+          <BarChart3 className="h-4 w-4" /> Platform Summary
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {[
@@ -389,14 +338,13 @@ function AnalyticsOverviewTab() {
             { label: "Groups", value: stats.groups },
           ].map((item) => (
             <div key={item.label} className="text-center">
-              <div className="text-2xl font-black">{item.value}</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider">{item.label}</div>
+              <div className="text-2xl font-bold text-foreground">{item.value}</div>
+              <div className="text-xs text-muted-foreground">{item.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Footer timestamp */}
       <p className="text-center text-xs text-muted-foreground pt-4 border-t border-border">
         Analytics update on refresh • Last updated: {new Date().toLocaleTimeString()}
       </p>
@@ -413,31 +361,14 @@ function PostsTab() {
   const [editingPost, setEditingPost] = useState<any>(null);
   const [form, setForm] = useState({ title: "", slug: "", content: "", category: "story" as string, status: "draft" as string, excerpt: "", featured_image: "", audio_url: "", homepage_section: "none" });
 
-  const load = () => {
-    supabase.from("blog_posts").select("*").order("created_at", { ascending: false }).then(({ data }) => {
-      if (data) setPosts(data);
-    });
-  };
-
+  const load = () => { supabase.from("blog_posts").select("*").order("created_at", { ascending: false }).then(({ data }) => { if (data) setPosts(data); }); };
   useEffect(() => { load(); }, []);
 
-  const openCreate = () => {
-    setEditingPost(null);
-    setForm({ title: "", slug: "", content: "", category: "story", status: "draft", excerpt: "", featured_image: "", audio_url: "", homepage_section: "none" });
-    setDialogOpen(true);
-  };
-
-  const openEdit = (post: any) => {
-    setEditingPost(post);
-    setForm({ title: post.title, slug: post.slug, content: post.content, category: post.category, status: post.status, excerpt: post.excerpt || "", featured_image: post.featured_image || "", audio_url: post.audio_url || "", homepage_section: post.homepage_section || "none" });
-    setDialogOpen(true);
-  };
+  const openCreate = () => { setEditingPost(null); setForm({ title: "", slug: "", content: "", category: "story", status: "draft", excerpt: "", featured_image: "", audio_url: "", homepage_section: "none" }); setDialogOpen(true); };
+  const openEdit = (post: any) => { setEditingPost(post); setForm({ title: post.title, slug: post.slug, content: post.content, category: post.category, status: post.status, excerpt: post.excerpt || "", featured_image: post.featured_image || "", audio_url: post.audio_url || "", homepage_section: post.homepage_section || "none" }); setDialogOpen(true); };
 
   const save = async () => {
-    if (!form.title || !form.slug) {
-      toast({ title: "Title and slug are required", variant: "destructive" });
-      return;
-    }
+    if (!form.title || !form.slug) { toast({ title: "Title and slug are required", variant: "destructive" }); return; }
     if (editingPost) {
       const { error } = await supabase.from("blog_posts").update({ ...form, category: form.category as any, status: form.status as any }).eq("id", editingPost.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
@@ -445,29 +376,21 @@ function PostsTab() {
       const { error } = await supabase.from("blog_posts").insert({ ...form, category: form.category as any, status: form.status as any, author_id: user?.id });
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     }
-    toast({ title: editingPost ? "Post updated" : "Post created" });
-    setDialogOpen(false);
-    load();
+    toast({ title: editingPost ? "Post updated" : "Post created" }); setDialogOpen(false); load();
   };
 
-  const deletePost = async (id: string) => {
-    await supabase.from("blog_posts").delete().eq("id", id);
-    toast({ title: "Post deleted" });
-    load();
-  };
+  const deletePost = async (id: string) => { await supabase.from("blog_posts").delete().eq("id", id); toast({ title: "Post deleted" }); load(); };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-black tracking-tight uppercase">Manage Posts ({posts.length})</h2>
-        <Button onClick={openCreate} className="rounded-full">+ Create Post</Button>
+        <h2 className="text-2xl font-bold text-foreground">Manage Posts ({posts.length})</h2>
+        <Button onClick={openCreate}>+ Create Post</Button>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingPost ? "Edit Post" : "Create Post"}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editingPost ? "Edit Post" : "Create Post"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <Input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             <Input placeholder="Slug (url-friendly)" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
@@ -478,14 +401,12 @@ function PostsTab() {
                 <Input placeholder="Image URL" value={form.featured_image} onChange={(e) => setForm({ ...form, featured_image: e.target.value })} className="flex-1" />
                 <label className="cursor-pointer">
                   <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
+                    const file = e.target.files?.[0]; if (!file) return;
                     const path = `posts/${Date.now()}-${file.name}`;
                     const { error } = await supabase.storage.from("media").upload(path, file);
                     if (error) { toast({ title: "Upload failed", description: error.message, variant: "destructive" }); return; }
                     const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
-                    setForm((f) => ({ ...f, featured_image: pub.publicUrl }));
-                    toast({ title: "Image uploaded" });
+                    setForm((f) => ({ ...f, featured_image: pub.publicUrl })); toast({ title: "Image uploaded" });
                   }} />
                   <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors">Upload</span>
                 </label>
@@ -497,14 +418,12 @@ function PostsTab() {
                 <Input placeholder="Audio URL" value={form.audio_url} onChange={(e) => setForm({ ...form, audio_url: e.target.value })} className="flex-1" />
                 <label className="cursor-pointer">
                   <input type="file" accept="audio/*" className="hidden" onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
+                    const file = e.target.files?.[0]; if (!file) return;
                     const path = `audio/${Date.now()}-${file.name}`;
                     const { error } = await supabase.storage.from("media").upload(path, file);
                     if (error) { toast({ title: "Upload failed", description: error.message, variant: "destructive" }); return; }
                     const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
-                    setForm((f) => ({ ...f, audio_url: pub.publicUrl }));
-                    toast({ title: "Audio uploaded" });
+                    setForm((f) => ({ ...f, audio_url: pub.publicUrl })); toast({ title: "Audio uploaded" });
                   }} />
                   <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors">Upload</span>
                 </label>
@@ -514,19 +433,12 @@ function PostsTab() {
               <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="story">Story</SelectItem>
-                  <SelectItem value="news">News</SelectItem>
-                  <SelectItem value="tutorial">Tutorial</SelectItem>
-                  <SelectItem value="review">Review</SelectItem>
-                  <SelectItem value="opinion">Opinion</SelectItem>
+                  <SelectItem value="story">Story</SelectItem><SelectItem value="news">News</SelectItem><SelectItem value="tutorial">Tutorial</SelectItem><SelectItem value="review">Review</SelectItem><SelectItem value="opinion">Opinion</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
-                </SelectContent>
+                <SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="published">Published</SelectItem></SelectContent>
               </Select>
             </div>
             <div>
@@ -534,12 +446,7 @@ function PostsTab() {
               <Select value={form.homepage_section} onValueChange={(v) => setForm({ ...form, homepage_section: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="hero">Hero (main banner)</SelectItem>
-                  <SelectItem value="featured_stories">Featured AI Fictions</SelectItem>
-                  <SelectItem value="featured_collections">Featured Collections</SelectItem>
-                  <SelectItem value="best_ai_tools">Best AI Tools</SelectItem>
-                  <SelectItem value="news_articles">News & Articles</SelectItem>
+                  <SelectItem value="none">None</SelectItem><SelectItem value="hero">Hero (main banner)</SelectItem><SelectItem value="featured_stories">Featured AI Fictions</SelectItem><SelectItem value="featured_collections">Featured Collections</SelectItem><SelectItem value="best_ai_tools">Best AI Tools</SelectItem><SelectItem value="news_articles">News & Articles</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -549,16 +456,11 @@ function PostsTab() {
         </DialogContent>
       </Dialog>
 
-      <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+      <div className="rounded-xl border border-border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Section</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Status</TableHead><TableHead>Section</TableHead><TableHead>Created</TableHead><TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -566,11 +468,7 @@ function PostsTab() {
               <TableRow key={post.id}>
                 <TableCell className="font-medium max-w-[200px] truncate">{post.title}</TableCell>
                 <TableCell><Badge variant="secondary">{post.category}</Badge></TableCell>
-                <TableCell>
-                  <Badge className={post.status === "published" ? "bg-[hsl(150,76%,78%)] text-foreground hover:bg-[hsl(150,76%,70%)]" : ""} variant={post.status === "published" ? "default" : "outline"}>
-                    {post.status}
-                  </Badge>
-                </TableCell>
+                <TableCell><Badge variant={post.status === "published" ? "default" : "outline"}>{post.status}</Badge></TableCell>
                 <TableCell className="text-muted-foreground text-xs">{post.homepage_section || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{new Date(post.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right space-x-2">
@@ -579,11 +477,7 @@ function PostsTab() {
                 </TableCell>
               </TableRow>
             ))}
-            {posts.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No posts yet</TableCell>
-              </TableRow>
-            )}
+            {posts.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No posts yet</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>
@@ -595,75 +489,40 @@ function PostsTab() {
 function UsersTab() {
   const { toast } = useToast();
   const [users, setUsers] = useState<any[]>([]);
-
-  const load = () => {
-    supabase.from("profiles").select("*, user_roles(role)").order("created_at", { ascending: false }).then(({ data }) => {
-      if (data) setUsers(data);
-    });
-  };
-
+  const load = () => { supabase.from("profiles").select("*, user_roles(role)").order("created_at", { ascending: false }).then(({ data }) => { if (data) setUsers(data); }); };
   useEffect(() => { load(); }, []);
 
   const toggleAdmin = async (userId: string, currentlyAdmin: boolean) => {
-    if (currentlyAdmin) {
-      await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin");
-    } else {
-      await supabase.from("user_roles").insert({ user_id: userId, role: "admin" as any });
-    }
-    toast({ title: currentlyAdmin ? "Admin role removed" : "Admin role granted" });
-    load();
+    if (currentlyAdmin) { await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin"); }
+    else { await supabase.from("user_roles").insert({ user_id: userId, role: "admin" as any }); }
+    toast({ title: currentlyAdmin ? "Admin role removed" : "Admin role granted" }); load();
   };
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-black tracking-tight uppercase">Manage Users ({users.length})</h2>
-
-      {/* Top Users */}
-      <div className="rounded-xl border-2 border-dashed border-border p-6">
-        <h3 className="font-bold text-sm flex items-center gap-2 mb-4">
-          <Crown className="h-4 w-4" /> User Overview
-        </h3>
-        {users.length === 0 ? (
-          <div className="text-center py-8">
-            <Crown className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-            <p className="font-bold">No Users Yet</p>
-            <p className="text-sm text-muted-foreground">Registered users will appear here</p>
-          </div>
-        ) : (
-          <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+      <h2 className="text-2xl font-bold text-foreground">Manage Users ({users.length})</h2>
+      <div className="rounded-xl border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow><TableHead>Name</TableHead><TableHead>Role</TableHead><TableHead>Joined</TableHead><TableHead className="text-right">Actions</TableHead></TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((u) => {
+              const isAdmin = u.user_roles?.some((r: any) => r.role === "admin");
+              return (
+                <TableRow key={u.id}>
+                  <TableCell className="font-medium">{u.display_name || "Unnamed"}</TableCell>
+                  <TableCell><Badge variant={isAdmin ? "default" : "secondary"}>{isAdmin ? "Admin" : "User"}</Badge></TableCell>
+                  <TableCell className="text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="outline" onClick={() => toggleAdmin(u.user_id, isAdmin)}>{isAdmin ? "Remove Admin" : "Make Admin"}</Button>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((u) => {
-                  const isAdmin = u.user_roles?.some((r: any) => r.role === "admin");
-                  return (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.display_name || "Unnamed"}</TableCell>
-                      <TableCell>
-                        <Badge className={isAdmin ? "bg-[hsl(150,76%,78%)] text-foreground hover:bg-[hsl(150,76%,70%)]" : ""} variant={isAdmin ? "default" : "secondary"}>
-                          {isAdmin ? "Admin" : "User"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => toggleAdmin(u.user_id, isAdmin)}>
-                          {isAdmin ? "Remove Admin" : "Make Admin"}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+              );
+            })}
+            {users.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No users yet</TableCell></TableRow>}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
@@ -680,58 +539,37 @@ function QuizTab() {
     supabase.from("quiz_results").select("*").order("completed_at", { ascending: false }).limit(20).then(({ data }) => { if (data) setResults(data); });
   }, []);
 
-  const deleteQ = async (id: string) => {
-    await supabase.from("quiz_questions").delete().eq("id", id);
-    toast({ title: "Question deleted" });
-    setQuestions((q) => q.filter((x) => x.id !== id));
-  };
-
-  const avgScore = results.length > 0
-    ? Math.round(results.reduce((a, r) => a + (r.score / r.total_questions) * 100, 0) / results.length)
-    : 0;
+  const deleteQ = async (id: string) => { await supabase.from("quiz_questions").delete().eq("id", id); toast({ title: "Question deleted" }); setQuestions((q) => q.filter((x) => x.id !== id)); };
+  const avgScore = results.length > 0 ? Math.round(results.reduce((a, r) => a + (r.score / r.total_questions) * 100, 0) / results.length) : 0;
 
   return (
     <div className="space-y-8">
-      {/* Quiz Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(270,67%,80%)] p-5">
-          <HelpCircle className="h-8 w-8 mb-3 text-foreground/70" />
-          <div className="text-4xl font-black">{questions.length}</div>
-          <div className="text-xs font-bold uppercase tracking-wider mt-1">Questions</div>
-        </div>
-        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(45,100%,70%)] p-5">
-          <Users className="h-8 w-8 mb-3 text-foreground/70" />
-          <div className="text-4xl font-black">{results.length}</div>
-          <div className="text-xs font-bold uppercase tracking-wider mt-1">Submissions</div>
-        </div>
-        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(150,76%,78%)] p-5">
-          <TrendingUp className="h-8 w-8 mb-3 text-foreground/70" />
-          <div className="text-4xl font-black">{avgScore}%</div>
-          <div className="text-xs font-bold uppercase tracking-wider mt-1">Avg Score</div>
-        </div>
+        {[
+          { icon: HelpCircle, value: questions.length, label: "Questions" },
+          { icon: Users, value: results.length, label: "Submissions" },
+          { icon: TrendingUp, value: `${avgScore}%`, label: "Avg Score" },
+        ].map((card) => (
+          <div key={card.label} className="rounded-xl border border-border bg-card p-5">
+            <card.icon className="h-6 w-6 mb-2 text-muted-foreground" />
+            <div className="text-4xl font-bold text-foreground">{card.value}</div>
+            <div className="text-xs font-medium text-foreground mt-1">{card.label}</div>
+          </div>
+        ))}
       </div>
 
       <div>
-        <h2 className="text-2xl font-black tracking-tight uppercase mb-4">Quiz Questions ({questions.length})</h2>
-        <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+        <h2 className="text-2xl font-bold text-foreground mb-4">Quiz Questions ({questions.length})</h2>
+        <div className="rounded-xl border border-border overflow-hidden">
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Question</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Difficulty</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+            <TableHeader><TableRow><TableHead>Question</TableHead><TableHead>Category</TableHead><TableHead>Difficulty</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
             <TableBody>
               {questions.slice(0, 20).map((q) => (
                 <TableRow key={q.id}>
                   <TableCell className="max-w-xs truncate">{q.question}</TableCell>
                   <TableCell><Badge variant="secondary">{q.category || "—"}</Badge></TableCell>
                   <TableCell className="text-muted-foreground">{q.difficulty || "—"}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="destructive" onClick={() => deleteQ(q.id)}>Delete</Button>
-                  </TableCell>
+                  <TableCell className="text-right"><Button size="sm" variant="destructive" onClick={() => deleteQ(q.id)}>Delete</Button></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -740,16 +578,10 @@ function QuizTab() {
       </div>
 
       <div>
-        <h2 className="text-2xl font-black tracking-tight uppercase mb-4">Recent Results</h2>
-        <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+        <h2 className="text-2xl font-bold text-foreground mb-4">Recent Results</h2>
+        <div className="rounded-xl border border-border overflow-hidden">
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Quiz</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>Date</TableHead>
-              </TableRow>
-            </TableHeader>
+            <TableHeader><TableRow><TableHead>Quiz</TableHead><TableHead>Score</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
             <TableBody>
               {results.map((r) => (
                 <TableRow key={r.id}>
@@ -758,11 +590,7 @@ function QuizTab() {
                   <TableCell className="text-muted-foreground">{new Date(r.completed_at).toLocaleString()}</TableCell>
                 </TableRow>
               ))}
-              {results.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground py-8">No quiz results yet</TableCell>
-                </TableRow>
-              )}
+              {results.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">No quiz results yet</TableCell></TableRow>}
             </TableBody>
           </Table>
         </div>
@@ -780,31 +608,14 @@ function FreebiesTab() {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [form, setForm] = useState({ title: "", description: "", type: "ebook", category: "general", file_url: "", cover_image: "" });
 
-  const load = () => {
-    supabase.from("freebies").select("*").order("created_at", { ascending: false }).then(({ data }) => {
-      if (data) setItems(data);
-    });
-  };
-
+  const load = () => { supabase.from("freebies").select("*").order("created_at", { ascending: false }).then(({ data }) => { if (data) setItems(data); }); };
   useEffect(() => { load(); }, []);
 
-  const openCreate = () => {
-    setEditingItem(null);
-    setForm({ title: "", description: "", type: "ebook", category: "general", file_url: "", cover_image: "" });
-    setDialogOpen(true);
-  };
-
-  const openEdit = (item: any) => {
-    setEditingItem(item);
-    setForm({ title: item.title, description: item.description || "", type: item.type, category: item.category, file_url: item.file_url, cover_image: item.cover_image || "" });
-    setDialogOpen(true);
-  };
+  const openCreate = () => { setEditingItem(null); setForm({ title: "", description: "", type: "ebook", category: "general", file_url: "", cover_image: "" }); setDialogOpen(true); };
+  const openEdit = (item: any) => { setEditingItem(item); setForm({ title: item.title, description: item.description || "", type: item.type, category: item.category, file_url: item.file_url, cover_image: item.cover_image || "" }); setDialogOpen(true); };
 
   const save = async () => {
-    if (!form.title || !form.file_url) {
-      toast({ title: "Title and file URL are required", variant: "destructive" });
-      return;
-    }
+    if (!form.title || !form.file_url) { toast({ title: "Title and file URL are required", variant: "destructive" }); return; }
     if (editingItem) {
       const { error } = await supabase.from("freebies").update(form).eq("id", editingItem.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
@@ -812,48 +623,36 @@ function FreebiesTab() {
       const { error } = await supabase.from("freebies").insert({ ...form, created_by: user?.id });
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     }
-    toast({ title: editingItem ? "Freebie updated" : "Freebie created" });
-    setDialogOpen(false);
-    load();
+    toast({ title: editingItem ? "Freebie updated" : "Freebie created" }); setDialogOpen(false); load();
   };
 
-  const deleteItem = async (id: string) => {
-    await supabase.from("freebies").delete().eq("id", id);
-    toast({ title: "Freebie deleted" });
-    load();
-  };
+  const deleteItem = async (id: string) => { await supabase.from("freebies").delete().eq("id", id); toast({ title: "Freebie deleted" }); load(); };
 
   const uploadFile = async (file: File, folder: string, onDone: (url: string) => void) => {
     const path = `freebies/${folder}/${Date.now()}-${file.name}`;
     const { error } = await supabase.storage.from("media").upload(path, file);
     if (error) { toast({ title: "Upload failed", description: error.message, variant: "destructive" }); return; }
     const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
-    onDone(pub.publicUrl);
-    toast({ title: "File uploaded" });
+    onDone(pub.publicUrl); toast({ title: "File uploaded" });
   };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-black tracking-tight uppercase">Manage Freebies ({items.length})</h2>
-        <Button onClick={openCreate} className="rounded-full">+ Add Freebie</Button>
+        <h2 className="text-2xl font-bold text-foreground">Manage Freebies ({items.length})</h2>
+        <Button onClick={openCreate}>+ Add Freebie</Button>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingItem ? "Edit Freebie" : "Add Freebie"}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editingItem ? "Edit Freebie" : "Add Freebie"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <Input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             <Textarea placeholder="Description" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             <div className="flex gap-4">
               <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ebook">Ebook (PDF)</SelectItem>
-                  <SelectItem value="podcast">Podcast</SelectItem>
-                </SelectContent>
+                <SelectContent><SelectItem value="ebook">Ebook (PDF)</SelectItem><SelectItem value="podcast">Podcast</SelectItem></SelectContent>
               </Select>
               <Input placeholder="Category (e.g. AI, Marketing)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
             </div>
@@ -862,13 +661,8 @@ function FreebiesTab() {
               <div className="flex gap-2">
                 <Input placeholder="File URL" value={form.file_url} onChange={(e) => setForm({ ...form, file_url: e.target.value })} className="flex-1" />
                 <label className="cursor-pointer">
-                  <input type="file" className="hidden" accept={form.type === "ebook" ? ".pdf,.epub" : "audio/*"} onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) uploadFile(file, form.type === "ebook" ? "ebooks" : "podcasts", (url) => setForm((f) => ({ ...f, file_url: url })));
-                  }} />
-                  <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors">
-                    <Upload className="h-4 w-4 mr-1" /> Upload
-                  </span>
+                  <input type="file" className="hidden" accept={form.type === "ebook" ? ".pdf,.epub" : "audio/*"} onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadFile(file, form.type === "ebook" ? "ebooks" : "podcasts", (url) => setForm((f) => ({ ...f, file_url: url }))); }} />
+                  <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors"><Upload className="h-4 w-4 mr-1" /> Upload</span>
                 </label>
               </div>
             </div>
@@ -877,13 +671,8 @@ function FreebiesTab() {
               <div className="flex gap-2">
                 <Input placeholder="Image URL" value={form.cover_image} onChange={(e) => setForm({ ...form, cover_image: e.target.value })} className="flex-1" />
                 <label className="cursor-pointer">
-                  <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) uploadFile(file, "covers", (url) => setForm((f) => ({ ...f, cover_image: url })));
-                  }} />
-                  <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors">
-                    <Upload className="h-4 w-4 mr-1" /> Upload
-                  </span>
+                  <input type="file" className="hidden" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadFile(file, "covers", (url) => setForm((f) => ({ ...f, cover_image: url }))); }} />
+                  <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors"><Upload className="h-4 w-4 mr-1" /> Upload</span>
                 </label>
               </div>
             </div>
@@ -892,27 +681,14 @@ function FreebiesTab() {
         </DialogContent>
       </Dialog>
 
-      <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+      <div className="rounded-xl border border-border overflow-hidden">
         <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
+          <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Type</TableHead><TableHead>Category</TableHead><TableHead>Created</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
           <TableBody>
             {items.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="font-medium max-w-[200px] truncate">{item.title}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className="gap-1">
-                    {item.type === "ebook" ? <BookOpen className="h-3 w-3" /> : <Headphones className="h-3 w-3" />}
-                    {item.type}
-                  </Badge>
-                </TableCell>
+                <TableCell><Badge variant="secondary" className="gap-1">{item.type === "ebook" ? <BookOpen className="h-3 w-3" /> : <Headphones className="h-3 w-3" />}{item.type}</Badge></TableCell>
                 <TableCell className="capitalize">{item.category}</TableCell>
                 <TableCell className="text-muted-foreground">{new Date(item.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right space-x-2">
@@ -921,11 +697,7 @@ function FreebiesTab() {
                 </TableCell>
               </TableRow>
             ))}
-            {items.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">No freebies yet. Add your first ebook or podcast!</TableCell>
-              </TableRow>
-            )}
+            {items.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No freebies yet. Add your first ebook or podcast!</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>
@@ -940,20 +712,15 @@ export default function AdminDashboard() {
   const { isAdmin, loading: roleLoading } = useRole();
   const [tab, setTab] = useState<Tab>("analytics");
 
-  if (authLoading || roleLoading) {
-    return <div className="flex items-center justify-center min-h-screen bg-background">Loading…</div>;
-  }
+  if (authLoading || roleLoading) return <div className="flex items-center justify-center min-h-screen bg-background">Loading…</div>;
+  if (!user || !isAdmin) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background gap-4">
+      <p className="text-lg text-foreground">Access denied. Admin privileges required.</p>
+      <Button onClick={() => navigate("/")} variant="outline"><ArrowLeft className="mr-2 h-4 w-4" /> Go Home</Button>
+    </div>
+  );
 
-  if (!user || !isAdmin) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background gap-4">
-        <p className="text-lg">Access denied. Admin privileges required.</p>
-        <Button onClick={() => navigate("/")} variant="outline"><ArrowLeft className="mr-2 h-4 w-4" /> Go Home</Button>
-      </div>
-    );
-  }
-
-  const tabs: { label: string; key: Tab; icon: any; count?: number }[] = [
+  const tabs: { label: string; key: Tab; icon: any }[] = [
     { label: "Analytics", key: "analytics", icon: BarChart3 },
     { label: "Posts", key: "posts", icon: FileText },
     { label: "Users", key: "users", icon: Users },
@@ -971,20 +738,15 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Header Bar */}
       <header className="bg-background border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center h-14">
-          <button onClick={() => navigate("/")} className="text-xl font-black tracking-tight italic mr-auto">
-            UTOP<span className="gradient-text">AI</span>
+          <button onClick={() => navigate("/")} className="text-xl font-bold tracking-tight mr-auto">
+            The <span className="gradient-text">Kave</span>
           </button>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:inline">{user.email}</span>
-            <Badge className="bg-[hsl(150,76%,78%)] text-foreground hover:bg-[hsl(150,76%,70%)] rounded-full font-bold text-xs px-3">ADMIN</Badge>
-            <button
-              onClick={async () => { await signOut(); navigate("/"); }}
-              className="p-2 rounded-md hover:bg-secondary transition-colors"
-              title="Sign Out"
-            >
+            <Badge variant="secondary" className="font-medium text-xs px-3">ADMIN</Badge>
+            <button onClick={async () => { await signOut(); navigate("/"); }} className="p-2 rounded-md hover:bg-secondary transition-colors" title="Sign Out">
               <LogOut className="h-4 w-4" />
             </button>
           </div>
@@ -992,19 +754,17 @@ export default function AdminDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Page Title */}
-        <h1 className="text-4xl font-black tracking-tight uppercase mb-6">Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-6">Admin Dashboard</h1>
 
-        {/* Horizontal Tab Navigation */}
         <div className="flex flex-wrap gap-2 mb-8">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold uppercase tracking-wide border-2 transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 tab === t.key
-                  ? "bg-[hsl(150,76%,78%)] border-[hsl(150,76%,78%)] text-foreground"
-                  : "border-border bg-background text-foreground hover:bg-secondary"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-foreground hover:bg-accent"
               }`}
             >
               <t.icon className="h-4 w-4" />
@@ -1013,7 +773,6 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* Tab Content */}
         {tabContent[tab]}
       </div>
     </div>

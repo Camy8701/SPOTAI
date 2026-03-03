@@ -7,7 +7,7 @@ const Footer = () => (
       <div className="flex flex-col items-center justify-center space-y-4">
         <Link to="/" className="flex items-center space-x-2">
           <span className="font-bold text-xl">
-            UTOP<span className="gradient-text">AI</span>
+            The <span className="gradient-text">Kave</span>
           </span>
         </Link>
         <Button asChild>
@@ -16,7 +16,7 @@ const Footer = () => (
           </a>
         </Button>
         <p className="text-xs text-muted-foreground text-center">
-          © {new Date().getFullYear()} UTOPAI. All rights reserved.
+          © {new Date().getFullYear()} The Kave. All rights reserved.
         </p>
       </div>
     </div>
