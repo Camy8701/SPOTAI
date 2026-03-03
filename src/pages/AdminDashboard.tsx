@@ -60,10 +60,18 @@ type Tab = "analytics" | "posts" | "users" | "quiz" | "freebies";
 
 // ─── Analytics / Overview Tab ───
 function AnalyticsOverviewTab() {
-  const [stats, setStats] = useState({ posts: 0, users: 0, comments: 0, likes: 0, saved: 0, quizResults: 0, published: 0, drafts: 0 });
+  const [stats, setStats] = useState({
+    posts: 0, users: 0, comments: 0, likes: 0, saved: 0, quizResults: 0,
+    published: 0, drafts: 0, communities: 0, groups: 0, communityMembers: 0,
+    groupMembers: 0, conversations: 0, messages: 0, freebies: 0, ebooks: 0,
+    podcasts: 0, pendingMembers: 0, mediaFiles: 0,
+  });
   const [recentLikes, setRecentLikes] = useState<any[]>([]);
   const [recentComments, setRecentComments] = useState<any[]>([]);
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [recentUsers, setRecentUsers] = useState<any[]>([]);
+  const [recentMessages, setRecentMessages] = useState<any[]>([]);
+  const [topPosts, setTopPosts] = useState<any[]>([]);
+  const [recentFreebies, setRecentFreebies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = () => {
@@ -77,38 +85,61 @@ function AnalyticsOverviewTab() {
       supabase.from("quiz_results").select("id", { count: "exact", head: true }),
       supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("status", "published"),
       supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("status", "draft"),
+      supabase.from("communities").select("id", { count: "exact", head: true }),
+      supabase.from("groups").select("id", { count: "exact", head: true }),
+      supabase.from("community_members").select("id", { count: "exact", head: true }),
+      supabase.from("group_members").select("id", { count: "exact", head: true }),
+      supabase.from("conversations").select("id", { count: "exact", head: true }),
+      supabase.from("messages").select("id", { count: "exact", head: true }),
+      supabase.from("freebies").select("id", { count: "exact", head: true }),
+      supabase.from("freebies").select("id", { count: "exact", head: true }).eq("type", "ebook"),
+      supabase.from("freebies").select("id", { count: "exact", head: true }).eq("type", "podcast"),
+      supabase.from("group_members").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("media").select("id", { count: "exact", head: true }),
+      // Recent data
       supabase.from("likes").select("*, blog_posts(title)").order("created_at", { ascending: false }).limit(10),
       supabase.from("comments").select("*, blog_posts(title), profiles(display_name)").order("created_at", { ascending: false }).limit(10),
-      supabase.from("activities").select("*").order("created_at", { ascending: false }).limit(10),
-    ]).then(([posts, users, comments, likes, saved, quiz, published, drafts, rLikes, rComments, rActivities]) => {
+      supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(10),
+      supabase.from("messages").select("*, conversations(participant_1, participant_2)").order("created_at", { ascending: false }).limit(10),
+      supabase.from("blog_posts").select("id, title, status, created_at, category").order("created_at", { ascending: false }).limit(10),
+      supabase.from("freebies").select("*").order("created_at", { ascending: false }).limit(5),
+    ]).then(([
+      posts, users, comments, likes, saved, quiz, published, drafts,
+      communities, groups, communityMembers, groupMembers, conversations, messages,
+      freebies, ebooks, podcasts, pendingMembers, mediaFiles,
+      rLikes, rComments, rUsers, rMessages, rTopPosts, rFreebies
+    ]) => {
       setStats({
-        posts: posts.count ?? 0,
-        users: users.count ?? 0,
-        comments: comments.count ?? 0,
-        likes: likes.count ?? 0,
-        saved: saved.count ?? 0,
-        quizResults: quiz.count ?? 0,
-        published: published.count ?? 0,
-        drafts: drafts.count ?? 0,
+        posts: posts.count ?? 0, users: users.count ?? 0, comments: comments.count ?? 0,
+        likes: likes.count ?? 0, saved: saved.count ?? 0, quizResults: quiz.count ?? 0,
+        published: published.count ?? 0, drafts: drafts.count ?? 0,
+        communities: communities.count ?? 0, groups: groups.count ?? 0,
+        communityMembers: communityMembers.count ?? 0, groupMembers: groupMembers.count ?? 0,
+        conversations: conversations.count ?? 0, messages: messages.count ?? 0,
+        freebies: freebies.count ?? 0, ebooks: ebooks.count ?? 0, podcasts: podcasts.count ?? 0,
+        pendingMembers: pendingMembers.count ?? 0, mediaFiles: mediaFiles.count ?? 0,
       });
       if (rLikes.data) setRecentLikes(rLikes.data);
       if (rComments.data) setRecentComments(rComments.data);
-      if (rActivities.data) setRecentActivities(rActivities.data);
+      if (rUsers.data) setRecentUsers(rUsers.data);
+      if (rMessages.data) setRecentMessages(rMessages.data);
+      if (rTopPosts.data) setTopPosts(rTopPosts.data);
+      if (rFreebies.data) setRecentFreebies(rFreebies.data);
       setLoading(false);
     });
   };
 
   useEffect(() => { load(); }, []);
 
-  const hasAlerts = stats.drafts > 3;
+  const hasAlerts = stats.drafts > 3 || stats.pendingMembers > 0;
 
   return (
     <div className="space-y-8">
       {/* Section Title + Refresh */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-black tracking-tight uppercase">Analytics Dashboard</h2>
-          <p className="text-sm text-muted-foreground">Real-time insights into your content performance</p>
+          <h2 className="text-2xl font-black tracking-tight uppercase">Platform Analytics</h2>
+          <p className="text-sm text-muted-foreground">Complete overview of everything happening on the platform</p>
         </div>
         <Button variant="outline" size="sm" onClick={load} disabled={loading} className="gap-2 rounded-full border-2 border-foreground">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -116,82 +147,128 @@ function AnalyticsOverviewTab() {
         </Button>
       </div>
 
-      {/* Content Command Center */}
+      {/* ── Row 1: Core Metrics ── */}
       <div>
         <h3 className="text-lg font-black uppercase tracking-tight mb-4">Content Command Center</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(150,76%,78%)] p-5">
-            <FileText className="h-8 w-8 mb-3 text-foreground/70" />
-            <div className="text-4xl font-black">{stats.posts}</div>
-            <div className="text-xs font-bold uppercase tracking-wider mt-1">Total Posts</div>
-            <div className="text-xs text-foreground/60 mt-1">{stats.published} published</div>
-          </div>
-          <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(270,67%,80%)] p-5">
-            <Users className="h-8 w-8 mb-3 text-foreground/70" />
-            <div className="text-4xl font-black">{stats.users}</div>
-            <div className="text-xs font-bold uppercase tracking-wider mt-1">Total Users</div>
-            <div className="text-xs text-foreground/60 mt-1">Registered accounts</div>
-          </div>
-          <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(45,100%,70%)] p-5">
-            <Heart className="h-8 w-8 mb-3 text-foreground/70" />
-            <div className="text-4xl font-black">{stats.likes}</div>
-            <div className="text-xs font-bold uppercase tracking-wider mt-1">Total Likes</div>
-            <div className="text-xs text-foreground/60 mt-1">{stats.comments} comments</div>
-          </div>
-          <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(150,76%,78%)] p-5">
-            <HelpCircle className="h-8 w-8 mb-3 text-foreground/70" />
-            <div className="text-4xl font-black">{stats.quizResults}</div>
-            <div className="text-xs font-bold uppercase tracking-wider mt-1">Quiz Submissions</div>
-            <div className="text-xs text-foreground/60 mt-1">Completed quizzes</div>
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {[
+            { icon: FileText, value: stats.posts, label: "Total Posts", sub: `${stats.published} published`, bg: "hsl(150,76%,78%)" },
+            { icon: Users, value: stats.users, label: "Users", sub: "Registered", bg: "hsl(270,67%,80%)" },
+            { icon: Heart, value: stats.likes, label: "Likes", sub: `${stats.comments} comments`, bg: "hsl(45,100%,70%)" },
+            { icon: MessageSquare, value: stats.messages, label: "Messages", sub: `${stats.conversations} conversations`, bg: "hsl(200,80%,78%)" },
+            { icon: HelpCircle, value: stats.quizResults, label: "Quiz Plays", sub: "Completed", bg: "hsl(330,70%,80%)" },
+            { icon: Gift, value: stats.freebies, label: "Freebies", sub: `${stats.ebooks} ebooks · ${stats.podcasts} pods`, bg: "hsl(20,90%,78%)" },
+          ].map((card) => (
+            <div key={card.label} className="rounded-xl border-2 border-dashed border-border p-4" style={{ backgroundColor: card.bg }}>
+              <card.icon className="h-6 w-6 mb-2 text-foreground/70" />
+              <div className="text-3xl font-black">{card.value}</div>
+              <div className="text-xs font-bold uppercase tracking-wider mt-1">{card.label}</div>
+              <div className="text-xs text-foreground/60 mt-0.5">{card.sub}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Content Health Alerts */}
+      {/* ── Row 2: Social & Community Metrics ── */}
+      <div>
+        <h3 className="text-lg font-black uppercase tracking-tight mb-4">Social & Community</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {[
+            { icon: Users, value: stats.communities, label: "Communities", sub: `${stats.communityMembers} members`, bg: "hsl(170,60%,78%)" },
+            { icon: Crown, value: stats.groups, label: "Groups", sub: `${stats.groupMembers} members`, bg: "hsl(290,60%,80%)" },
+            { icon: MessageSquare, value: stats.conversations, label: "Conversations", sub: "Active DMs", bg: "hsl(210,70%,80%)" },
+            { icon: Bookmark, value: stats.saved, label: "Saved Posts", sub: "By readers", bg: "hsl(50,90%,75%)" },
+            { icon: Upload, value: stats.mediaFiles, label: "Media Files", sub: "Uploaded", bg: "hsl(130,50%,78%)" },
+          ].map((card) => (
+            <div key={card.label} className="rounded-xl border-2 border-dashed border-border p-4" style={{ backgroundColor: card.bg }}>
+              <card.icon className="h-6 w-6 mb-2 text-foreground/70" />
+              <div className="text-3xl font-black">{card.value}</div>
+              <div className="text-xs font-bold uppercase tracking-wider mt-1">{card.label}</div>
+              <div className="text-xs text-foreground/60 mt-0.5">{card.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Alerts ── */}
       <div>
         <h3 className="text-lg font-black uppercase tracking-tight mb-4 flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5" /> Content Health Alerts
+          <AlertTriangle className="h-5 w-5" /> Platform Alerts
         </h3>
-        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(150,76%,78%)] p-8 text-center">
-          {hasAlerts ? (
-            <>
-              <AlertTriangle className="h-10 w-10 mx-auto mb-2 text-foreground/60" />
-              <p className="font-bold">Attention Needed</p>
-              <p className="text-sm text-foreground/60">You have {stats.drafts} draft posts waiting to be published.</p>
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="h-10 w-10 mx-auto mb-2 text-foreground/60" />
-              <p className="font-bold">All Clear!</p>
-              <p className="text-sm text-foreground/60">No alerts at the moment. Everything is running smoothly.</p>
-            </>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div className="rounded-xl border-2 border-dashed border-border p-5">
-            <h4 className="font-bold text-sm flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" /> Engagement Trends
-            </h4>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats.likes > 0 ? `${stats.likes} total likes and ${stats.comments} comments across all posts` : "Engagement data will appear as users interact with content"}
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className={`rounded-xl border-2 border-dashed border-border p-5 text-center ${stats.drafts > 3 ? "bg-[hsl(45,100%,85%)]" : "bg-[hsl(150,76%,88%)]"}`}>
+            <PenLine className="h-8 w-8 mx-auto mb-2 text-foreground/60" />
+            <div className="text-2xl font-black">{stats.drafts}</div>
+            <p className="text-sm font-bold">Unpublished Drafts</p>
+            {stats.drafts > 3 && <p className="text-xs text-foreground/60 mt-1">Consider reviewing and publishing</p>}
           </div>
-          <div className="rounded-xl border-2 border-dashed border-border p-5">
-            <h4 className="font-bold text-sm flex items-center gap-2">
-              <Bookmark className="h-4 w-4" /> Saved Content
-            </h4>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats.saved > 0 ? `${stats.saved} posts saved by readers` : "Saved content metrics will appear here"}
-            </p>
+          <div className={`rounded-xl border-2 border-dashed border-border p-5 text-center ${stats.pendingMembers > 0 ? "bg-[hsl(20,90%,85%)]" : "bg-[hsl(150,76%,88%)]"}`}>
+            <Users className="h-8 w-8 mx-auto mb-2 text-foreground/60" />
+            <div className="text-2xl font-black">{stats.pendingMembers}</div>
+            <p className="text-sm font-bold">Pending Group Requests</p>
+            {stats.pendingMembers > 0 && <p className="text-xs text-foreground/60 mt-1">Members awaiting approval</p>}
+          </div>
+          <div className="rounded-xl border-2 border-dashed border-border p-5 text-center bg-[hsl(150,76%,88%)]">
+            {hasAlerts ? (
+              <>
+                <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-foreground/60" />
+                <p className="text-sm font-bold">Action Required</p>
+                <p className="text-xs text-foreground/60 mt-1">Review items above</p>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-foreground/60" />
+                <p className="text-sm font-bold">All Clear!</p>
+                <p className="text-xs text-foreground/60 mt-1">Platform running smoothly</p>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Top Content */}
+      {/* ── Recent Activity Feed ── */}
       <div>
-        <h3 className="text-lg font-black uppercase tracking-tight mb-4">Recent Engagement</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <h3 className="text-lg font-black uppercase tracking-tight mb-4">Recent Activity</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Recent Users */}
+          <div className="rounded-xl border-2 border-dashed border-border p-5">
+            <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
+              <Users className="h-4 w-4 text-blue-500" /> New User Signups
+            </h4>
+            <div className="space-y-2">
+              {recentUsers.slice(0, 6).map((u) => (
+                <div key={u.id} className="text-sm border-b border-border pb-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {u.avatar_url ? (
+                      <img src={u.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
+                    ) : (
+                      <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold">{(u.display_name || "?")[0]}</div>
+                    )}
+                    <span className="font-medium">{u.display_name || "Anonymous"}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</span>
+                </div>
+              ))}
+              {recentUsers.length === 0 && <p className="text-sm text-muted-foreground">No users yet</p>}
+            </div>
+          </div>
+
+          {/* Recent Messages */}
+          <div className="rounded-xl border-2 border-dashed border-border p-5">
+            <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
+              <MessageSquare className="h-4 w-4 text-green-500" /> Recent Messages
+            </h4>
+            <div className="space-y-2">
+              {recentMessages.slice(0, 6).map((m) => (
+                <div key={m.id} className="text-sm border-b border-border pb-2">
+                  <span className="font-medium line-clamp-1">{m.content}</span>
+                  <div className="text-xs text-muted-foreground">{new Date(m.created_at).toLocaleString()}</div>
+                </div>
+              ))}
+              {recentMessages.length === 0 && <p className="text-sm text-muted-foreground">No messages yet</p>}
+            </div>
+          </div>
+
           {/* Recent Likes */}
           <div className="rounded-xl border-2 border-dashed border-border p-5">
             <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
@@ -217,17 +294,25 @@ function AnalyticsOverviewTab() {
               {recentComments.slice(0, 5).map((c) => (
                 <div key={c.id} className="text-sm border-b border-border pb-2">
                   <span className="font-medium line-clamp-1">{c.content}</span>
-                  <div className="text-xs text-muted-foreground">on {(c.blog_posts as any)?.title || "Unknown"} • {new Date(c.created_at).toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">
+                    by {(c.profiles as any)?.display_name || "Anonymous"} on {(c.blog_posts as any)?.title || "Unknown"} • {new Date(c.created_at).toLocaleString()}
+                  </div>
                 </div>
               ))}
               {recentComments.length === 0 && <p className="text-sm text-muted-foreground">No comments yet</p>}
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Recent Saves */}
+      {/* ── Content Breakdown ── */}
+      <div>
+        <h3 className="text-lg font-black uppercase tracking-tight mb-4">Content Breakdown</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Post Status */}
           <div className="rounded-xl border-2 border-dashed border-border p-5">
             <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
-              <Bookmark className="h-4 w-4 text-yellow-600" /> Content Status
+              <FileText className="h-4 w-4" /> Post Status
             </h4>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
@@ -239,15 +324,75 @@ function AnalyticsOverviewTab() {
                 <Badge variant="outline">{stats.drafts}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">Saved by users</span>
+                <span className="text-sm">Total saved by users</span>
                 <Badge variant="secondary">{stats.saved}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Quiz results</span>
-                <Badge variant="secondary">{stats.quizResults}</Badge>
               </div>
             </div>
           </div>
+
+          {/* Recent Posts */}
+          <div className="rounded-xl border-2 border-dashed border-border p-5">
+            <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
+              <Eye className="h-4 w-4" /> Latest Posts
+            </h4>
+            <div className="space-y-2">
+              {topPosts.slice(0, 5).map((p) => (
+                <div key={p.id} className="text-sm border-b border-border pb-2 flex items-center justify-between">
+                  <span className="font-medium line-clamp-1 flex-1">{p.title}</span>
+                  <Badge variant={p.status === "published" ? "default" : "outline"} className="ml-2 text-xs">{p.status}</Badge>
+                </div>
+              ))}
+              {topPosts.length === 0 && <p className="text-sm text-muted-foreground">No posts yet</p>}
+            </div>
+          </div>
+
+          {/* Freebies Breakdown */}
+          <div className="rounded-xl border-2 border-dashed border-border p-5">
+            <h4 className="font-bold text-sm flex items-center gap-2 mb-3">
+              <Gift className="h-4 w-4" /> Freebies Library
+            </h4>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm flex items-center gap-1"><BookOpen className="h-3 w-3" /> Ebooks</span>
+                <Badge className="bg-[hsl(200,80%,78%)] text-foreground hover:bg-[hsl(200,80%,70%)]">{stats.ebooks}</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm flex items-center gap-1"><Headphones className="h-3 w-3" /> Podcasts</span>
+                <Badge className="bg-[hsl(330,70%,80%)] text-foreground hover:bg-[hsl(330,70%,72%)]">{stats.podcasts}</Badge>
+              </div>
+              {recentFreebies.length > 0 && (
+                <div className="border-t border-border pt-2 mt-2">
+                  <p className="text-xs font-bold uppercase mb-1">Latest</p>
+                  {recentFreebies.slice(0, 3).map((f) => (
+                    <div key={f.id} className="text-xs text-muted-foreground">{f.title} ({f.type})</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Platform Summary Bar ── */}
+      <div className="rounded-xl border-2 border-dashed border-border p-5 bg-muted/30">
+        <h3 className="text-lg font-black uppercase tracking-tight mb-3 flex items-center gap-2">
+          <BarChart3 className="h-5 w-5" /> Platform Summary
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          {[
+            { label: "Posts", value: stats.posts },
+            { label: "Users", value: stats.users },
+            { label: "Comments", value: stats.comments },
+            { label: "Likes", value: stats.likes },
+            { label: "Messages", value: stats.messages },
+            { label: "Communities", value: stats.communities },
+            { label: "Groups", value: stats.groups },
+          ].map((item) => (
+            <div key={item.label} className="text-center">
+              <div className="text-2xl font-black">{item.value}</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wider">{item.label}</div>
+            </div>
+          ))}
         </div>
       </div>
 
