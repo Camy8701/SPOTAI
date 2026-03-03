@@ -241,6 +241,48 @@ export type Database = {
         }
         Relationships: []
       }
+      freebies: {
+        Row: {
+          category: string
+          cover_image: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          file_size: number | null
+          file_url: string
+          id: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          cover_image?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          file_size?: number | null
+          file_url: string
+          id?: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       group_members: {
         Row: {
           group_id: string

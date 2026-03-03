@@ -23,6 +23,8 @@ import Popular from "./pages/Popular";
 import Messages from "./pages/Messages";
 import Communities from "./pages/Communities";
 import Groups from "./pages/Groups";
+import EbooksLibrary from "./pages/EbooksLibrary";
+import PodcastLibrary from "./pages/PodcastLibrary";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +54,8 @@ const App = () => (
             <Route path="/messages" element={<Messages />} />
             <Route path="/communities" element={<Communities />} />
             <Route path="/groups" element={<Groups />} />
+            <Route path="/freebies/ebooks" element={<EbooksLibrary />} />
+            <Route path="/freebies/podcasts" element={<PodcastLibrary />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

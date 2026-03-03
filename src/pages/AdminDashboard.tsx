@@ -23,6 +23,10 @@ import {
   ShoppingCart,
   DollarSign,
   Calendar,
+  Gift,
+  BookOpen,
+  Headphones,
+  Upload,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,7 +56,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
-type Tab = "analytics" | "posts" | "users" | "quiz";
+type Tab = "analytics" | "posts" | "users" | "quiz" | "freebies";
 
 // ─── Analytics / Overview Tab ───
 function AnalyticsOverviewTab() {
@@ -622,6 +626,168 @@ function QuizTab() {
   );
 }
 
+// ─── Freebies Tab ───
+function FreebiesTab() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [items, setItems] = useState<any[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [form, setForm] = useState({ title: "", description: "", type: "ebook", category: "general", file_url: "", cover_image: "" });
+
+  const load = () => {
+    supabase.from("freebies").select("*").order("created_at", { ascending: false }).then(({ data }) => {
+      if (data) setItems(data);
+    });
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const openCreate = () => {
+    setEditingItem(null);
+    setForm({ title: "", description: "", type: "ebook", category: "general", file_url: "", cover_image: "" });
+    setDialogOpen(true);
+  };
+
+  const openEdit = (item: any) => {
+    setEditingItem(item);
+    setForm({ title: item.title, description: item.description || "", type: item.type, category: item.category, file_url: item.file_url, cover_image: item.cover_image || "" });
+    setDialogOpen(true);
+  };
+
+  const save = async () => {
+    if (!form.title || !form.file_url) {
+      toast({ title: "Title and file URL are required", variant: "destructive" });
+      return;
+    }
+    if (editingItem) {
+      const { error } = await supabase.from("freebies").update(form).eq("id", editingItem.id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    } else {
+      const { error } = await supabase.from("freebies").insert({ ...form, created_by: user?.id });
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }
+    toast({ title: editingItem ? "Freebie updated" : "Freebie created" });
+    setDialogOpen(false);
+    load();
+  };
+
+  const deleteItem = async (id: string) => {
+    await supabase.from("freebies").delete().eq("id", id);
+    toast({ title: "Freebie deleted" });
+    load();
+  };
+
+  const uploadFile = async (file: File, folder: string, onDone: (url: string) => void) => {
+    const path = `freebies/${folder}/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("media").upload(path, file);
+    if (error) { toast({ title: "Upload failed", description: error.message, variant: "destructive" }); return; }
+    const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
+    onDone(pub.publicUrl);
+    toast({ title: "File uploaded" });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-black tracking-tight uppercase">Manage Freebies ({items.length})</h2>
+        <Button onClick={openCreate} className="rounded-full">+ Add Freebie</Button>
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingItem ? "Edit Freebie" : "Add Freebie"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            <Textarea placeholder="Description" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <div className="flex gap-4">
+              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ebook">Ebook (PDF)</SelectItem>
+                  <SelectItem value="podcast">Podcast</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input placeholder="Category (e.g. AI, Marketing)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">File</label>
+              <div className="flex gap-2">
+                <Input placeholder="File URL" value={form.file_url} onChange={(e) => setForm({ ...form, file_url: e.target.value })} className="flex-1" />
+                <label className="cursor-pointer">
+                  <input type="file" className="hidden" accept={form.type === "ebook" ? ".pdf,.epub" : "audio/*"} onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadFile(file, form.type === "ebook" ? "ebooks" : "podcasts", (url) => setForm((f) => ({ ...f, file_url: url })));
+                  }} />
+                  <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors">
+                    <Upload className="h-4 w-4 mr-1" /> Upload
+                  </span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Cover Image</label>
+              <div className="flex gap-2">
+                <Input placeholder="Image URL" value={form.cover_image} onChange={(e) => setForm({ ...form, cover_image: e.target.value })} className="flex-1" />
+                <label className="cursor-pointer">
+                  <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadFile(file, "covers", (url) => setForm((f) => ({ ...f, cover_image: url })));
+                  }} />
+                  <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors">
+                    <Upload className="h-4 w-4 mr-1" /> Upload
+                  </span>
+                </label>
+              </div>
+            </div>
+            <Button onClick={save} className="w-full">{editingItem ? "Update" : "Create"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium max-w-[200px] truncate">{item.title}</TableCell>
+                <TableCell>
+                  <Badge variant="secondary" className="gap-1">
+                    {item.type === "ebook" ? <BookOpen className="h-3 w-3" /> : <Headphones className="h-3 w-3" />}
+                    {item.type}
+                  </Badge>
+                </TableCell>
+                <TableCell className="capitalize">{item.category}</TableCell>
+                <TableCell className="text-muted-foreground">{new Date(item.created_at).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right space-x-2">
+                  <Button size="sm" variant="outline" onClick={() => openEdit(item)}>Edit</Button>
+                  <Button size="sm" variant="destructive" onClick={() => deleteItem(item.id)}>Delete</Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {items.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">No freebies yet. Add your first ebook or podcast!</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Admin Dashboard ───
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -647,6 +813,7 @@ export default function AdminDashboard() {
     { label: "Posts", key: "posts", icon: FileText },
     { label: "Users", key: "users", icon: Users },
     { label: "Quiz", key: "quiz", icon: HelpCircle },
+    { label: "Freebies", key: "freebies", icon: Gift },
   ];
 
   const tabContent: Record<Tab, JSX.Element> = {
@@ -654,6 +821,7 @@ export default function AdminDashboard() {
     posts: <PostsTab />,
     users: <UsersTab />,
     quiz: <QuizTab />,
+    freebies: <FreebiesTab />,
   };
 
   return (
