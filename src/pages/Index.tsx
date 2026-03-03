@@ -58,7 +58,7 @@ const Index = () => {
       <section className="relative py-16 lg:py-24 flex items-center justify-center bg-background">
         <div className="container mx-auto px-4 text-center">
           <AnimateInView>
-            <h1 className="font-semibold text-foreground tracking-tighter leading-none uppercase text-[4.0rem] md:text-[5.85rem] lg:text-[7.8rem] xl:text-[9.75rem] whitespace-nowrap">
+            <h1 className="font-semibold text-foreground tracking-tighter leading-none uppercase text-[4.0rem] md:text-[5.85rem] lg:text-[7.8rem] xl:text-[9.75rem] text-center mx-auto">
               LATEST AI CHRONICLES
             </h1>
           </AnimateInView>
