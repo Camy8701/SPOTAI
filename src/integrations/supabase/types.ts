@@ -149,6 +149,172 @@ export type Database = {
           },
         ]
       }
+      communities: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          icon_url: string | null
+          id: string
+          language: string
+          member_count: number
+          name: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          language?: string
+          member_count?: number
+          name: string
+          topic?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          language?: string
+          member_count?: number
+          name?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      community_members: {
+        Row: {
+          community_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          community_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          community_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_members_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          participant_1: string
+          participant_2: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_1: string
+          participant_2: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_1?: string
+          participant_2?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          status: Database["public"]["Enums"]["member_status"]
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          status?: Database["public"]["Enums"]["member_status"]
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          status?: Database["public"]["Enums"]["member_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          icon_url: string | null
+          id: string
+          is_private: boolean
+          language: string
+          member_count: number
+          name: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          is_private?: boolean
+          language?: string
+          member_count?: number
+          name: string
+          topic?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          is_private?: boolean
+          language?: string
+          member_count?: number
+          name?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           comment_id: string | null
@@ -220,6 +386,41 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          read: boolean
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -379,6 +580,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      member_status: "pending" | "approved" | "rejected"
       post_category: "story" | "news" | "tutorial" | "review" | "opinion"
       post_status: "draft" | "published"
     }
@@ -509,6 +711,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      member_status: ["pending", "approved", "rejected"],
       post_category: ["story", "news", "tutorial", "review", "opinion"],
       post_status: ["draft", "published"],
     },
