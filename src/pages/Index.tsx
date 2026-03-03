@@ -58,7 +58,7 @@ const Index = () => {
       <section className="relative py-16 lg:py-24 flex items-center justify-center bg-background">
         <div className="container mx-auto px-4 text-center">
           <AnimateInView>
-            <h1 className="font-semibold text-foreground tracking-tighter leading-none uppercase text-5xl md:text-7xl lg:text-8xl xl:text-9xl whitespace-nowrap">
+            <h1 className="font-semibold text-foreground tracking-tighter leading-none uppercase text-[4.0rem] md:text-[5.85rem] lg:text-[7.8rem] xl:text-[9.75rem] whitespace-nowrap">
               LATEST AI CHRONICLES
             </h1>
           </AnimateInView>
@@ -67,8 +67,8 @@ const Index = () => {
 
       {/* Featured Content - Hero Image */}
       {hero ? (
-        <AnimateInView className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="relative aspect-video overflow-hidden rounded-lg group">
+        <AnimateInView className="max-w-[84rem] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="relative overflow-hidden rounded-lg group" style={{ aspectRatio: '16/9', height: 'calc(56.25vw + 10px)', maxHeight: 'calc(84rem * 9 / 16 + 10px)' }}>
             <img
               src={hero.featured_image || "/placeholder.svg"}
               alt={hero.title}
