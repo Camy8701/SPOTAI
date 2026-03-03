@@ -40,9 +40,15 @@ const Header = () => {
         {/* Left - Logo & Social Links */}
         <div className="flex items-center flex-shrink-0">
           <Link to="/" className="flex-shrink-0 mr-8">
-            <span className="text-xl font-bold tracking-tight">
-              UTOP<span className="gradient-text">AI</span>
-            </span>
+            <motion.div
+              className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-md"
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+              </svg>
+            </motion.div>
           </Link>
 
           <nav className="hidden md:flex md:items-center md:space-x-6">
