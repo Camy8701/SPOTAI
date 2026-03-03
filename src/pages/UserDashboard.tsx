@@ -1,29 +1,19 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  SidebarProvider,
-  SidebarTrigger,
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
   Heart,
   Bookmark,
   MessageSquare,
-  Activity,
   ArrowLeft,
   User,
+  LogOut,
+  HelpCircle,
+  CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -40,45 +30,11 @@ import { useToast } from "@/hooks/use-toast";
 
 type Tab = "overview" | "saved" | "liked" | "comments" | "profile";
 
-function UserSidebar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
-  const items = [
-    { title: "Overview", icon: LayoutDashboard, key: "overview" as Tab },
-    { title: "Saved Posts", icon: Bookmark, key: "saved" as Tab },
-    { title: "Liked Posts", icon: Heart, key: "liked" as Tab },
-    { title: "My Comments", icon: MessageSquare, key: "comments" as Tab },
-    { title: "Profile", icon: User, key: "profile" as Tab },
-  ];
-
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>My Dashboard</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.key}>
-                  <SidebarMenuButton
-                    onClick={() => setTab(item.key)}
-                    isActive={tab === item.key}
-                    className="cursor-pointer"
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
-  );
-}
-
+// ─── Overview ───
 function OverviewTab() {
   const { user } = useAuth();
-  const [stats, setStats] = useState({ saved: 0, liked: 0, comments: 0 });
+  const [stats, setStats] = useState({ saved: 0, liked: 0, comments: 0, quizzes: 0 });
+  const [recentComments, setRecentComments] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -86,38 +42,88 @@ function OverviewTab() {
       supabase.from("saved_posts").select("id", { count: "exact", head: true }).eq("user_id", user.id),
       supabase.from("likes").select("id", { count: "exact", head: true }).eq("user_id", user.id),
       supabase.from("comments").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-    ]).then(([saved, liked, comments]) => {
+      supabase.from("quiz_results").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+      supabase.from("comments").select("*, blog_posts(title)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+    ]).then(([saved, liked, comments, quizzes, rComments]) => {
       setStats({
         saved: saved.count ?? 0,
         liked: liked.count ?? 0,
         comments: comments.count ?? 0,
+        quizzes: quizzes.count ?? 0,
       });
+      if (rComments.data) setRecentComments(rComments.data);
     });
   }, [user]);
 
-  const cards = [
-    { label: "Saved Posts", value: stats.saved, icon: Bookmark, color: "text-yellow-500" },
-    { label: "Liked Posts", value: stats.liked, icon: Heart, color: "text-red-500" },
-    { label: "My Comments", value: stats.comments, icon: MessageSquare, color: "text-purple-500" },
-  ];
-
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-      {cards.map((c) => (
-        <Card key={c.label}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{c.label}</CardTitle>
-            <c.icon className={`h-5 w-5 ${c.color}`} />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-foreground">{c.value}</div>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-8">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(270,67%,80%)] p-5 flex items-center gap-4">
+          <Bookmark className="h-8 w-8 text-foreground/70" />
+          <div className="text-right flex-1">
+            <div className="text-4xl font-black">{stats.saved}</div>
+            <div className="text-xs font-bold uppercase tracking-wider">Saved Posts</div>
+          </div>
+        </div>
+        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(150,76%,78%)] p-5 flex items-center gap-4">
+          <Heart className="h-8 w-8 text-foreground/70" />
+          <div className="text-right flex-1">
+            <div className="text-4xl font-black">{stats.liked}</div>
+            <div className="text-xs font-bold uppercase tracking-wider">Liked Posts</div>
+          </div>
+        </div>
+        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(45,100%,70%)] p-5 flex items-center gap-4">
+          <MessageSquare className="h-8 w-8 text-foreground/70" />
+          <div className="text-right flex-1">
+            <div className="text-4xl font-black">{stats.comments}</div>
+            <div className="text-xs font-bold uppercase tracking-wider">Comments</div>
+          </div>
+        </div>
+        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(350,76%,72%)] p-5 flex items-center gap-4">
+          <HelpCircle className="h-8 w-8 text-foreground/70" />
+          <div className="text-right flex-1">
+            <div className="text-4xl font-black">{stats.quizzes}</div>
+            <div className="text-xs font-bold uppercase tracking-wider">Quizzes</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div>
+        <h3 className="text-lg font-black uppercase tracking-tight mb-4">Recent Activity</h3>
+        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(270,67%,80%)] p-8 text-center">
+          {recentComments.length > 0 ? (
+            <div className="space-y-3 text-left">
+              {recentComments.map((c) => (
+                <div key={c.id} className="flex items-start gap-3 border-b border-foreground/10 pb-3 last:border-0">
+                  <MessageSquare className="h-5 w-5 mt-0.5 text-foreground/60 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium line-clamp-1">{c.content}</p>
+                    <p className="text-xs text-foreground/60">on {(c.blog_posts as any)?.title || "Unknown"} • {new Date(c.created_at).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              <CheckCircle2 className="h-10 w-10 mx-auto mb-2 text-foreground/40" />
+              <p className="font-bold uppercase">No Activity Yet</p>
+              <p className="text-sm text-foreground/60 mt-1">Start exploring content, leave comments, and save your favorite posts!</p>
+              <Link to="/">
+                <Button className="mt-4 rounded-full bg-[hsl(350,76%,72%)] text-foreground hover:bg-[hsl(350,76%,65%)] gap-2">
+                  Browse Content <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
+// ─── Saved Tab ───
 function SavedTab() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -140,38 +146,45 @@ function SavedTab() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-foreground">Saved Posts</h2>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Saved On</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {saved.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell className="text-foreground font-medium">{(s.blog_posts as any)?.title || "Unknown"}</TableCell>
-                <TableCell><Badge variant="secondary">{(s.blog_posts as any)?.category || "—"}</Badge></TableCell>
-                <TableCell className="text-muted-foreground">{new Date(s.created_at).toLocaleDateString()}</TableCell>
-                <TableCell className="text-right">
-                  <Button size="sm" variant="destructive" onClick={() => unsave(s.id)}>Unsave</Button>
-                </TableCell>
+      <h2 className="text-2xl font-black tracking-tight uppercase">Saved Posts ({saved.length})</h2>
+      {saved.length === 0 ? (
+        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(150,76%,78%)] p-8 text-center">
+          <Bookmark className="h-10 w-10 mx-auto mb-2 text-foreground/40" />
+          <p className="font-bold uppercase">No Saved Posts Yet</p>
+          <p className="text-sm text-foreground/60 mt-1">Save posts to read them later!</p>
+          <Link to="/"><Button className="mt-4 rounded-full gap-2">Browse Posts <ArrowRight className="h-4 w-4" /></Button></Link>
+        </div>
+      ) : (
+        <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Saved On</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))}
-            {saved.length === 0 && (
-              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No saved posts</TableCell></TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {saved.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell className="font-medium">{(s.blog_posts as any)?.title || "Unknown"}</TableCell>
+                  <TableCell><Badge variant="secondary">{(s.blog_posts as any)?.category || "—"}</Badge></TableCell>
+                  <TableCell className="text-muted-foreground">{new Date(s.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="destructive" onClick={() => unsave(s.id)}>Unsave</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }
 
+// ─── Liked Tab ───
 function LikedTab() {
   const { user } = useAuth();
   const [liked, setLiked] = useState<any[]>([]);
@@ -185,34 +198,40 @@ function LikedTab() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-foreground">Liked Posts</h2>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Liked On</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {liked.map((l) => (
-              <TableRow key={l.id}>
-                <TableCell className="text-foreground font-medium">{(l.blog_posts as any)?.title || "Unknown"}</TableCell>
-                <TableCell><Badge variant="secondary">{(l.blog_posts as any)?.category || "—"}</Badge></TableCell>
-                <TableCell className="text-muted-foreground">{new Date(l.created_at).toLocaleDateString()}</TableCell>
+      <h2 className="text-2xl font-black tracking-tight uppercase">Liked Posts ({liked.length})</h2>
+      {liked.length === 0 ? (
+        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(350,76%,72%)] p-8 text-center">
+          <Heart className="h-10 w-10 mx-auto mb-2 text-foreground/40" />
+          <p className="font-bold uppercase">No Liked Posts Yet</p>
+          <p className="text-sm text-foreground/60 mt-1">Like posts to keep track of your favorites!</p>
+        </div>
+      ) : (
+        <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Liked On</TableHead>
               </TableRow>
-            ))}
-            {liked.length === 0 && (
-              <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">No liked posts yet</TableCell></TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {liked.map((l) => (
+                <TableRow key={l.id}>
+                  <TableCell className="font-medium">{(l.blog_posts as any)?.title || "Unknown"}</TableCell>
+                  <TableCell><Badge variant="secondary">{(l.blog_posts as any)?.category || "—"}</Badge></TableCell>
+                  <TableCell className="text-muted-foreground">{new Date(l.created_at).toLocaleDateString()}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }
 
+// ─── Comments Tab ───
 function CommentsTab() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -235,38 +254,44 @@ function CommentsTab() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-foreground">My Comments</h2>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Comment</TableHead>
-              <TableHead>Post</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {comments.map((c) => (
-              <TableRow key={c.id}>
-                <TableCell className="text-foreground max-w-xs truncate">{c.content}</TableCell>
-                <TableCell className="text-muted-foreground">{(c.blog_posts as any)?.title || "Unknown"}</TableCell>
-                <TableCell className="text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</TableCell>
-                <TableCell className="text-right">
-                  <Button size="sm" variant="destructive" onClick={() => deleteComment(c.id)}>Delete</Button>
-                </TableCell>
+      <h2 className="text-2xl font-black tracking-tight uppercase">My Comments ({comments.length})</h2>
+      {comments.length === 0 ? (
+        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(45,100%,70%)] p-8 text-center">
+          <MessageSquare className="h-10 w-10 mx-auto mb-2 text-foreground/40" />
+          <p className="font-bold uppercase">No Comments Yet</p>
+          <p className="text-sm text-foreground/60 mt-1">Join the conversation by commenting on posts!</p>
+        </div>
+      ) : (
+        <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Comment</TableHead>
+                <TableHead>Post</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))}
-            {comments.length === 0 && (
-              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No comments yet</TableCell></TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {comments.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="max-w-xs truncate">{c.content}</TableCell>
+                  <TableCell className="text-muted-foreground">{(c.blog_posts as any)?.title || "Unknown"}</TableCell>
+                  <TableCell className="text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="destructive" onClick={() => deleteComment(c.id)}>Delete</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }
 
+// ─── Profile Tab ───
 function ProfileTab() {
   const { user, profile } = useAuth();
   const { toast } = useToast();
@@ -294,44 +319,53 @@ function ProfileTab() {
   };
 
   return (
-    <div className="max-w-lg space-y-6">
-      <h2 className="text-xl font-bold text-foreground">Edit Profile</h2>
-      <div className="space-y-4">
+    <div className="space-y-6">
+      <h2 className="text-2xl font-black tracking-tight uppercase">Edit Profile</h2>
+      <div className="rounded-xl border-2 border-dashed border-border p-6 max-w-lg space-y-4">
         <div>
-          <label className="text-sm font-medium text-foreground">Display Name</label>
-          <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+          <label className="text-sm font-bold uppercase tracking-wider">Display Name</label>
+          <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="mt-1" />
         </div>
         <div>
-          <label className="text-sm font-medium text-foreground">Bio</label>
-          <Textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={4} />
+          <label className="text-sm font-bold uppercase tracking-wider">Bio</label>
+          <Textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={4} className="mt-1" />
         </div>
         <div>
-          <label className="text-sm font-medium text-muted-foreground">Email</label>
-          <Input value={user?.email || ""} disabled />
+          <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Email</label>
+          <Input value={user?.email || ""} disabled className="mt-1" />
         </div>
-        <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save Profile"}</Button>
+        <Button onClick={save} disabled={saving} className="rounded-full">{saving ? "Saving…" : "Save Profile"}</Button>
       </div>
     </div>
   );
 }
 
+// ─── Main ───
 export default function UserDashboard() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const [tab, setTab] = useState<Tab>("overview");
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen bg-background text-foreground">Loading…</div>;
+    return <div className="flex items-center justify-center min-h-screen bg-background">Loading…</div>;
   }
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground gap-4">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background gap-4">
         <p className="text-lg">Please sign in to access your dashboard.</p>
         <Button onClick={() => navigate("/auth")} variant="outline">Sign In</Button>
       </div>
     );
   }
+
+  const tabs: { label: string; key: Tab; icon: any }[] = [
+    { label: "Overview", key: "overview", icon: LayoutDashboard },
+    { label: "Saved", key: "saved", icon: Bookmark },
+    { label: "Liked", key: "liked", icon: Heart },
+    { label: "Comments", key: "comments", icon: MessageSquare },
+    { label: "Profile", key: "profile", icon: User },
+  ];
 
   const tabContent: Record<Tab, JSX.Element> = {
     overview: <OverviewTab />,
@@ -342,24 +376,52 @@ export default function UserDashboard() {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <UserSidebar tab={tab} setTab={setTab} />
-        <div className="flex-1 flex flex-col">
-          <header className="h-14 flex items-center border-b border-border px-4 gap-4">
-            <SidebarTrigger />
-            <h1 className="text-lg font-bold text-foreground">My Dashboard</h1>
-            <div className="ml-auto">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to site
-              </Button>
-            </div>
-          </header>
-          <main className="flex-1 p-6 overflow-y-auto">
-            {tabContent[tab]}
-          </main>
+    <div className="min-h-screen bg-background">
+      {/* Top Header */}
+      <header className="bg-background border-b border-border sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 flex items-center h-14">
+          <button onClick={() => navigate("/")} className="text-xl font-black tracking-tight italic mr-auto">
+            UTOP<span className="gradient-text">AI</span>
+          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground hidden sm:inline">{user.email}</span>
+            <button
+              onClick={async () => { await signOut(); navigate("/"); }}
+              className="p-2 rounded-md hover:bg-secondary transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Title */}
+        <h1 className="text-4xl font-black tracking-tight uppercase">My Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-1 mb-6">Manage your saved posts, likes, comments, and profile</p>
+
+        {/* Horizontal Tabs */}
+        <div className="flex flex-wrap gap-2 mb-8">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold uppercase tracking-wide border-2 transition-all ${
+                tab === t.key
+                  ? "bg-foreground border-foreground text-background"
+                  : "border-border bg-background text-foreground hover:bg-secondary"
+              }`}
+            >
+              <t.icon className="h-4 w-4" />
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        {tabContent[tab]}
       </div>
-    </SidebarProvider>
+    </div>
   );
 }
