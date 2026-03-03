@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,6 +28,10 @@ import {
   Headphones,
   Upload,
 } from "lucide-react";
+import {
+  LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+} from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +76,79 @@ function AnalyticsOverviewTab() {
   const [recentMessages, setRecentMessages] = useState<any[]>([]);
   const [topPosts, setTopPosts] = useState<any[]>([]);
   const [recentFreebies, setRecentFreebies] = useState<any[]>([]);
+  const [allProfiles, setAllProfiles] = useState<any[]>([]);
+  const [allPosts, setAllPosts] = useState<any[]>([]);
+  const [allComments, setAllComments] = useState<any[]>([]);
+  const [allLikes, setAllLikes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Helper: group items by date (YYYY-MM-DD)
+  const groupByDay = (items: any[], key = "created_at") => {
+    const map: Record<string, number> = {};
+    items.forEach((item) => {
+      const day = new Date(item[key]).toISOString().slice(0, 10);
+      map[day] = (map[day] || 0) + 1;
+    });
+    return map;
+  };
+
+  // Build last 30 days chart data
+  const chartData = useMemo(() => {
+    const days: string[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(d.toISOString().slice(0, 10));
+    }
+    const profilesByDay = groupByDay(allProfiles);
+    const postsByDay = groupByDay(allPosts);
+    const commentsByDay = groupByDay(allComments);
+    const likesByDay = groupByDay(allLikes);
+
+    return days.map((day) => ({
+      date: day.slice(5), // MM-DD
+      users: profilesByDay[day] || 0,
+      posts: postsByDay[day] || 0,
+      comments: commentsByDay[day] || 0,
+      likes: likesByDay[day] || 0,
+    }));
+  }, [allProfiles, allPosts, allComments, allLikes]);
+
+  // Cumulative user growth
+  const growthData = useMemo(() => {
+    let cumulative = 0;
+    const profilesByDay = groupByDay(allProfiles);
+    const days: string[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(d.toISOString().slice(0, 10));
+    }
+    // Count all profiles before our 30-day window
+    const windowStart = days[0];
+    allProfiles.forEach((p) => {
+      if (p.created_at.slice(0, 10) < windowStart) cumulative++;
+    });
+    return days.map((day) => {
+      cumulative += profilesByDay[day] || 0;
+      return { date: day.slice(5), total: cumulative };
+    });
+  }, [allProfiles]);
+
+  // Category pie data
+  const categoryData = useMemo(() => {
+    const map: Record<string, number> = {};
+    allPosts.forEach((p) => {
+      const cat = p.category || "uncategorized";
+      map[cat] = (map[cat] || 0) + 1;
+    });
+    return Object.entries(map).map(([name, value]) => ({ name, value }));
+  }, [allPosts]);
+
+  const PIE_COLORS = [
+    "hsl(150, 76%, 48%)", "hsl(270, 67%, 55%)", "hsl(45, 100%, 50%)",
+    "hsl(200, 80%, 50%)", "hsl(330, 70%, 55%)", "hsl(20, 90%, 55%)",
+  ];
 
   const load = () => {
     setLoading(true);
@@ -96,18 +172,23 @@ function AnalyticsOverviewTab() {
       supabase.from("freebies").select("id", { count: "exact", head: true }).eq("type", "podcast"),
       supabase.from("group_members").select("id", { count: "exact", head: true }).eq("status", "pending"),
       supabase.from("media").select("id", { count: "exact", head: true }),
-      // Recent data
       supabase.from("likes").select("*, blog_posts(title)").order("created_at", { ascending: false }).limit(10),
       supabase.from("comments").select("*, blog_posts(title), profiles(display_name)").order("created_at", { ascending: false }).limit(10),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(10),
       supabase.from("messages").select("*, conversations(participant_1, participant_2)").order("created_at", { ascending: false }).limit(10),
       supabase.from("blog_posts").select("id, title, status, created_at, category").order("created_at", { ascending: false }).limit(10),
       supabase.from("freebies").select("*").order("created_at", { ascending: false }).limit(5),
+      // Time-series for charts
+      supabase.from("profiles").select("created_at").order("created_at", { ascending: true }),
+      supabase.from("blog_posts").select("created_at, category, status").order("created_at", { ascending: true }),
+      supabase.from("comments").select("created_at").order("created_at", { ascending: true }),
+      supabase.from("likes").select("created_at").order("created_at", { ascending: true }),
     ]).then(([
       posts, users, comments, likes, saved, quiz, published, drafts,
       communities, groups, communityMembers, groupMembers, conversations, messages,
       freebies, ebooks, podcasts, pendingMembers, mediaFiles,
-      rLikes, rComments, rUsers, rMessages, rTopPosts, rFreebies
+      rLikes, rComments, rUsers, rMessages, rTopPosts, rFreebies,
+      chartProfiles, chartPosts, chartComments, chartLikes,
     ]) => {
       setStats({
         posts: posts.count ?? 0, users: users.count ?? 0, comments: comments.count ?? 0,
@@ -125,6 +206,10 @@ function AnalyticsOverviewTab() {
       if (rMessages.data) setRecentMessages(rMessages.data);
       if (rTopPosts.data) setTopPosts(rTopPosts.data);
       if (rFreebies.data) setRecentFreebies(rFreebies.data);
+      if (chartProfiles.data) setAllProfiles(chartProfiles.data);
+      if (chartPosts.data) setAllPosts(chartPosts.data);
+      if (chartComments.data) setAllComments(chartComments.data);
+      if (chartLikes.data) setAllLikes(chartLikes.data);
       setLoading(false);
     });
   };
@@ -187,6 +272,84 @@ function AnalyticsOverviewTab() {
               <div className="text-xs text-foreground/60 mt-0.5">{card.sub}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* ── Charts Section ── */}
+      <div>
+        <h3 className="text-lg font-black uppercase tracking-tight mb-4 flex items-center gap-2">
+          <TrendingUp className="h-5 w-5" /> Trends & Analytics (Last 30 Days)
+        </h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* User Growth Line Chart */}
+          <div className="rounded-xl border-2 border-border p-5 bg-card">
+            <h4 className="font-bold text-sm mb-4">User Growth (Cumulative)</h4>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart data={growthData}>
+                <defs>
+                  <linearGradient id="userGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(270, 67%, 55%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(270, 67%, 55%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+                <Area type="monotone" dataKey="total" stroke="hsl(270, 67%, 55%)" fill="url(#userGrad)" strokeWidth={2} name="Total Users" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Daily Activity Bar Chart */}
+          <div className="rounded-xl border-2 border-border p-5 bg-card">
+            <h4 className="font-bold text-sm mb-4">Daily Engagement</h4>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar dataKey="likes" fill="hsl(330, 70%, 55%)" radius={[2, 2, 0, 0]} name="Likes" />
+                <Bar dataKey="comments" fill="hsl(200, 80%, 50%)" radius={[2, 2, 0, 0]} name="Comments" />
+                <Bar dataKey="posts" fill="hsl(150, 76%, 48%)" radius={[2, 2, 0, 0]} name="Posts" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* New Users Per Day */}
+          <div className="rounded-xl border-2 border-border p-5 bg-card">
+            <h4 className="font-bold text-sm mb-4">New Signups Per Day</h4>
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+                <Line type="monotone" dataKey="users" stroke="hsl(45, 100%, 50%)" strokeWidth={2} dot={{ r: 3 }} name="New Users" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Post Categories Pie */}
+          <div className="rounded-xl border-2 border-border p-5 bg-card">
+            <h4 className="font-bold text-sm mb-4">Content by Category</h4>
+            {categoryData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie data={categoryData} cx="50%" cy="50%" innerRadius={55} outerRadius={95} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} style={{ fontSize: 11 }}>
+                    {categoryData.map((_, idx) => (
+                      <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[260px] text-muted-foreground text-sm">No posts yet</div>
+            )}
+          </div>
         </div>
       </div>
 
