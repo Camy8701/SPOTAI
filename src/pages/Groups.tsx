@@ -33,6 +33,7 @@ const Groups = () => {
       const { data, error } = await supabase.from("groups").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       if (!data) return [];
+
       const enriched = await Promise.all(
         data.map(async (g) => {
           const { count } = await supabase.from("group_members").select("*", { count: "exact", head: true }).eq("group_id", g.id).eq("status", "approved");
@@ -48,24 +49,43 @@ const Groups = () => {
     },
   });
 
+  // Pending members for group owner
   const { data: pendingMembers } = useQuery({
     queryKey: ["pending-members", managingGroup],
     enabled: !!managingGroup,
     queryFn: async () => {
-      const { data, error } = await supabase.from("group_members").select("*").eq("group_id", managingGroup!).eq("status", "pending");
+      const { data, error } = await supabase
+        .from("group_members")
+        .select("*")
+        .eq("group_id", managingGroup!)
+        .eq("status", "pending");
       if (error) throw error;
+
+      // Get profiles
       const userIds = (data || []).map((m) => m.user_id);
       const { data: profiles } = await supabase.from("profiles").select("*").in("user_id", userIds);
-      return (data || []).map((m) => ({ ...m, profile: profiles?.find((p) => p.user_id === m.user_id) }));
+      return (data || []).map((m) => ({
+        ...m,
+        profile: profiles?.find((p) => p.user_id === m.user_id),
+      }));
     },
   });
 
   const createGroup = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("groups").insert({ name: form.name, description: form.description, language: form.language, topic: form.topic, created_by: user!.id, is_private: true });
+      const { error } = await supabase.from("groups").insert({
+        name: form.name, description: form.description,
+        language: form.language, topic: form.topic,
+        created_by: user!.id, is_private: true,
+      });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Group created!"); setShowCreate(false); setForm({ name: "", description: "", language: "en", topic: "general" }); queryClient.invalidateQueries({ queryKey: ["groups"] }); },
+    onSuccess: () => {
+      toast.success("Group created!");
+      setShowCreate(false);
+      setForm({ name: "", description: "", language: "en", topic: "general" });
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+    },
   });
 
   const requestJoin = useMutation({
@@ -73,7 +93,10 @@ const Groups = () => {
       const { error } = await supabase.from("group_members").insert({ group_id: groupId, user_id: user!.id, status: "pending" });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Join request sent!"); queryClient.invalidateQueries({ queryKey: ["groups"] }); },
+    onSuccess: () => {
+      toast.success("Join request sent!");
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+    },
   });
 
   const handleMember = useMutation({
@@ -81,16 +104,25 @@ const Groups = () => {
       const { error } = await supabase.from("group_members").update({ status }).eq("id", memberId);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Member updated"); queryClient.invalidateQueries({ queryKey: ["pending-members", managingGroup] }); queryClient.invalidateQueries({ queryKey: ["groups"] }); },
+    onSuccess: () => {
+      toast.success("Member updated");
+      queryClient.invalidateQueries({ queryKey: ["pending-members", managingGroup] });
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+    },
   });
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Groups</h1>
-            <p className="text-muted-foreground mt-1">Private groups — admin approves members</p>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
+              <UsersRound className="text-white" size={24} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Groups</h1>
+              <p className="text-muted-foreground">Private groups — admin approves members</p>
+            </div>
           </div>
           {user && (
             <button onClick={() => setShowCreate(!showCreate)} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90">
@@ -118,6 +150,7 @@ const Groups = () => {
           </motion.div>
         )}
 
+        {/* Manage pending members modal */}
         {managingGroup && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8 p-6 rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between mb-4">
@@ -132,8 +165,12 @@ const Groups = () => {
                   <div key={m.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
                     <span className="text-sm font-medium text-foreground">{(m as any).profile?.display_name || "User"}</span>
                     <div className="flex gap-2">
-                      <button onClick={() => handleMember.mutate({ memberId: m.id, status: "approved" })} className="p-1.5 rounded-lg bg-accent text-foreground hover:bg-secondary"><CheckCircle size={16} /></button>
-                      <button onClick={() => handleMember.mutate({ memberId: m.id, status: "rejected" })} className="p-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20"><XCircle size={16} /></button>
+                      <button onClick={() => handleMember.mutate({ memberId: m.id, status: "approved" })} className="p-1.5 rounded-lg bg-green-500/10 text-green-600 hover:bg-green-500/20">
+                        <CheckCircle size={16} />
+                      </button>
+                      <button onClick={() => handleMember.mutate({ memberId: m.id, status: "rejected" })} className="p-1.5 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20">
+                        <XCircle size={16} />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -149,9 +186,9 @@ const Groups = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {(groups || []).map((group) => (
-              <div key={group.id} className="p-5 rounded-xl border border-border bg-card card-hover">
+              <motion.div key={group.id} whileHover={{ y: -2 }} className="p-5 rounded-xl border border-border bg-card hover:border-primary/30 transition-colors">
                 <div className="flex items-center gap-3 mb-3">
-                  <span className="text-2xl">{topicIcons[group.topic] || "💬"}</span>
+                  <span className="text-3xl">{topicIcons[group.topic] || "💬"}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold text-foreground truncate">{group.name}</h3>
@@ -168,19 +205,23 @@ const Groups = () => {
                 {user && (
                   <div className="flex gap-2">
                     {group.isOwner ? (
-                      <button onClick={() => setManagingGroup(group.id)} className="flex-1 py-2 text-sm font-medium bg-accent text-accent-foreground rounded-lg hover:opacity-90 flex items-center justify-center gap-1">Manage</button>
+                      <button onClick={() => setManagingGroup(group.id)} className="flex-1 py-2 text-sm font-medium bg-accent text-accent-foreground rounded-lg hover:opacity-90 flex items-center justify-center gap-1">
+                        Manage
+                      </button>
                     ) : group.memberStatus === "approved" ? (
-                      <span className="flex-1 py-2 text-sm font-medium text-center text-muted-foreground">Member ✓</span>
+                      <span className="flex-1 py-2 text-sm font-medium text-center text-green-600">Member ✓</span>
                     ) : group.memberStatus === "pending" ? (
-                      <span className="flex-1 py-2 text-sm font-medium text-center text-muted-foreground flex items-center justify-center gap-1"><Clock size={14} /> Pending</span>
+                      <span className="flex-1 py-2 text-sm font-medium text-center text-amber-600 flex items-center justify-center gap-1"><Clock size={14} /> Pending</span>
                     ) : group.memberStatus === "rejected" ? (
                       <span className="flex-1 py-2 text-sm font-medium text-center text-destructive">Rejected</span>
                     ) : (
-                      <button onClick={() => requestJoin.mutate(group.id)} className="flex-1 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90">Request to Join</button>
+                      <button onClick={() => requestJoin.mutate(group.id)} className="flex-1 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90">
+                        Request to Join
+                      </button>
                     )}
                   </div>
                 )}
-              </div>
+              </motion.div>
             ))}
           </div>
         )}
