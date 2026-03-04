@@ -60,7 +60,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
                 backgroundClip: "text",
               }}
             >
-              The Kave
+              SpotAI
             </span>
           </Link>
 
