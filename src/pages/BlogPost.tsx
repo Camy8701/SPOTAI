@@ -47,7 +47,7 @@ const BlogPost = () => {
   const [likeCount, setLikeCount] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [authorName, setAuthorName] = useState<string>("UTOPAI Team");
+  const [authorName, setAuthorName] = useState<string>("SpotAI Team");
 
   useEffect(() => {
     if (slug) fetchPost();
