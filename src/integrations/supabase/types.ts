@@ -357,6 +357,57 @@ export type Database = {
         }
         Relationships: []
       }
+      image_library_items: {
+        Row: {
+          category: string
+          collection: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          image_url: string
+          is_featured: boolean
+          orientation: string
+          sort_order: number
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          collection?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          image_url: string
+          is_featured?: boolean
+          orientation?: string
+          sort_order?: number
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          collection?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          is_featured?: boolean
+          orientation?: string
+          sort_order?: number
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           comment_id: string | null
@@ -491,6 +542,54 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      prompt_library_items: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          description: string | null
+          difficulty: string
+          id: string
+          is_featured: boolean
+          model: string
+          prompt_text: string
+          sort_order: number
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          difficulty?: string
+          id?: string
+          is_featured?: boolean
+          model?: string
+          prompt_text: string
+          sort_order?: number
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          difficulty?: string
+          id?: string
+          is_featured?: boolean
+          model?: string
+          prompt_text?: string
+          sort_order?: number
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
