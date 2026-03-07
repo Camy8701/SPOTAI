@@ -1,13 +1,15 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, XCircle, RotateCcw, Trophy, Brain, Zap, Star, Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import ShowcaseCard from "@/components/ui/showcase-card";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 type Question = {
-  id: number;
+  id: number | string;
   question: string;
   options: string[];
   correctAnswer: number;
@@ -80,14 +82,69 @@ const gameCards = [
 ];
 
 const Quiz = () => {
+  const { toast } = useToast();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
+  const [questionPool, setQuestionPool] = useState<Question[]>(allQuizQuestions);
+  const [questionsLoading, setQuestionsLoading] = useState(true);
+  const [quizSeed, setQuizSeed] = useState(0);
+  const [resultSaved, setResultSaved] = useState(false);
   const { user } = useAuth();
 
-  const quizQuestions = useMemo(() => getRandomQuestions(allQuizQuestions, 10), []);
+  useEffect(() => {
+    let mounted = true;
+
+    const loadQuestions = async () => {
+      setQuestionsLoading(true);
+      const { data, error } = await supabase
+        .from("quiz_questions")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!mounted) return;
+
+      if (error || !data || data.length === 0) {
+        setQuestionPool(allQuizQuestions);
+        setQuestionsLoading(false);
+        return;
+      }
+
+      const mappedQuestions: Question[] = data
+        .map((item) => {
+          const options = Array.isArray(item.options)
+            ? item.options.map((option) => String(option))
+            : [];
+
+          if (options.length < 2) return null;
+
+          return {
+            id: item.id,
+            question: item.question,
+            options,
+            correctAnswer: item.correct_answer,
+            explanation: item.explanation || "No explanation provided.",
+          };
+        })
+        .filter((item): item is Question => !!item);
+
+      setQuestionPool(mappedQuestions.length > 0 ? mappedQuestions : allQuizQuestions);
+      setQuestionsLoading(false);
+    };
+
+    loadQuestions();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const quizQuestions = useMemo(
+    () => getRandomQuestions(questionPool, Math.min(10, questionPool.length)),
+    [questionPool, quizSeed],
+  );
 
   if (!user) {
     return (
@@ -181,11 +238,48 @@ const Quiz = () => {
   };
 
   const resetQuiz = () => {
-    window.location.reload();
+    setCurrentQuestion(0);
+    setSelectedAnswers([]);
+    setShowResults(false);
+    setQuizCompleted(false);
+    setQuizStarted(false);
+    setResultSaved(false);
+    setQuizSeed((value) => value + 1);
   };
 
   const score = calculateScore();
   const pointsEarned = score * 10;
+
+  useEffect(() => {
+    if (!user || !quizCompleted || !showResults || resultSaved || quizQuestions.length === 0) return;
+
+    const saveResult = async () => {
+      const { error } = await supabase.from("quiz_results").insert({
+        user_id: user.id,
+        quiz_title: "AI Knowledge Arena",
+        score,
+        total_questions: quizQuestions.length,
+        answers: selectedAnswers,
+      });
+
+      if (error) {
+        toast({
+          title: "Could not save quiz result",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setResultSaved(true);
+      toast({
+        title: "Quiz result saved",
+        description: "Your score is now available in your dashboard and admin analytics.",
+      });
+    };
+
+    saveResult();
+  }, [quizCompleted, quizQuestions.length, resultSaved, score, selectedAnswers, showResults, toast, user]);
 
   return (
     <Layout>
@@ -230,19 +324,22 @@ const Quiz = () => {
               <div className="mt-10 rounded-[2rem] border border-border bg-card px-8 py-10 text-center shadow-[0_8px_26px_rgba(16,24,40,0.06)]">
                 <div className="mx-auto mb-4 flex w-fit items-center gap-3 rounded-full border border-pink-200 bg-pink-100 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-pink-700">
                   <Zap className="h-4 w-4" />
-                  10 Random Questions
+                  {quizQuestions.length} Questions
                 </div>
                 <h2 className="text-3xl font-semibold tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                   Ready For The AI Knowledge Arena?
                 </h2>
                 <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-                  You will get 10 questions out of 40. Finish the round to unlock your score and answer review.
+                  {questionsLoading
+                    ? "Loading the current quiz bank..."
+                    : `You will get ${quizQuestions.length} questions from the current quiz bank. Finish the round to unlock your score and answer review.`}
                 </p>
                 <button
                   onClick={() => setQuizStarted(true)}
+                  disabled={questionsLoading || quizQuestions.length === 0}
                   className="mt-6 inline-flex h-12 items-center rounded-full border border-pink-500 bg-pink-500 px-8 text-sm font-semibold uppercase tracking-[0.2em] text-white transition-colors hover:bg-pink-600"
                 >
-                  Start Quiz
+                  {questionsLoading ? "Loading..." : "Start Quiz"}
                 </button>
               </div>
             </>
@@ -379,7 +476,7 @@ const Quiz = () => {
                                   {index + 1}. {question.question}
                                 </p>
                                 <p className={`text-sm mb-2 ${isCorrect ? "text-green-700" : "text-red-700"}`}>
-                                  Your answer: {question.options[userAnswer]}
+                                  Your answer: {question.options[userAnswer] || "No answer selected"}
                                 </p>
                                 {!isCorrect && (
                                   <p className="text-sm text-green-700 mb-2">

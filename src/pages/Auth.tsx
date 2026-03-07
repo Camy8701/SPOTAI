@@ -84,22 +84,23 @@ const Auth = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-[#f4f6f8] px-4 py-10 lg:px-8">
+      <div className="min-h-screen bg-[#f4f6f8] px-4 py-10 transition-colors dark:bg-[#020611] lg:px-8">
         <div className="mx-auto grid max-w-6xl gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <section className="relative overflow-hidden rounded-[32px] border border-black/10 bg-white p-8 shadow-[0_28px_70px_rgba(15,23,42,0.08)] md:p-10">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.12),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,1))]" />
+          <section className="relative overflow-hidden rounded-[32px] border border-black/10 bg-white p-8 shadow-[0_28px_70px_rgba(15,23,42,0.08)] transition-colors dark:border-white/10 dark:bg-[#07101f] dark:shadow-[0_30px_80px_rgba(0,0,0,0.42)] md:p-10">
+            <div className="absolute inset-0 dark:hidden bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.12),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,1))]" />
+            <div className="absolute inset-0 hidden dark:block bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.14),transparent_30%),linear-gradient(180deg,rgba(7,16,31,0.96),rgba(4,10,20,1))]" />
             <div className="relative">
-              <span className="inline-flex rounded-full border border-black/10 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+              <span className="inline-flex rounded-full border border-black/10 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500 transition-colors dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-300">
                 SpotAI access
               </span>
               <div className="mt-8">
                 <span className="spotai-wordmark text-3xl font-extrabold tracking-tight">
                   SpotAI
                 </span>
-                <h1 className="mt-6 text-5xl leading-[0.95] tracking-tight text-slate-950" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                <h1 className="mt-6 text-5xl leading-[0.95] tracking-tight text-slate-950 dark:text-white" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                   {isSignUp ? "Create a profile that feels like yours." : "Return to your SpotAI dashboard."}
                 </h1>
-                <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
+                <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
                   {isSignUp
                     ? "Set your display name, pick one of 7 avatar colorways, and unlock the full SpotAI experience."
                     : "Sign in to access your saved content, activity history, and profile settings."}
@@ -111,13 +112,13 @@ const Auth = () => {
                   const Icon = benefit.icon;
 
                   return (
-                    <div key={benefit.title} className="flex items-start gap-4 rounded-3xl border border-black/8 bg-slate-50/80 px-5 py-4">
+                    <div key={benefit.title} className="flex items-start gap-4 rounded-3xl border border-black/8 bg-slate-50/80 px-5 py-4 transition-colors dark:border-white/10 dark:bg-white/[0.045]">
                       <span className={cn("mt-0.5 flex h-11 w-11 items-center justify-center rounded-2xl text-white", benefit.accent)}>
                         <Icon className="h-5 w-5" />
                       </span>
                       <div>
-                        <p className="font-semibold text-slate-950">{benefit.title}</p>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">{benefit.description}</p>
+                        <p className="font-semibold text-slate-950 dark:text-slate-100">{benefit.title}</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">{benefit.description}</p>
                       </div>
                     </div>
                   );
@@ -126,16 +127,16 @@ const Auth = () => {
             </div>
           </section>
 
-          <section className="rounded-[32px] border border-black/10 bg-white p-6 shadow-[0_28px_70px_rgba(15,23,42,0.08)] md:p-8">
+          <section className="rounded-[32px] border border-black/10 bg-white p-6 shadow-[0_28px_70px_rgba(15,23,42,0.08)] transition-colors dark:border-white/10 dark:bg-[#07101f] dark:shadow-[0_30px_80px_rgba(0,0,0,0.42)] md:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <span className="inline-flex rounded-full border border-black/10 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <span className="inline-flex rounded-full border border-black/10 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500 transition-colors dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-300">
                   {isSignUp ? "New account" : "Existing account"}
                 </span>
-                <h2 className="mt-4 text-4xl tracking-tight text-slate-950" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                <h2 className="mt-4 text-4xl tracking-tight text-slate-950 dark:text-white" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                   {isSignUp ? "Build your profile" : "Sign in to continue"}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   {isSignUp
                     ? "Email signup lets you set your profile name and avatar before your first session."
                     : "Use the same account you use for articles, freebies, and community activity."}
@@ -147,7 +148,7 @@ const Auth = () => {
                   setError(null);
                   setSuccess(null);
                 }}
-                className="rounded-full border border-black/10 px-4 py-2 text-sm font-semibold text-slate-600 transition-colors hover:border-slate-900/20 hover:text-slate-950"
+                className="rounded-full border border-black/10 px-4 py-2 text-sm font-semibold text-slate-600 transition-colors hover:border-slate-900/20 hover:text-slate-950 dark:border-white/10 dark:text-slate-300 dark:hover:border-white/20 dark:hover:text-white"
               >
                 {isSignUp ? "Already have an account?" : "Need an account?"}
               </button>
@@ -164,15 +165,15 @@ const Auth = () => {
               </Alert>
             )}
 
-            <div className="mt-6 flex rounded-full border border-black/8 bg-slate-100 p-1">
+            <div className="mt-6 flex rounded-full border border-black/8 bg-slate-100 p-1 transition-colors dark:border-white/10 dark:bg-white/[0.06]">
               <button
                 type="button"
                 onClick={() => setAuthMethod("email")}
                 className={cn(
                   "flex h-11 flex-1 items-center justify-center gap-2 rounded-full text-sm font-semibold transition-all",
                   authMethod === "email"
-                    ? "bg-white text-slate-950 shadow-[0_8px_18px_rgba(15,23,42,0.12)]"
-                    : "text-slate-500 hover:text-slate-900",
+                    ? "bg-white text-slate-950 shadow-[0_8px_18px_rgba(15,23,42,0.12)] dark:bg-white dark:text-slate-950"
+                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
                 )}
               >
                 <Mail className="h-4 w-4" />
@@ -184,8 +185,8 @@ const Auth = () => {
                 className={cn(
                   "flex h-11 flex-1 items-center justify-center gap-2 rounded-full text-sm font-semibold transition-all",
                   authMethod === "google"
-                    ? "bg-white text-slate-950 shadow-[0_8px_18px_rgba(15,23,42,0.12)]"
-                    : "text-slate-500 hover:text-slate-900",
+                    ? "bg-white text-slate-950 shadow-[0_8px_18px_rgba(15,23,42,0.12)] dark:bg-white dark:text-slate-950"
+                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
                 )}
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -203,7 +204,7 @@ const Auth = () => {
                 {isSignUp && (
                   <>
                     <div>
-                      <Label htmlFor="fullName" className="text-sm font-semibold text-slate-700">Full Name</Label>
+                      <Label htmlFor="fullName" className="text-sm font-semibold text-slate-700 dark:text-slate-200">Full Name</Label>
                       <Input
                         id="fullName"
                         type="text"
@@ -211,11 +212,11 @@ const Auth = () => {
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="Enter your full name"
                         required
-                        className="mt-2 h-11 rounded-2xl border-black/10 bg-slate-50 px-4"
+                        className="mt-2 h-11 rounded-2xl border-black/10 bg-slate-50 px-4 text-slate-950 placeholder:text-slate-400 dark:border-white/10 dark:bg-white/[0.05] dark:text-white dark:placeholder:text-slate-500"
                       />
                     </div>
                     <ProfileAvatarPicker
-                      className="bg-white"
+                      className="bg-white dark:bg-[#07101f]"
                       onChange={setSelectedAvatarId}
                       value={selectedAvatarId}
                     />
@@ -223,7 +224,7 @@ const Auth = () => {
                 )}
 
                 <div>
-                  <Label htmlFor="email" className="text-sm font-semibold text-slate-700">Email Address</Label>
+                  <Label htmlFor="email" className="text-sm font-semibold text-slate-700 dark:text-slate-200">Email Address</Label>
                   <Input
                     id="email"
                     type="email"
@@ -231,12 +232,12 @@ const Auth = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
                     required
-                    className="mt-2 h-11 rounded-2xl border-black/10 bg-slate-50 px-4"
+                    className="mt-2 h-11 rounded-2xl border-black/10 bg-slate-50 px-4 text-slate-950 placeholder:text-slate-400 dark:border-white/10 dark:bg-white/[0.05] dark:text-white dark:placeholder:text-slate-500"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="password" className="text-sm font-semibold text-slate-700">Password</Label>
+                  <Label htmlFor="password" className="text-sm font-semibold text-slate-700 dark:text-slate-200">Password</Label>
                   <div className="relative mt-2">
                     <Input
                       id="password"
@@ -245,12 +246,12 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your password"
                       required
-                      className="h-11 rounded-2xl border-black/10 bg-slate-50 px-4 pr-10"
+                      className="h-11 rounded-2xl border-black/10 bg-slate-50 px-4 pr-10 text-slate-950 placeholder:text-slate-400 dark:border-white/10 dark:bg-white/[0.05] dark:text-white dark:placeholder:text-slate-500"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition-colors hover:text-slate-900"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -258,7 +259,7 @@ const Auth = () => {
                 </div>
 
                 {!isSignUp && (
-                  <Link to="/forgot-password" className="inline-flex text-sm font-medium text-blue-600 transition-colors hover:text-blue-700">
+                  <Link to="/forgot-password" className="inline-flex text-sm font-medium text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
                     Forgot your password?
                   </Link>
                 )}
@@ -266,11 +267,11 @@ const Auth = () => {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="h-11 w-full rounded-full bg-slate-950 text-white transition-colors hover:bg-slate-800"
+                  className="h-11 w-full rounded-full bg-slate-950 text-white transition-colors hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin dark:border-slate-950 dark:border-t-transparent" />
                       {isSignUp ? "Creating account..." : "Signing in..."}
                     </div>
                   ) : (
@@ -285,14 +286,14 @@ const Auth = () => {
 
             {authMethod === "google" && (
               <div className="mt-6 space-y-4">
-                <div className="rounded-[28px] border border-black/8 bg-slate-50 p-5">
-                  <div className="flex items-center gap-3 text-slate-950">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm">
+                <div className="rounded-[28px] border border-black/8 bg-slate-50 p-5 transition-colors dark:border-white/10 dark:bg-white/[0.05]">
+                  <div className="flex items-center gap-3 text-slate-950 dark:text-white">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm dark:bg-white/[0.08]">
                       <Sparkles className="h-5 w-5 text-violet-500" />
                     </span>
                     <div>
                       <p className="font-semibold">Continue with Google</p>
-                      <p className="text-sm text-slate-600">
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
                         Google sign-in keeps your Google profile photo. Email signup is available if you want to pick one of the 7 SpotAI avatars first.
                       </p>
                     </div>
@@ -302,11 +303,11 @@ const Auth = () => {
                 <Button
                   onClick={handleGoogleSignIn}
                   disabled={loading}
-                  className="h-12 w-full rounded-full border border-black/10 bg-white text-slate-950 shadow-sm transition-colors hover:bg-slate-50"
+                  className="h-12 w-full rounded-full border border-black/10 bg-white text-slate-950 shadow-sm transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:hover:bg-white/[0.1]"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 rounded-full border-2 border-slate-400 border-t-transparent animate-spin" />
+                      <div className="h-4 w-4 rounded-full border-2 border-slate-400 border-t-transparent animate-spin dark:border-slate-300 dark:border-t-transparent" />
                       Connecting...
                     </div>
                   ) : (
@@ -324,7 +325,7 @@ const Auth = () => {
               </div>
             )}
 
-            <p className="mt-6 text-center text-xs leading-5 text-slate-500">
+            <p className="mt-6 text-center text-xs leading-5 text-slate-500 dark:text-slate-400">
               By continuing, you agree to our Terms of Service and Privacy Policy.
             </p>
           </section>

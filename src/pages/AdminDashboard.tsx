@@ -6,10 +6,12 @@ import { useRole } from "@/hooks/useRole";
 import {
   FileText,
   Users,
+  UsersRound,
   BarChart3,
   Heart,
   Bookmark,
   MessageSquare,
+  MessagesSquare,
   HelpCircle,
   ArrowLeft,
   LogOut,
@@ -19,16 +21,15 @@ import {
   TrendingUp,
   Eye,
   PenLine,
-  Crown,
-  ShoppingCart,
-  DollarSign,
-  Calendar,
+  XCircle,
   Gift,
   BookOpen,
   Headphones,
   Upload,
   Images,
   Sparkles,
+  Plus,
+  Globe,
 } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
@@ -62,7 +63,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
-type Tab = "analytics" | "posts" | "users" | "quiz" | "freebies" | "images" | "prompts";
+type Tab = "analytics" | "posts" | "users" | "quiz" | "social" | "freebies" | "images" | "prompts";
 
 // ─── Analytics / Overview Tab ───
 function AnalyticsOverviewTab() {
@@ -70,7 +71,8 @@ function AnalyticsOverviewTab() {
     posts: 0, users: 0, comments: 0, likes: 0, saved: 0, quizResults: 0,
     published: 0, drafts: 0, communities: 0, groups: 0, communityMembers: 0,
     groupMembers: 0, conversations: 0, messages: 0, freebies: 0, ebooks: 0,
-    podcasts: 0, pendingMembers: 0, mediaFiles: 0,
+    podcasts: 0, pendingMembers: 0, mediaFiles: 0, imageItems: 0,
+    promptItems: 0, quizQuestions: 0,
   });
   const [recentLikes, setRecentLikes] = useState<any[]>([]);
   const [recentComments, setRecentComments] = useState<any[]>([]);
@@ -161,6 +163,7 @@ function AnalyticsOverviewTab() {
       supabase.from("likes").select("id", { count: "exact", head: true }),
       supabase.from("saved_posts").select("id", { count: "exact", head: true }),
       supabase.from("quiz_results").select("id", { count: "exact", head: true }),
+      supabase.from("quiz_questions").select("id", { count: "exact", head: true }),
       supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("status", "published"),
       supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("status", "draft"),
       supabase.from("communities").select("id", { count: "exact", head: true }),
@@ -172,6 +175,8 @@ function AnalyticsOverviewTab() {
       supabase.from("freebies").select("id", { count: "exact", head: true }),
       supabase.from("freebies").select("id", { count: "exact", head: true }).eq("type", "ebook"),
       supabase.from("freebies").select("id", { count: "exact", head: true }).eq("type", "podcast"),
+      supabase.from("image_library_items").select("id", { count: "exact", head: true }),
+      supabase.from("prompt_library_items").select("id", { count: "exact", head: true }),
       supabase.from("group_members").select("id", { count: "exact", head: true }).eq("status", "pending"),
       supabase.from("media").select("id", { count: "exact", head: true }),
       supabase.from("likes").select("*, blog_posts(title)").order("created_at", { ascending: false }).limit(10),
@@ -186,20 +191,22 @@ function AnalyticsOverviewTab() {
       supabase.from("comments").select("created_at").order("created_at", { ascending: true }),
       supabase.from("likes").select("created_at").order("created_at", { ascending: true }),
     ]).then(([
-      posts, users, comments, likes, saved, quiz, published, drafts,
+      posts, users, comments, likes, saved, quiz, quizQuestions, published, drafts,
       communities, groups, communityMembers, groupMembers, conversations, messages,
-      freebies, ebooks, podcasts, pendingMembers, mediaFiles,
+      freebies, ebooks, podcasts, imageItems, promptItems, pendingMembers, mediaFiles,
       rLikes, rComments, rUsers, rMessages, rTopPosts, rFreebies,
       chartProfiles, chartPosts, chartComments, chartLikes,
     ]) => {
       setStats({
         posts: posts.count ?? 0, users: users.count ?? 0, comments: comments.count ?? 0,
         likes: likes.count ?? 0, saved: saved.count ?? 0, quizResults: quiz.count ?? 0,
+        quizQuestions: quizQuestions.count ?? 0,
         published: published.count ?? 0, drafts: drafts.count ?? 0,
         communities: communities.count ?? 0, groups: groups.count ?? 0,
         communityMembers: communityMembers.count ?? 0, groupMembers: groupMembers.count ?? 0,
         conversations: conversations.count ?? 0, messages: messages.count ?? 0,
         freebies: freebies.count ?? 0, ebooks: ebooks.count ?? 0, podcasts: podcasts.count ?? 0,
+        imageItems: imageItems.count ?? 0, promptItems: promptItems.count ?? 0,
         pendingMembers: pendingMembers.count ?? 0, mediaFiles: mediaFiles.count ?? 0,
       });
       if (rLikes.data) setRecentLikes(rLikes.data);
@@ -237,14 +244,16 @@ function AnalyticsOverviewTab() {
       {/* ── Row 1: Core Metrics ── */}
       <div>
         <h3 className="text-lg font-black uppercase tracking-tight mb-4">Content Command Center</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
           {[
             { icon: FileText, value: stats.posts, label: "Total Posts", sub: `${stats.published} published`, bg: "hsl(150,76%,78%)" },
             { icon: Users, value: stats.users, label: "Users", sub: "Registered", bg: "hsl(270,67%,80%)" },
             { icon: Heart, value: stats.likes, label: "Likes", sub: `${stats.comments} comments`, bg: "hsl(45,100%,70%)" },
             { icon: MessageSquare, value: stats.messages, label: "Messages", sub: `${stats.conversations} conversations`, bg: "hsl(200,80%,78%)" },
-            { icon: HelpCircle, value: stats.quizResults, label: "Quiz Plays", sub: "Completed", bg: "hsl(330,70%,80%)" },
+            { icon: HelpCircle, value: stats.quizResults, label: "Quiz Plays", sub: `${stats.quizQuestions} live questions`, bg: "hsl(330,70%,80%)" },
             { icon: Gift, value: stats.freebies, label: "Freebies", sub: `${stats.ebooks} ebooks · ${stats.podcasts} pods`, bg: "hsl(20,90%,78%)" },
+            { icon: Images, value: stats.imageItems, label: "Image Items", sub: "Library inventory", bg: "hsl(193,90%,84%)" },
+            { icon: Sparkles, value: stats.promptItems, label: "Prompt Items", sub: "Prompt library", bg: "hsl(292,72%,86%)" },
           ].map((card) => (
             <div key={card.label} className="rounded-xl border-2 border-dashed border-border p-4" style={{ backgroundColor: card.bg }}>
               <card.icon className="h-6 w-6 mb-2 text-foreground/70" />
@@ -838,12 +847,104 @@ function UsersTab() {
 function QuizTab() {
   const { toast } = useToast();
   const [questions, setQuestions] = useState<any[]>([]);
-  const [results, setResults] = useState<any[]>([]);
+  const [recentResults, setRecentResults] = useState<any[]>([]);
+  const [allResults, setAllResults] = useState<any[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<any>(null);
+  const emptyForm = {
+    quiz_title: "AI Knowledge Arena",
+    category: "general",
+    difficulty: "medium",
+    question: "",
+    explanation: "",
+    correct_answer: 0,
+    options: ["", "", "", ""],
+  };
+  const [form, setForm] = useState(emptyForm);
+
+  const load = () => {
+    Promise.all([
+      supabase.from("quiz_questions").select("*").order("created_at", { ascending: false }),
+      supabase.from("quiz_results").select("score, total_questions"),
+      supabase.from("quiz_results").select("*").order("completed_at", { ascending: false }).limit(20),
+    ]).then(([questionsRes, allResultsRes, recentResultsRes]) => {
+      if (questionsRes.data) setQuestions(questionsRes.data);
+      if (allResultsRes.data) setAllResults(allResultsRes.data);
+      if (recentResultsRes.data) setRecentResults(recentResultsRes.data);
+    });
+  };
 
   useEffect(() => {
-    supabase.from("quiz_questions").select("*").order("created_at", { ascending: false }).then(({ data }) => { if (data) setQuestions(data); });
-    supabase.from("quiz_results").select("*").order("completed_at", { ascending: false }).limit(20).then(({ data }) => { if (data) setResults(data); });
+    load();
   }, []);
+
+  const openCreate = () => {
+    setEditingQuestion(null);
+    setForm(emptyForm);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (question: any) => {
+    const nextOptions = Array.isArray(question.options)
+      ? question.options.map((option: unknown) => String(option)).slice(0, 4)
+      : [];
+    while (nextOptions.length < 4) nextOptions.push("");
+
+    setEditingQuestion(question);
+    setForm({
+      quiz_title: question.quiz_title || "AI Knowledge Arena",
+      category: question.category || "general",
+      difficulty: question.difficulty || "medium",
+      question: question.question || "",
+      explanation: question.explanation || "",
+      correct_answer: Number(question.correct_answer) || 0,
+      options: nextOptions,
+    });
+    setDialogOpen(true);
+  };
+
+  const saveQuestion = async () => {
+    const normalizedOptions = form.options.map((option) => option.trim()).filter(Boolean);
+    if (!form.question.trim() || normalizedOptions.length < 2) {
+      toast({
+        title: "Missing question details",
+        description: "Add a question and at least two answer options.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const payload = {
+      quiz_title: form.quiz_title.trim() || "AI Knowledge Arena",
+      category: form.category.trim() || "general",
+      difficulty: form.difficulty,
+      question: form.question.trim(),
+      explanation: form.explanation.trim(),
+      correct_answer: Math.min(form.correct_answer, normalizedOptions.length - 1),
+      options: normalizedOptions,
+    };
+
+    if (editingQuestion) {
+      const { error } = await supabase.from("quiz_questions").update(payload).eq("id", editingQuestion.id);
+      if (error) {
+        toast({ title: "Failed to update question", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Question updated" });
+    } else {
+      const { error } = await supabase.from("quiz_questions").insert(payload);
+      if (error) {
+        toast({ title: "Failed to create question", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Question created" });
+    }
+
+    setDialogOpen(false);
+    setEditingQuestion(null);
+    setForm(emptyForm);
+    load();
+  };
 
   const deleteQ = async (id: string) => {
     await supabase.from("quiz_questions").delete().eq("id", id);
@@ -851,8 +952,8 @@ function QuizTab() {
     setQuestions((q) => q.filter((x) => x.id !== id));
   };
 
-  const avgScore = results.length > 0
-    ? Math.round(results.reduce((a, r) => a + (r.score / r.total_questions) * 100, 0) / results.length)
+  const avgScore = allResults.length > 0
+    ? Math.round(allResults.reduce((a, r) => a + (r.score / r.total_questions) * 100, 0) / allResults.length)
     : 0;
 
   return (
@@ -866,7 +967,7 @@ function QuizTab() {
         </div>
         <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(45,100%,70%)] p-5">
           <Users className="h-8 w-8 mb-3 text-foreground/70" />
-          <div className="text-4xl font-black">{results.length}</div>
+          <div className="text-4xl font-black">{allResults.length}</div>
           <div className="text-xs font-bold uppercase tracking-wider mt-1">Submissions</div>
         </div>
         <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(150,76%,78%)] p-5">
@@ -877,11 +978,18 @@ function QuizTab() {
       </div>
 
       <div>
-        <h2 className="text-2xl font-black tracking-tight uppercase mb-4">Quiz Questions ({questions.length})</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-2xl font-black tracking-tight uppercase">Quiz Questions ({questions.length})</h2>
+          <Button onClick={openCreate} className="rounded-full gap-2">
+            <Plus className="h-4 w-4" />
+            Add Question
+          </Button>
+        </div>
         <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Quiz</TableHead>
                 <TableHead>Question</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Difficulty</TableHead>
@@ -891,14 +999,28 @@ function QuizTab() {
             <TableBody>
               {questions.slice(0, 20).map((q) => (
                 <TableRow key={q.id}>
+                  <TableCell className="text-muted-foreground">{q.quiz_title}</TableCell>
                   <TableCell className="max-w-xs truncate">{q.question}</TableCell>
                   <TableCell><Badge variant="secondary">{q.category || "—"}</Badge></TableCell>
                   <TableCell className="text-muted-foreground">{q.difficulty || "—"}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="destructive" onClick={() => deleteQ(q.id)}>Delete</Button>
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openEdit(q)}>
+                        <PenLine className="mr-1 h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => deleteQ(q.id)}>Delete</Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
+              {questions.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                    No quiz questions yet. Add the first question to align the Games page with admin content.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
@@ -916,20 +1038,361 @@ function QuizTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {results.map((r) => (
+              {recentResults.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>{r.quiz_title}</TableCell>
                   <TableCell><Badge>{r.score}/{r.total_questions}</Badge></TableCell>
                   <TableCell className="text-muted-foreground">{new Date(r.completed_at).toLocaleString()}</TableCell>
                 </TableRow>
               ))}
-              {results.length === 0 && (
+              {recentResults.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center text-muted-foreground py-8">No quiz results yet</TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+        </div>
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingQuestion ? "Edit Quiz Question" : "Add Quiz Question"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Input
+                placeholder="Quiz title"
+                value={form.quiz_title}
+                onChange={(e) => setForm({ ...form, quiz_title: e.target.value })}
+              />
+              <Input
+                placeholder="Category"
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+              />
+              <Select value={form.difficulty} onValueChange={(value) => setForm({ ...form, difficulty: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="easy">Easy</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="hard">Hard</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Textarea
+              placeholder="Question"
+              rows={3}
+              value={form.question}
+              onChange={(e) => setForm({ ...form, question: e.target.value })}
+            />
+
+            <div className="grid gap-3">
+              {form.options.map((option, index) => (
+                <Input
+                  key={index}
+                  placeholder={`Option ${index + 1}`}
+                  value={option}
+                  onChange={(e) => {
+                    const nextOptions = [...form.options];
+                    nextOptions[index] = e.target.value;
+                    setForm({ ...form, options: nextOptions });
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                value={String(form.correct_answer)}
+                onValueChange={(value) => setForm({ ...form, correct_answer: Number(value) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Correct answer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {form.options.map((option, index) => (
+                    <SelectItem key={index} value={String(index)}>
+                      Correct answer: option {index + 1}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Textarea
+                placeholder="Explanation"
+                rows={3}
+                value={form.explanation}
+                onChange={(e) => setForm({ ...form, explanation: e.target.value })}
+              />
+            </div>
+
+            <Button onClick={saveQuestion} className="w-full">
+              {editingQuestion ? "Update Question" : "Create Question"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ─── Social Tab ───
+function SocialTab() {
+  const { toast } = useToast();
+  const [communities, setCommunities] = useState<any[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [pendingMembers, setPendingMembers] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [recentMessages, setRecentMessages] = useState<any[]>([]);
+
+  const load = async () => {
+    const [
+      communitiesRes,
+      groupsRes,
+      pendingMembersRes,
+      conversationsRes,
+      recentMessagesRes,
+    ] = await Promise.all([
+      supabase.from("communities").select("*").order("created_at", { ascending: false }).limit(12),
+      supabase.from("groups").select("*").order("created_at", { ascending: false }).limit(12),
+      supabase.from("group_members").select("*").eq("status", "pending").order("joined_at", { ascending: false }).limit(12),
+      supabase.from("conversations").select("*").order("updated_at", { ascending: false }).limit(10),
+      supabase.from("messages").select("*").order("created_at", { ascending: false }).limit(10),
+    ]);
+
+    const pendingUserIds = Array.from(new Set((pendingMembersRes.data || []).map((item) => item.user_id)));
+    const pendingGroupIds = Array.from(new Set((pendingMembersRes.data || []).map((item) => item.group_id)));
+    const conversationUserIds = Array.from(
+      new Set(
+        (conversationsRes.data || []).flatMap((item) => [item.participant_1, item.participant_2]),
+      ),
+    );
+    const messageSenderIds = Array.from(new Set((recentMessagesRes.data || []).map((item) => item.sender_id)));
+
+    const profileIds = Array.from(new Set([...pendingUserIds, ...conversationUserIds, ...messageSenderIds]));
+    const { data: profiles } = profileIds.length > 0
+      ? await supabase.from("profiles").select("user_id, display_name, avatar_url").in("user_id", profileIds)
+      : { data: [] as any[] };
+    const { data: pendingGroups } = pendingGroupIds.length > 0
+      ? await supabase.from("groups").select("id, name").in("id", pendingGroupIds)
+      : { data: [] as any[] };
+
+    const pendingWithContext = (pendingMembersRes.data || []).map((item) => ({
+      ...item,
+      profile: (profiles || []).find((profile) => profile.user_id === item.user_id),
+      group: (pendingGroups || []).find((group) => group.id === item.group_id),
+    }));
+
+    const conversationsWithProfiles = (conversationsRes.data || []).map((item) => ({
+      ...item,
+      participantOne: (profiles || []).find((profile) => profile.user_id === item.participant_1),
+      participantTwo: (profiles || []).find((profile) => profile.user_id === item.participant_2),
+    }));
+
+    const messagesWithProfiles = (recentMessagesRes.data || []).map((item) => ({
+      ...item,
+      senderProfile: (profiles || []).find((profile) => profile.user_id === item.sender_id),
+    }));
+
+    setCommunities(communitiesRes.data || []);
+    setGroups(groupsRes.data || []);
+    setPendingMembers(pendingWithContext);
+    setConversations(conversationsWithProfiles);
+    setRecentMessages(messagesWithProfiles);
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const updatePendingMember = async (memberId: string, status: "approved" | "rejected") => {
+    const { error } = await supabase.from("group_members").update({ status }).eq("id", memberId);
+    if (error) {
+      toast({ title: "Failed to update member", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: `Member ${status}` });
+    load();
+  };
+
+  const deleteCommunity = async (id: string) => {
+    const { error } = await supabase.from("communities").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Failed to delete community", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Community deleted" });
+    load();
+  };
+
+  const deleteGroup = async (id: string) => {
+    const { error } = await supabase.from("groups").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Failed to delete group", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Group deleted" });
+    load();
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {[
+          { icon: Globe, value: communities.length, label: "Communities", bg: "hsl(150,76%,78%)" },
+          { icon: UsersRound, value: groups.length, label: "Groups", bg: "hsl(330,70%,80%)" },
+          { icon: AlertTriangle, value: pendingMembers.length, label: "Pending Requests", bg: "hsl(45,100%,70%)" },
+          { icon: MessagesSquare, value: conversations.length, label: "Tracked Conversations", bg: "hsl(200,80%,78%)" },
+        ].map((card) => (
+          <div key={card.label} className="rounded-xl border-2 border-dashed border-border p-5" style={{ backgroundColor: card.bg }}>
+            <card.icon className="mb-3 h-8 w-8 text-foreground/70" />
+            <div className="text-4xl font-black">{card.value}</div>
+            <div className="mt-1 text-xs font-bold uppercase tracking-wider">{card.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <h2 className="mb-4 text-2xl font-black tracking-tight uppercase">Pending Group Requests</h2>
+        <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Group</TableHead>
+                <TableHead>Requested</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pendingMembers.map((member) => (
+                <TableRow key={member.id}>
+                  <TableCell>{member.profile?.display_name || "User"}</TableCell>
+                  <TableCell>{member.group?.name || "Group"}</TableCell>
+                  <TableCell className="text-muted-foreground">{new Date(member.joined_at).toLocaleString()}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => updatePendingMember(member.id, "approved")}>
+                        <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
+                        Approve
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => updatePendingMember(member.id, "rejected")}>
+                        <XCircle className="mr-1 h-3.5 w-3.5" />
+                        Reject
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {pendingMembers.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                    No pending member requests.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div>
+          <h2 className="mb-4 text-2xl font-black tracking-tight uppercase">Communities</h2>
+          <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Topic</TableHead>
+                  <TableHead>Language</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {communities.map((community) => (
+                  <TableRow key={community.id}>
+                    <TableCell className="font-medium">{community.name}</TableCell>
+                    <TableCell>{community.topic || "general"}</TableCell>
+                    <TableCell className="text-muted-foreground">{community.language?.toUpperCase() || "EN"}</TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="destructive" onClick={() => deleteCommunity(community.id)}>
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="mb-4 text-2xl font-black tracking-tight uppercase">Groups</h2>
+          <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Topic</TableHead>
+                  <TableHead>Language</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {groups.map((group) => (
+                  <TableRow key={group.id}>
+                    <TableCell className="font-medium">{group.name}</TableCell>
+                    <TableCell>{group.topic || "general"}</TableCell>
+                    <TableCell className="text-muted-foreground">{group.language?.toUpperCase() || "EN"}</TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="destructive" onClick={() => deleteGroup(group.id)}>
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-xl border-2 border-dashed border-border p-5">
+          <h2 className="mb-4 text-2xl font-black tracking-tight uppercase">Recent Conversations</h2>
+          <div className="space-y-3">
+            {conversations.map((conversation) => (
+              <div key={conversation.id} className="rounded-xl border border-border bg-card p-4">
+                <p className="font-medium">
+                  {(conversation.participantOne?.display_name || "User A")} and {(conversation.participantTwo?.display_name || "User B")}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Updated {new Date(conversation.updated_at).toLocaleString()}
+                </p>
+              </div>
+            ))}
+            {conversations.length === 0 && <p className="text-sm text-muted-foreground">No accessible conversations yet.</p>}
+          </div>
+        </div>
+
+        <div className="rounded-xl border-2 border-dashed border-border p-5">
+          <h2 className="mb-4 text-2xl font-black tracking-tight uppercase">Recent Messages</h2>
+          <div className="space-y-3">
+            {recentMessages.map((message) => (
+              <div key={message.id} className="rounded-xl border border-border bg-card p-4">
+                <p className="text-sm">{message.content}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {(message.senderProfile?.display_name || "User")} · {new Date(message.created_at).toLocaleString()}
+                </p>
+              </div>
+            ))}
+            {recentMessages.length === 0 && <p className="text-sm text-muted-foreground">No accessible messages yet.</p>}
+          </div>
         </div>
       </div>
     </div>
@@ -1670,6 +2133,7 @@ export default function AdminDashboard() {
     { label: "Posts", key: "posts", icon: FileText },
     { label: "Users", key: "users", icon: Users },
     { label: "Quiz", key: "quiz", icon: HelpCircle },
+    { label: "Social", key: "social", icon: UsersRound },
     { label: "Freebies", key: "freebies", icon: Gift },
     { label: "Images", key: "images", icon: Images },
     { label: "Prompts", key: "prompts", icon: Sparkles },
@@ -1680,6 +2144,7 @@ export default function AdminDashboard() {
     posts: <PostsTab />,
     users: <UsersTab />,
     quiz: <QuizTab />,
+    social: <SocialTab />,
     freebies: <FreebiesTab />,
     images: <ImagesTab />,
     prompts: <PromptsTab />,
@@ -1690,11 +2155,15 @@ export default function AdminDashboard() {
       {/* Top Header Bar */}
       <header className="bg-background border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center h-14">
-          <button onClick={() => navigate("/")} className="text-xl font-black tracking-tight italic mr-auto">
-            UTOP<span className="gradient-text">AI</span>
+          <button onClick={() => navigate("/")} className="mr-auto">
+            <span className="spotai-wordmark text-xl font-extrabold tracking-tight">
+              SpotAI
+            </span>
           </button>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:inline">{user.email}</span>
+            <span className="text-sm text-muted-foreground hidden sm:inline">
+              {profile?.display_name || user.email}
+            </span>
             <Badge className="bg-[hsl(150,76%,78%)] text-foreground hover:bg-[hsl(150,76%,70%)] rounded-full font-bold text-xs px-3">ADMIN</Badge>
             <button
               onClick={async () => { await signOut(); navigate("/"); }}
@@ -1709,7 +2178,14 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Page Title */}
-        <h1 className="text-4xl font-black tracking-tight uppercase mb-6">Admin Dashboard</h1>
+        <div className="mb-6 rounded-[1.75rem] border border-border bg-secondary/40 p-6">
+          <h1 className="text-4xl tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+            Admin Dashboard
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Manage only the features the live product actually uses: posts, social data, quiz content, freebies, and the new media libraries.
+          </p>
+        </div>
 
         {/* Horizontal Tab Navigation */}
         <div className="flex flex-wrap gap-2 mb-8">

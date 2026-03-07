@@ -226,6 +226,12 @@ export const getAvatarDataUrlForId = (avatarId: number) => {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(avatar.svg)}`;
 };
 
+export const getAvatarIdFromDataUrl = (avatarUrl: string | null | undefined) => {
+  if (!avatarUrl) return null;
+  const match = avatarOptions.find((avatar) => getAvatarDataUrlForId(avatar.id) === avatarUrl);
+  return match?.id ?? null;
+};
+
 function AvatarArtwork({ svg, className }: { svg: string; className?: string }) {
   return (
     <div
@@ -244,21 +250,21 @@ export function ProfileAvatarPicker({ value, onChange, className }: ProfileAvata
   return (
     <Card
       className={cn(
-        "overflow-hidden rounded-[28px] border border-black/10 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)]",
+        "overflow-hidden rounded-[28px] border border-black/10 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)] transition-colors dark:border-white/10 dark:bg-[#07101f] dark:shadow-[0_26px_70px_rgba(0,0,0,0.38)]",
         className,
       )}
     >
       <CardContent className="p-6 md:p-7">
         <div className="space-y-6">
           <div className="space-y-2 text-center">
-            <span className="inline-flex rounded-full border border-black/10 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+            <span className="inline-flex rounded-full border border-black/10 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500 transition-colors dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-300">
               Avatar selection
             </span>
             <div>
-              <h3 className="text-2xl tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+              <h3 className="text-2xl tracking-tight text-slate-950 dark:text-white" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                 Pick your profile look
               </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm text-muted-foreground dark:text-slate-400">
                 Choose from 7 curated avatar colors for your SpotAI profile.
               </p>
             </div>
@@ -274,7 +280,7 @@ export function ProfileAvatarPicker({ value, onChange, className }: ProfileAvata
                 className="pointer-events-none absolute inset-0 rounded-full"
                 transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.42, ease: "easeOut" }}
               />
-              <div className="relative h-full w-full overflow-hidden rounded-full bg-slate-100">
+              <div className="relative h-full w-full overflow-hidden rounded-full bg-slate-100 transition-colors dark:bg-white/[0.06]">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={selectedAvatar.id}
@@ -294,7 +300,7 @@ export function ProfileAvatarPicker({ value, onChange, className }: ProfileAvata
               <motion.span
                 key={selectedAvatar.id}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500"
+                className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-300"
                 exit={{ opacity: 0, y: -6 }}
                 initial={{ opacity: 0, y: 6 }}
                 transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.16, ease: "easeOut" }}
@@ -320,10 +326,10 @@ export function ProfileAvatarPicker({ value, onChange, className }: ProfileAvata
                   aria-label={`Select ${avatar.label}`}
                   aria-pressed={isSelected}
                   className={cn(
-                    "relative flex h-14 items-center justify-center overflow-hidden rounded-2xl border bg-slate-50 transition-[opacity,transform,box-shadow,border-color] duration-200",
+                    "relative flex h-14 items-center justify-center overflow-hidden rounded-2xl border bg-slate-50 transition-[opacity,transform,box-shadow,border-color,background-color] duration-200 dark:bg-white/[0.05]",
                     isSelected
-                      ? "border-slate-900/15 opacity-100 ring-2 ring-slate-900/80 ring-offset-2 ring-offset-white"
-                      : "border-black/8 opacity-65 hover:opacity-100",
+                      ? "border-slate-900/15 opacity-100 ring-2 ring-slate-900/80 ring-offset-2 ring-offset-white dark:border-white/20 dark:ring-white/80 dark:ring-offset-[#07101f]"
+                      : "border-black/8 opacity-65 hover:opacity-100 dark:border-white/10",
                   )}
                   onClick={() => onChange(avatar.id)}
                   variants={thumbnailVariants}
@@ -332,8 +338,8 @@ export function ProfileAvatarPicker({ value, onChange, className }: ProfileAvata
                 >
                   <AvatarArtwork className="h-full w-full" svg={avatar.svg} />
                   {isSelected && (
-                    <div className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-slate-950">
-                      <Check aria-hidden="true" className="h-3 w-3 text-white" />
+                    <div className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-slate-950 dark:bg-white">
+                      <Check aria-hidden="true" className="h-3 w-3 text-white dark:text-slate-950" />
                     </div>
                   )}
                 </motion.button>
@@ -345,4 +351,3 @@ export function ProfileAvatarPicker({ value, onChange, className }: ProfileAvata
     </Card>
   );
 }
-
