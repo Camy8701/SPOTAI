@@ -30,6 +30,7 @@ import {
   Sparkles,
   Plus,
   Globe,
+  Crown,
 } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
