@@ -369,7 +369,7 @@ export type Database = {
           is_featured: boolean
           orientation: string
           sort_order: number
-          tags: string[]
+          tags: string[] | null
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -385,7 +385,7 @@ export type Database = {
           is_featured?: boolean
           orientation?: string
           sort_order?: number
-          tags?: string[]
+          tags?: string[] | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -401,7 +401,7 @@ export type Database = {
           is_featured?: boolean
           orientation?: string
           sort_order?: number
-          tags?: string[]
+          tags?: string[] | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
@@ -515,54 +515,6 @@ export type Database = {
           },
         ]
       }
-      prompt_library_items: {
-        Row: {
-          category: string
-          created_at: string
-          created_by: string
-          description: string | null
-          difficulty: string
-          id: string
-          is_featured: boolean
-          model: string
-          prompt_text: string
-          sort_order: number
-          tags: string[]
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          category?: string
-          created_at?: string
-          created_by: string
-          description?: string | null
-          difficulty?: string
-          id?: string
-          is_featured?: boolean
-          model?: string
-          prompt_text: string
-          sort_order?: number
-          tags?: string[]
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          created_by?: string
-          description?: string | null
-          difficulty?: string
-          id?: string
-          is_featured?: boolean
-          model?: string
-          prompt_text?: string
-          sort_order?: number
-          tags?: string[]
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -590,6 +542,54 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      prompt_library_items: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          description: string | null
+          difficulty: string
+          id: string
+          is_featured: boolean
+          model: string
+          prompt_text: string
+          sort_order: number
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          difficulty?: string
+          id?: string
+          is_featured?: boolean
+          model?: string
+          prompt_text: string
+          sort_order?: number
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          difficulty?: string
+          id?: string
+          is_featured?: boolean
+          model?: string
+          prompt_text?: string
+          sort_order?: number
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }

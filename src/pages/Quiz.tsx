@@ -112,7 +112,7 @@ const Quiz = () => {
         return;
       }
 
-      const mappedQuestions: Question[] = data
+      const mappedQuestions = data
         .map((item) => {
           const options = Array.isArray(item.options)
             ? item.options.map((option) => String(option))
@@ -121,12 +121,12 @@ const Quiz = () => {
           if (options.length < 2) return null;
 
           return {
-            id: item.id,
+            id: item.id as string | number,
             question: item.question,
             options,
             correctAnswer: item.correct_answer,
             explanation: item.explanation || "No explanation provided.",
-          };
+          } as Question;
         })
         .filter((item): item is Question => !!item);
 
