@@ -1,103 +1,157 @@
 import { Link } from "react-router-dom";
 
-const Footer = () => (
-  <footer className="relative bg-foreground text-background overflow-hidden">
-    {/* Animated SVG Background */}
-    <div className="absolute inset-0 pointer-events-none opacity-20">
-      <svg
-        className="w-full h-full"
-        viewBox="0 0 800 400"
-        preserveAspectRatio="xMidYMid slice"
-        xmlns="http://www.w3.org/2000/svg"
+const Footer = () => {
+  const handleFooterNavigate = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  return (
+    <footer className="overflow-hidden border-t border-border bg-secondary pt-20 text-foreground">
+      <div
+        className="mb-16 w-full px-4 text-center"
+        style={{
+          maskImage: "linear-gradient(180deg, transparent, black 0%, black 58%, transparent)",
+          WebkitMaskImage: "linear-gradient(180deg, transparent, black 0%, black 58%, transparent)",
+        }}
       >
-        <defs>
-          <linearGradient id="footer-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(217, 91%, 60%)" />
-            <stop offset="50%" stopColor="hsl(271, 81%, 56%)" />
-            <stop offset="100%" stopColor="hsl(330, 81%, 60%)" />
-          </linearGradient>
-          <linearGradient id="footer-grad2" x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="hsl(25, 95%, 53%)" />
-            <stop offset="100%" stopColor="hsl(217, 91%, 60%)" />
-          </linearGradient>
-        </defs>
-        <circle cx="100" cy="300" r="180" fill="url(#footer-grad1)" className="animate-footer-wave" />
-        <circle cx="700" cy="100" r="150" fill="url(#footer-grad2)" className="animate-footer-wave-reverse" />
-        <circle cx="400" cy="350" r="120" fill="url(#footer-grad1)" className="animate-footer-float" />
-      </svg>
-    </div>
-
-    <div className="relative z-10 container px-6 md:px-12 py-12 md:py-16">
-      {/* Top Section */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-12">
-        {/* Brand */}
-        <Link to="/" className="block">
-          <span
-            className="text-3xl md:text-4xl font-extrabold tracking-tight"
-            style={{
-              background: "linear-gradient(135deg, hsl(217 91% 60%), hsl(271 81% 56%), hsl(330 81% 60%), hsl(25 95% 53%))",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
+        <Link to="/" className="inline-block" onClick={handleFooterNavigate}>
+          <h2 className="spotai-wordmark select-none text-[18vw] font-bold leading-[0.72] tracking-[-0.08em] opacity-35 md:scale-y-110">
             SpotAI
-          </span>
+          </h2>
         </Link>
+      </div>
 
-        {/* Navigation Columns */}
-        <div className="flex gap-16 md:gap-24">
-          <div className="flex flex-col gap-3">
-            <a href="/library" className="text-sm font-medium opacity-80 hover:opacity-100 transition-opacity">
-              About Us
-            </a>
-            <a href="/marketplace" className="text-sm font-medium opacity-80 hover:opacity-100 transition-opacity">
+      <div className="grid grid-cols-1 border-t border-border lg:grid-cols-2">
+        <div className="grid grid-cols-2 gap-12 border-r-0 border-border p-8 md:p-16 lg:border-r">
+          <div className="flex flex-col gap-6">
+            <Link
+              to="/library"
+              onClick={handleFooterNavigate}
+              className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Story Library
+            </Link>
+            <Link
+              to="/popular"
+              onClick={handleFooterNavigate}
+              className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Trending
+            </Link>
+            <Link
+              to="/marketplace"
+              onClick={handleFooterNavigate}
+              className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground transition-colors hover:text-foreground"
+            >
               Marketplace
-            </a>
-            <a href="/popular" className="text-sm font-medium opacity-80 hover:opacity-100 transition-opacity">
-              Popular
-            </a>
+            </Link>
+            <Link
+              to="/create-post"
+              onClick={handleFooterNavigate}
+              className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Create
+            </Link>
           </div>
-          <div className="flex flex-col gap-3">
-            <a href="/messages" className="text-sm font-medium opacity-80 hover:opacity-100 transition-opacity">
-              Contact Us
-            </a>
-            <a
-              href="https://www.instagram.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium opacity-80 hover:opacity-100 transition-opacity"
+
+          <div className="flex flex-col gap-6">
+            <Link
+              to="/communities"
+              onClick={handleFooterNavigate}
+              className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground transition-colors hover:text-foreground"
             >
-              Instagram
-            </a>
-            <a
-              href="https://www.twitter.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium opacity-80 hover:opacity-100 transition-opacity"
+              Communities
+            </Link>
+            <Link
+              to="/groups"
+              onClick={handleFooterNavigate}
+              className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground transition-colors hover:text-foreground"
             >
-              Twitter/X
-            </a>
-            <a
-              href="https://www.facebook.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium opacity-80 hover:opacity-100 transition-opacity"
+              Groups
+            </Link>
+            <Link
+              to="/freebies/ebooks"
+              onClick={handleFooterNavigate}
+              className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground transition-colors hover:text-foreground"
             >
-              Facebook
-            </a>
+              Free Ebooks
+            </Link>
+            <Link
+              to="/freebies/podcasts"
+              onClick={handleFooterNavigate}
+              className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Podcasts
+            </Link>
           </div>
+        </div>
+
+        <div className="relative flex h-56 items-center justify-center overflow-hidden border-t border-border lg:h-auto lg:border-t-0">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.12),transparent_35%),radial-gradient(circle_at_80%_30%,rgba(234,88,12,0.1),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(139,92,246,0.08),transparent_35%)]" />
+          <svg
+            viewBox="0 0 420 140"
+            className="spotai-network h-[170px] w-[780px] max-w-[calc(100%-2rem)] text-slate-500/60"
+            preserveAspectRatio="xMidYMid meet"
+            aria-hidden="true"
+          >
+            <path d="M50 95 L130 45 L210 80 L290 38 L370 72" stroke="currentColor" strokeWidth="1" fill="none" />
+            <path d="M50 55 L130 45 L210 80 L290 98 L370 72" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.45" />
+
+            <g transform="translate(28 72)">
+              <rect x="0" y="0" width="44" height="32" rx="8" stroke="currentColor" strokeWidth="1" fill="none" />
+              <path d="M9 11 H35" stroke="currentColor" strokeWidth="1" />
+              <path d="M9 18 H27" stroke="currentColor" strokeWidth="1" opacity="0.7" />
+            </g>
+
+            <g transform="translate(108 22)">
+              <circle cx="22" cy="22" r="22" stroke="currentColor" strokeWidth="1" fill="none" />
+              <circle cx="22" cy="22" r="6" className="spotai-node-core" fill="currentColor" />
+              <circle cx="22" cy="22" r="12" className="spotai-node-ring" stroke="currentColor" strokeWidth="1" fill="none" />
+            </g>
+
+            <g transform="translate(184 58)">
+              <rect x="0" y="0" width="52" height="36" rx="10" stroke="currentColor" strokeWidth="1" fill="none" />
+              <path
+                className="spotai-wave-line"
+                d="M9 22 C15 14, 21 30, 28 22 S41 14, 45 18"
+                stroke="currentColor"
+                strokeWidth="1"
+                fill="none"
+              />
+            </g>
+
+            <g transform="translate(266 14)">
+              <rect x="0" y="0" width="48" height="48" rx="14" stroke="currentColor" strokeWidth="1" fill="none" />
+              <path d="M14 17 H34" stroke="currentColor" strokeWidth="1" />
+              <path d="M14 25 H28" stroke="currentColor" strokeWidth="1" opacity="0.7" />
+              <path d="M14 33 H31" stroke="currentColor" strokeWidth="1" opacity="0.45" />
+            </g>
+
+            <g transform="translate(346 48)">
+              <circle cx="22" cy="22" r="22" stroke="currentColor" strokeWidth="1" fill="none" />
+              <path d="M15 28 L22 14 L29 28" stroke="currentColor" strokeWidth="1" fill="none" />
+              <path d="M18 23 H26" stroke="currentColor" strokeWidth="1" />
+            </g>
+          </svg>
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-background/20 pt-6">
-        <p className="text-xs opacity-60 text-center">
-          © {new Date().getFullYear()} SpotAI. All rights reserved.
-        </p>
+      <div className="flex flex-col items-center justify-between gap-6 border-t border-border px-8 py-8 text-[10px] font-medium tracking-[0.22em] text-muted-foreground md:flex-row md:px-16">
+        <div>{new Date().getFullYear()} ALL RIGHTS RESERVED</div>
+        <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
+          <Link to="/auth" className="transition-colors hover:text-foreground" onClick={handleFooterNavigate}>
+            Sign In
+          </Link>
+          <Link to="/messages" className="transition-colors hover:text-foreground" onClick={handleFooterNavigate}>
+            Messages
+          </Link>
+          <Link to="/dashboard" className="transition-colors hover:text-foreground" onClick={handleFooterNavigate}>
+            Dashboard
+          </Link>
+        </div>
       </div>
-    </div>
-  </footer>
-);
+    </footer>
+  );
+};
 
 export default Footer;

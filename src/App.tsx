@@ -25,6 +25,8 @@ import Communities from "./pages/Communities";
 import Groups from "./pages/Groups";
 import EbooksLibrary from "./pages/EbooksLibrary";
 import PodcastLibrary from "./pages/PodcastLibrary";
+import ImageLibrary from "./pages/ImageLibrary";
+import PromptLibrary from "./pages/PromptLibrary";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +58,8 @@ const App = () => (
             <Route path="/groups" element={<Groups />} />
             <Route path="/freebies/ebooks" element={<EbooksLibrary />} />
             <Route path="/freebies/podcasts" element={<PodcastLibrary />} />
+            <Route path="/image-library" element={<ImageLibrary />} />
+            <Route path="/prompt-library" element={<PromptLibrary />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

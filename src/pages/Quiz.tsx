@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import Layout from "@/components/layout/Layout";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, XCircle, RotateCcw, Trophy, Brain, Zap, Star } from "lucide-react";
+import { CheckCircle, XCircle, RotateCcw, Trophy, Brain, Zap, Star, Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import ShowcaseCard from "@/components/ui/showcase-card";
 
 type Question = {
   id: number;
@@ -61,11 +62,29 @@ const getRandomQuestions = (questions: Question[], count: number): Question[] =>
   return shuffled.slice(0, count);
 };
 
+const gameCards = [
+  {
+    title: "AI Knowledge Arena",
+    subtitle: "History, tools, ethics, and pop culture",
+    tag: "Trivia",
+    image:
+      "https://images.unsplash.com/photo-1516110833967-0b5716ca1387?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    title: "Prompt Speed Run",
+    subtitle: "Quick rounds, faster scoring, bonus points",
+    tag: "Challenge",
+    image:
+      "https://images.unsplash.com/photo-1579567761406-4684ee0c75b6?auto=format&fit=crop&w=1400&q=80",
+  },
+];
+
 const Quiz = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
+  const [quizStarted, setQuizStarted] = useState(false);
   const { user } = useAuth();
 
   const quizQuestions = useMemo(() => getRandomQuestions(allQuizQuestions, 10), []);
@@ -73,18 +92,58 @@ const Quiz = () => {
   if (!user) {
     return (
       <Layout>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center px-4 py-12">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 text-center max-w-md">
-            <Brain className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-            <h2 className="text-2xl font-bold dark:text-white mb-4">AI Knowledge Quiz</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">Please log in to take the quiz and earn points!</p>
-            <Link
-              to="/auth"
-              className="inline-block px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg font-medium hover:from-pink-600 hover:to-purple-700 transition-all duration-300"
-            >
-              Log In to Start Quiz
-            </Link>
-          </div>
+        <div className="min-h-screen bg-background text-foreground">
+          <section className="border-b border-border bg-secondary">
+            <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+              <div className="text-center">
+                <h1 className="text-5xl tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                  Games
+                </h1>
+                <p className="mt-2 text-sm uppercase tracking-[0.22em] text-muted-foreground">
+                  Learn and play with SPOTAI
+                </p>
+              </div>
+              <div className="relative mx-auto mt-8 max-w-2xl">
+                <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  placeholder="Search games"
+                  className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-pink-500"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+              {gameCards.map((card) => (
+                <ShowcaseCard
+                  key={card.title}
+                  title={card.title}
+                  subtitle={card.subtitle}
+                  tag={card.tag}
+                  image={card.image}
+                  className="min-h-[32rem]"
+                  imageClassName="h-[21rem]"
+                />
+              ))}
+            </div>
+
+            <div className="mt-10 rounded-[2rem] border border-border bg-card px-8 py-10 text-center shadow-[0_8px_26px_rgba(16,24,40,0.06)]">
+              <Brain className="mx-auto mb-4 h-14 w-14 text-pink-600" />
+              <h2 className="text-3xl font-semibold tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                Log In To Start Quiz
+              </h2>
+              <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+                Sign in to play the AI Knowledge Arena, save your scores, and unlock bonus rounds.
+              </p>
+              <Link
+                to="/auth"
+                className="mt-6 inline-flex h-12 items-center rounded-full border border-pink-500 bg-pink-500 px-8 text-sm font-semibold uppercase tracking-[0.2em] text-white transition-colors hover:bg-pink-600"
+              >
+                Enter The Arena
+              </Link>
+            </div>
+          </section>
         </div>
       </Layout>
     );
@@ -130,165 +189,226 @@ const Quiz = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8 px-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8">
-            <div className="text-center mb-8">
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <Brain className="h-8 w-8 text-pink-500" />
-                <h2 className="text-3xl font-bold dark:text-white">AI Knowledge Quiz</h2>
-                <Zap className="h-8 w-8 text-yellow-500" />
-              </div>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Test your knowledge about artificial intelligence and machine learning! (10 random questions from 40 total)
+      <div className="min-h-screen bg-background text-foreground">
+        <section className="border-b border-border bg-secondary">
+          <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h1 className="text-5xl tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                Games
+              </h1>
+              <p className="mt-2 text-sm uppercase tracking-[0.22em] text-muted-foreground">
+                Play, learn, and level up your AI knowledge
               </p>
             </div>
+            <div className="relative mx-auto mt-8 max-w-2xl">
+              <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                placeholder="Search game modes"
+                className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-pink-500"
+              />
+            </div>
+          </div>
+        </section>
 
-            <AnimatePresence mode="wait">
-              {!showResults ? (
-                <motion.div
-                  key={currentQuestion}
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-6"
+        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+          {!quizStarted ? (
+            <>
+              <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+                {gameCards.map((card) => (
+                  <ShowcaseCard
+                    key={card.title}
+                    title={card.title}
+                    subtitle={card.subtitle}
+                    tag={card.tag}
+                    image={card.image}
+                    className="min-h-[32rem]"
+                    imageClassName="h-[21rem]"
+                  />
+                ))}
+              </div>
+
+              <div className="mt-10 rounded-[2rem] border border-border bg-card px-8 py-10 text-center shadow-[0_8px_26px_rgba(16,24,40,0.06)]">
+                <div className="mx-auto mb-4 flex w-fit items-center gap-3 rounded-full border border-pink-200 bg-pink-100 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-pink-700">
+                  <Zap className="h-4 w-4" />
+                  10 Random Questions
+                </div>
+                <h2 className="text-3xl font-semibold tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                  Ready For The AI Knowledge Arena?
+                </h2>
+                <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+                  You will get 10 questions out of 40. Finish the round to unlock your score and answer review.
+                </p>
+                <button
+                  onClick={() => setQuizStarted(true)}
+                  className="mt-6 inline-flex h-12 items-center rounded-full border border-pink-500 bg-pink-500 px-8 text-sm font-semibold uppercase tracking-[0.2em] text-white transition-colors hover:bg-pink-600"
                 >
-                  {/* Progress Bar */}
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-pink-500 to-purple-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${((currentQuestion + 1) / quizQuestions.length) * 100}%` }}
-                    ></div>
-                  </div>
+                  Start Quiz
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="mx-auto max-w-3xl rounded-[2rem] border border-border bg-card p-8 shadow-[0_8px_30px_rgba(20,20,20,0.08)]">
+              <div className="text-center mb-8">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <Brain className="h-8 w-8 text-pink-600" />
+                  <h2 className="text-3xl font-bold text-foreground">AI Knowledge Quiz</h2>
+                  <Zap className="h-8 w-8 text-violet-600" />
+                </div>
+                <p className="text-muted-foreground mb-4">
+                  Test your knowledge about artificial intelligence and machine learning.
+                </p>
+              </div>
 
-                  <div className="text-center">
-                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Question {currentQuestion + 1} of {quizQuestions.length}
-                    </span>
-                  </div>
+              <AnimatePresence mode="wait">
+                {!showResults ? (
+                  <motion.div
+                    key={currentQuestion}
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -50 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-6"
+                  >
+                    <div className="w-full rounded-full bg-secondary h-2">
+                      <div
+                        className="h-2 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 transition-all duration-300"
+                        style={{ width: `${((currentQuestion + 1) / quizQuestions.length) * 100}%` }}
+                      ></div>
+                    </div>
 
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-                    <h3 className="text-xl font-semibold mb-6 dark:text-white">{quizQuestions[currentQuestion].question}</h3>
+                    <div className="text-center">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Question {currentQuestion + 1} of {quizQuestions.length}
+                      </span>
+                    </div>
 
-                    <div className="space-y-3 mb-6">
-                      {quizQuestions[currentQuestion].options.map((option, index) => {
-                        const isSelected = selectedAnswers[currentQuestion] === index;
+                    <div className="rounded-2xl border border-border bg-background p-6">
+                      <h3 className="text-xl font-semibold mb-6 text-foreground">{quizQuestions[currentQuestion].question}</h3>
+
+                      <div className="space-y-3 mb-6">
+                        {quizQuestions[currentQuestion].options.map((option, index) => {
+                          const isSelected = selectedAnswers[currentQuestion] === index;
+                          return (
+                            <motion.button
+                              key={index}
+                              onClick={() => handleAnswerSelect(index)}
+                              className={`w-full p-4 text-left rounded-xl border-2 transition-all duration-300 ${
+                                isSelected
+                                  ? "border-pink-400 bg-pink-50 text-foreground"
+                                  : "border-border text-foreground hover:border-pink-300 hover:bg-pink-50/70"
+                              }`}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">{option}</span>
+                                {isSelected && (
+                                  <div className="w-4 h-4 rounded-full bg-pink-500 flex items-center justify-center">
+                                    <div className="w-2 h-2 rounded-full bg-white"></div>
+                                  </div>
+                                )}
+                              </div>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex justify-between">
+                        <button
+                          onClick={() => setQuizStarted(false)}
+                          className="rounded-full border border-input px-5 py-2 text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground"
+                        >
+                          Back
+                        </button>
+                        <motion.button
+                          onClick={handleNextQuestion}
+                          disabled={selectedAnswers[currentQuestion] === undefined}
+                          className="rounded-full border border-pink-500 bg-pink-500 px-6 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-white disabled:cursor-not-allowed disabled:opacity-50 transition-colors hover:bg-pink-600"
+                          whileHover={{ scale: selectedAnswers[currentQuestion] !== undefined ? 1.03 : 1 }}
+                          whileTap={{ scale: selectedAnswers[currentQuestion] !== undefined ? 0.97 : 1 }}
+                        >
+                          {currentQuestion === quizQuestions.length - 1 ? "Finish Quiz" : "Next Question"}
+                        </motion.button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-center space-y-6"
+                  >
+                    <div className="rounded-2xl bg-gradient-to-r from-pink-500 to-violet-500 p-8 text-white">
+                      <Trophy className="h-16 w-16 mx-auto mb-4" />
+                      <h3 className="text-2xl font-bold mb-2">Quiz Complete!</h3>
+                      <p className="text-xl mb-2">
+                        You scored {score} out of {quizQuestions.length}
+                      </p>
+                      <p className="text-lg mb-4">{getScoreMessage(score)}</p>
+                      <div className="flex justify-center gap-6 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Star className="h-5 w-5" />
+                          <span>+{pointsEarned} Points Earned</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="text-xl font-semibold text-foreground">Review Your Answers</h4>
+                      {quizQuestions.map((question, index) => {
+                        const userAnswer = selectedAnswers[index];
+                        const isCorrect = userAnswer === question.correctAnswer;
                         return (
-                          <motion.button
-                            key={index}
-                            onClick={() => handleAnswerSelect(index)}
-                            className={`w-full p-4 text-left rounded-lg border-2 transition-all duration-300 ${
-                              isSelected
-                                ? "border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-400"
-                                : "border-gray-200 dark:border-gray-700 hover:border-pink-500 hover:bg-pink-50 dark:hover:bg-pink-900/20 dark:text-white"
+                          <div
+                            key={question.id}
+                            className={`p-4 rounded-xl border-2 text-left ${
+                              isCorrect
+                                ? "border-green-500 bg-green-50"
+                                : "border-red-500 bg-red-50"
                             }`}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
                           >
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium">{option}</span>
-                              {isSelected && (
-                                <div className="w-4 h-4 rounded-full bg-pink-500 flex items-center justify-center">
-                                  <div className="w-2 h-2 rounded-full bg-white"></div>
-                                </div>
+                            <div className="flex items-start gap-3">
+                              {isCorrect ? (
+                                <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
+                              ) : (
+                                <XCircle className="h-6 w-6 text-red-500 mt-1 flex-shrink-0" />
                               )}
+                              <div className="flex-1">
+                                <p className="font-medium text-foreground mb-2">
+                                  {index + 1}. {question.question}
+                                </p>
+                                <p className={`text-sm mb-2 ${isCorrect ? "text-green-700" : "text-red-700"}`}>
+                                  Your answer: {question.options[userAnswer]}
+                                </p>
+                                {!isCorrect && (
+                                  <p className="text-sm text-green-700 mb-2">
+                                    Correct answer: {question.options[question.correctAnswer]}
+                                  </p>
+                                )}
+                                <p className="text-sm text-muted-foreground">{question.explanation}</p>
+                              </div>
                             </div>
-                          </motion.button>
+                          </div>
                         );
                       })}
                     </div>
 
-                    <div className="flex justify-end">
-                      <motion.button
-                        onClick={handleNextQuestion}
-                        disabled={selectedAnswers[currentQuestion] === undefined}
-                        className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:from-pink-600 hover:to-purple-700 transition-all duration-300"
-                        whileHover={{ scale: selectedAnswers[currentQuestion] !== undefined ? 1.05 : 1 }}
-                        whileTap={{ scale: selectedAnswers[currentQuestion] !== undefined ? 0.95 : 1 }}
-                      >
-                        {currentQuestion === quizQuestions.length - 1 ? "Finish Quiz" : "Next Question"}
-                      </motion.button>
-                    </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="text-center space-y-6"
-                >
-                  <div className="bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg p-8 text-white">
-                    <Trophy className="h-16 w-16 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold mb-2">Quiz Complete!</h3>
-                    <p className="text-xl mb-2">
-                      You scored {score} out of {quizQuestions.length}
-                    </p>
-                    <p className="text-lg mb-4">{getScoreMessage(score)}</p>
-                    <div className="flex justify-center gap-6 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Star className="h-5 w-5" />
-                        <span>+{pointsEarned} Points Earned</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Review Answers */}
-                  <div className="space-y-4">
-                    <h4 className="text-xl font-semibold dark:text-white">Review Your Answers</h4>
-                    {quizQuestions.map((question, index) => {
-                      const userAnswer = selectedAnswers[index];
-                      const isCorrect = userAnswer === question.correctAnswer;
-                      return (
-                        <div
-                          key={question.id}
-                          className={`p-4 rounded-lg border-2 text-left ${
-                            isCorrect
-                              ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                              : "border-red-500 bg-red-50 dark:bg-red-900/20"
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            {isCorrect ? (
-                              <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
-                            ) : (
-                              <XCircle className="h-6 w-6 text-red-500 mt-1 flex-shrink-0" />
-                            )}
-                            <div className="flex-1">
-                              <p className="font-medium dark:text-white mb-2">
-                                {index + 1}. {question.question}
-                              </p>
-                              <p className={`text-sm mb-2 ${isCorrect ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>
-                                Your answer: {question.options[userAnswer]}
-                              </p>
-                              {!isCorrect && (
-                                <p className="text-sm text-green-700 dark:text-green-400 mb-2">
-                                  Correct answer: {question.options[question.correctAnswer]}
-                                </p>
-                              )}
-                              <p className="text-sm text-gray-600 dark:text-gray-400">{question.explanation}</p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <motion.button
-                    onClick={resetQuiz}
-                    className="flex items-center gap-2 mx-auto px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg font-medium hover:from-pink-600 hover:to-purple-700 transition-all duration-300"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <RotateCcw className="h-5 w-5" />
-                    Take New Quiz
-                  </motion.button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
+                    <motion.button
+                      onClick={resetQuiz}
+                      className="mx-auto flex items-center gap-2 rounded-full border border-pink-500 bg-pink-500 px-6 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-white transition-colors hover:bg-pink-600"
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      <RotateCcw className="h-5 w-5" />
+                      Take New Quiz
+                    </motion.button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+        </section>
       </div>
     </Layout>
   );

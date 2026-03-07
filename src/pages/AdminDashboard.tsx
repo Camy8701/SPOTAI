@@ -27,6 +27,8 @@ import {
   BookOpen,
   Headphones,
   Upload,
+  Images,
+  Sparkles,
 } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
@@ -60,7 +62,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
-type Tab = "analytics" | "posts" | "users" | "quiz" | "freebies";
+type Tab = "analytics" | "posts" | "users" | "quiz" | "freebies" | "images" | "prompts";
 
 // ─── Analytics / Overview Tab ───
 function AnalyticsOverviewTab() {
@@ -1096,6 +1098,553 @@ function FreebiesTab() {
   );
 }
 
+// ─── Image Library Tab ───
+function ImagesTab() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [items, setItems] = useState<any[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    image_url: "",
+    thumbnail_url: "",
+    category: "general",
+    collection: "default",
+    orientation: "landscape",
+    tags: "",
+    is_featured: false,
+    sort_order: 0,
+  });
+
+  const load = () => {
+    supabase
+      .from("image_library_items")
+      .select("*")
+      .order("sort_order", { ascending: false })
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data) setItems(data);
+      });
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const categories = useMemo(() => {
+    const all = new Set<string>();
+    items.forEach((item) => {
+      if (item.category) all.add(item.category);
+    });
+    return ["all", ...Array.from(all)];
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const keyword = `${item.title} ${item.description || ""} ${item.category || ""} ${item.collection || ""} ${(item.tags || []).join(" ")}`.toLowerCase();
+      const matchesSearch = keyword.includes(search.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [items, search, categoryFilter]);
+
+  const openCreate = () => {
+    setEditingItem(null);
+    setForm({
+      title: "",
+      description: "",
+      image_url: "",
+      thumbnail_url: "",
+      category: "general",
+      collection: "default",
+      orientation: "landscape",
+      tags: "",
+      is_featured: false,
+      sort_order: 0,
+    });
+    setDialogOpen(true);
+  };
+
+  const openEdit = (item: any) => {
+    setEditingItem(item);
+    setForm({
+      title: item.title || "",
+      description: item.description || "",
+      image_url: item.image_url || "",
+      thumbnail_url: item.thumbnail_url || "",
+      category: item.category || "general",
+      collection: item.collection || "default",
+      orientation: item.orientation || "landscape",
+      tags: (item.tags || []).join(", "),
+      is_featured: !!item.is_featured,
+      sort_order: item.sort_order || 0,
+    });
+    setDialogOpen(true);
+  };
+
+  const save = async () => {
+    if (!form.title || !form.image_url) {
+      toast({ title: "Title and image URL are required", variant: "destructive" });
+      return;
+    }
+
+    const payload = {
+      title: form.title,
+      description: form.description || null,
+      image_url: form.image_url,
+      thumbnail_url: form.thumbnail_url || null,
+      category: form.category || "general",
+      collection: form.collection || "default",
+      orientation: form.orientation || "landscape",
+      tags: form.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+      is_featured: form.is_featured,
+      sort_order: Number(form.sort_order) || 0,
+    };
+
+    if (editingItem) {
+      const { error } = await supabase.from("image_library_items").update(payload).eq("id", editingItem.id);
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Image updated" });
+    } else {
+      const { error } = await supabase.from("image_library_items").insert({
+        ...payload,
+        created_by: user?.id,
+      });
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Image added" });
+    }
+
+    setDialogOpen(false);
+    load();
+  };
+
+  const deleteItem = async (id: string) => {
+    const { error } = await supabase.from("image_library_items").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Image deleted" });
+    load();
+  };
+
+  const uploadImage = async (file: File, onDone: (url: string) => void) => {
+    const path = `image-library/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("media").upload(path, file);
+    if (error) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
+    onDone(pub.publicUrl);
+    toast({ title: "Image uploaded" });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-2xl font-black tracking-tight uppercase">Manage Image Library ({filteredItems.length})</h2>
+        <Button onClick={openCreate} className="rounded-full">+ Add Image</Button>
+      </div>
+
+      <div className="flex flex-col gap-3 md:flex-row">
+        <Input placeholder="Search by title, category, tags..." value={search} onChange={(e) => setSearch(e.target.value)} className="md:max-w-md" />
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-full md:w-[220px]">
+            <SelectValue placeholder="Filter by category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((category) => (
+              <SelectItem key={category} value={category}>
+                {category}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[82vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingItem ? "Edit Image Item" : "Add Image Item"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            <Textarea placeholder="Description" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <Input placeholder="Category (e.g. abstract)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+              <Input placeholder="Collection (e.g. hero-set)" value={form.collection} onChange={(e) => setForm({ ...form, collection: e.target.value })} />
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <Select value={form.orientation} onValueChange={(v) => setForm({ ...form, orientation: v })}>
+                <SelectTrigger><SelectValue placeholder="Orientation" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="landscape">Landscape</SelectItem>
+                  <SelectItem value="portrait">Portrait</SelectItem>
+                  <SelectItem value="square">Square</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={form.is_featured ? "yes" : "no"}
+                onValueChange={(v) => setForm({ ...form, is_featured: v === "yes" })}
+              >
+                <SelectTrigger><SelectValue placeholder="Featured" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no">Not Featured</SelectItem>
+                  <SelectItem value="yes">Featured</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                placeholder="Sort Order"
+                value={form.sort_order}
+                onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) || 0 })}
+              />
+            </div>
+
+            <Input
+              placeholder="Tags (comma separated)"
+              value={form.tags}
+              onChange={(e) => setForm({ ...form, tags: e.target.value })}
+            />
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">Primary Image URL</label>
+              <div className="flex gap-2">
+                <Input placeholder="https://..." value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="flex-1" />
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadImage(file, (url) => setForm((f) => ({ ...f, image_url: url })));
+                    }}
+                  />
+                  <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors">
+                    <Upload className="h-4 w-4 mr-1" /> Upload
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">Thumbnail URL (optional)</label>
+              <Input placeholder="https://..." value={form.thumbnail_url} onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })} />
+            </div>
+
+            <Button onClick={save} className="w-full">{editingItem ? "Update Image" : "Create Image"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Preview</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Collection</TableHead>
+              <TableHead>Featured</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredItems.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell>
+                  <img src={item.thumbnail_url || item.image_url} alt={item.title} className="h-12 w-16 rounded-md object-cover border border-border" />
+                </TableCell>
+                <TableCell className="font-medium max-w-[220px] truncate">{item.title}</TableCell>
+                <TableCell className="capitalize">{item.category}</TableCell>
+                <TableCell className="capitalize">{item.collection}</TableCell>
+                <TableCell>
+                  {item.is_featured ? <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white">Yes</Badge> : <Badge variant="secondary">No</Badge>}
+                </TableCell>
+                <TableCell className="text-right space-x-2">
+                  <Button size="sm" variant="outline" onClick={() => openEdit(item)}>Edit</Button>
+                  <Button size="sm" variant="destructive" onClick={() => deleteItem(item.id)}>Delete</Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {filteredItems.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  No image items yet. Add your first image asset.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+// ─── Prompt Library Tab ───
+function PromptsTab() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [items, setItems] = useState<any[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    prompt_text: "",
+    category: "general",
+    model: "any",
+    difficulty: "medium",
+    tags: "",
+    is_featured: false,
+    sort_order: 0,
+  });
+
+  const load = () => {
+    supabase
+      .from("prompt_library_items")
+      .select("*")
+      .order("is_featured", { ascending: false })
+      .order("sort_order", { ascending: false })
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data) setItems(data);
+      });
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const categories = useMemo(() => {
+    const all = new Set<string>();
+    items.forEach((item) => {
+      if (item.category) all.add(item.category);
+    });
+    return ["all", ...Array.from(all)];
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const keyword = `${item.title} ${item.description || ""} ${item.prompt_text || ""} ${(item.tags || []).join(" ")}`.toLowerCase();
+      const matchesSearch = keyword.includes(search.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [items, search, categoryFilter]);
+
+  const openCreate = () => {
+    setEditingItem(null);
+    setForm({
+      title: "",
+      description: "",
+      prompt_text: "",
+      category: "general",
+      model: "any",
+      difficulty: "medium",
+      tags: "",
+      is_featured: false,
+      sort_order: 0,
+    });
+    setDialogOpen(true);
+  };
+
+  const openEdit = (item: any) => {
+    setEditingItem(item);
+    setForm({
+      title: item.title || "",
+      description: item.description || "",
+      prompt_text: item.prompt_text || "",
+      category: item.category || "general",
+      model: item.model || "any",
+      difficulty: item.difficulty || "medium",
+      tags: (item.tags || []).join(", "),
+      is_featured: !!item.is_featured,
+      sort_order: item.sort_order || 0,
+    });
+    setDialogOpen(true);
+  };
+
+  const save = async () => {
+    if (!form.title || !form.prompt_text) {
+      toast({ title: "Title and prompt text are required", variant: "destructive" });
+      return;
+    }
+
+    const payload = {
+      title: form.title,
+      description: form.description || null,
+      prompt_text: form.prompt_text,
+      category: form.category || "general",
+      model: form.model || "any",
+      difficulty: form.difficulty || "medium",
+      tags: form.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+      is_featured: form.is_featured,
+      sort_order: Number(form.sort_order) || 0,
+    };
+
+    if (editingItem) {
+      const { error } = await supabase.from("prompt_library_items").update(payload).eq("id", editingItem.id);
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Prompt updated" });
+    } else {
+      const { error } = await supabase.from("prompt_library_items").insert({
+        ...payload,
+        created_by: user?.id,
+      });
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Prompt created" });
+    }
+
+    setDialogOpen(false);
+    load();
+  };
+
+  const deleteItem = async (id: string) => {
+    const { error } = await supabase.from("prompt_library_items").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Prompt deleted" });
+    load();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-2xl font-black tracking-tight uppercase">Manage Prompt Library ({filteredItems.length})</h2>
+        <Button onClick={openCreate} className="rounded-full">+ Add Prompt</Button>
+      </div>
+
+      <div className="flex flex-col gap-3 md:flex-row">
+        <Input placeholder="Search by title, use case, tags..." value={search} onChange={(e) => setSearch(e.target.value)} className="md:max-w-md" />
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-full md:w-[220px]">
+            <SelectValue placeholder="Filter by category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((category) => (
+              <SelectItem key={category} value={category}>
+                {category}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[82vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingItem ? "Edit Prompt Item" : "Add Prompt Item"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            <Textarea placeholder="Description" rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <Textarea placeholder="Prompt text" rows={8} value={form.prompt_text} onChange={(e) => setForm({ ...form, prompt_text: e.target.value })} />
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <Input placeholder="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+              <Input placeholder="Model (GPT-4o, Claude, etc.)" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
+              <Input placeholder="Difficulty" value={form.difficulty} onChange={(e) => setForm({ ...form, difficulty: e.target.value })} />
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <Input placeholder="Tags (comma separated)" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} />
+              <Input
+                type="number"
+                placeholder="Sort Order"
+                value={form.sort_order}
+                onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) || 0 })}
+              />
+            </div>
+
+            <Select
+              value={form.is_featured ? "yes" : "no"}
+              onValueChange={(v) => setForm({ ...form, is_featured: v === "yes" })}
+            >
+              <SelectTrigger><SelectValue placeholder="Featured status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no">Not Featured</SelectItem>
+                <SelectItem value="yes">Featured</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button onClick={save} className="w-full">{editingItem ? "Update Prompt" : "Create Prompt"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Model</TableHead>
+              <TableHead>Difficulty</TableHead>
+              <TableHead>Featured</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredItems.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium max-w-[280px] truncate">{item.title}</TableCell>
+                <TableCell className="capitalize">{item.category}</TableCell>
+                <TableCell>{item.model || "any"}</TableCell>
+                <TableCell className="capitalize">{item.difficulty || "medium"}</TableCell>
+                <TableCell>
+                  {item.is_featured ? <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white">Yes</Badge> : <Badge variant="secondary">No</Badge>}
+                </TableCell>
+                <TableCell className="text-right space-x-2">
+                  <Button size="sm" variant="outline" onClick={() => openEdit(item)}>Edit</Button>
+                  <Button size="sm" variant="destructive" onClick={() => deleteItem(item.id)}>Delete</Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {filteredItems.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  No prompts yet. Add your first prompt item.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Admin Dashboard ───
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -1122,6 +1671,8 @@ export default function AdminDashboard() {
     { label: "Users", key: "users", icon: Users },
     { label: "Quiz", key: "quiz", icon: HelpCircle },
     { label: "Freebies", key: "freebies", icon: Gift },
+    { label: "Images", key: "images", icon: Images },
+    { label: "Prompts", key: "prompts", icon: Sparkles },
   ];
 
   const tabContent: Record<Tab, JSX.Element> = {
@@ -1130,6 +1681,8 @@ export default function AdminDashboard() {
     users: <UsersTab />,
     quiz: <QuizTab />,
     freebies: <FreebiesTab />,
+    images: <ImagesTab />,
+    prompts: <PromptsTab />,
   };
 
   return (

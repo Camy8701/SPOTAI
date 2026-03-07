@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, ShoppingBag, TrendingUp, MessageCircle, Users, UsersRound, Newspaper, Gamepad2, Gift, BookOpen, Headphones, ChevronDown } from "lucide-react";
+import { Home, ShoppingBag, TrendingUp, MessageCircle, Users, UsersRound, Newspaper, Gamepad2, Gift, BookOpen, Headphones, ChevronDown, Images, Sparkles } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -12,6 +12,8 @@ const sidebarItems = [
   { name: "Groups", icon: UsersRound, path: "/groups", color: "from-pink-500 to-rose-600" },
   { name: "News & Articles", icon: Newspaper, path: "/library?section=news_articles", color: "from-amber-500 to-orange-600" },
   { name: "Games", icon: Gamepad2, path: "/quiz", color: "from-indigo-500 to-purple-600" },
+  { name: "Image Library", icon: Images, path: "/image-library", color: "from-sky-500 to-cyan-600" },
+  { name: "Prompt Library", icon: Sparkles, path: "/prompt-library", color: "from-violet-500 to-purple-600" },
 ];
 
 const freebiesSubItems = [

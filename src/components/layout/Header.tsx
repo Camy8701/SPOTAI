@@ -51,15 +51,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
           </button>
 
           <Link to="/" className="flex items-center gap-2">
-            <span
-              className="text-xl font-extrabold tracking-tight"
-              style={{
-                background: "linear-gradient(135deg, hsl(217 91% 60%), hsl(271 81% 56%), hsl(330 81% 60%), hsl(25 95% 53%))",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
+            <span className="spotai-wordmark text-xl font-extrabold tracking-tight">
               SpotAI
             </span>
           </Link>
@@ -77,10 +69,10 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
               YouTube
             </a>
             <a
-              href="https://ko-fi.com/utopai"
+              href="https://ko-fi.com/spotai"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center text-foreground font-medium whitespace-nowrap hover:text-green-600 transition-colors text-sm"
+              className="flex items-center text-foreground font-medium whitespace-nowrap hover:text-orange-600 transition-colors text-sm"
             >
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z" />
@@ -159,7 +151,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
             <motion.div whileHover={{ scale: 1.05, y: -1 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/tip-calculator"
-                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-md whitespace-nowrap h-10"
+                className="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 whitespace-nowrap h-10 transition-colors"
               >
                 <Calculator size={16} />
                 <span>Tip Calculator</span>
@@ -169,7 +161,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
             <motion.div whileHover={{ scale: 1.05, y: -1 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/character-counter"
-                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-md whitespace-nowrap h-10"
+                className="bg-violet-500 hover:bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 whitespace-nowrap h-10 transition-colors"
               >
                 <Type size={16} />
                 <span>Character Counter</span>
@@ -179,7 +171,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
             <motion.div whileHover={{ scale: 1.05, y: -1 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/file-converter"
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-md whitespace-nowrap h-10"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 whitespace-nowrap h-10 transition-colors"
               >
                 <Upload size={16} />
                 <span>File Converter</span>
@@ -219,13 +211,13 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Utility Tools
             </span>
-            <Link to="/tip-calculator" className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 shadow-md whitespace-nowrap">
+            <Link to="/tip-calculator" className="bg-sky-500 hover:bg-sky-600 text-white px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 whitespace-nowrap transition-colors">
               <Calculator size={14} /><span>Tip Calculator</span>
             </Link>
-            <Link to="/character-counter" className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 shadow-md whitespace-nowrap">
+            <Link to="/character-counter" className="bg-violet-500 hover:bg-violet-600 text-white px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 whitespace-nowrap transition-colors">
               <Type size={14} /><span>Character Counter</span>
             </Link>
-            <Link to="/file-converter" className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 shadow-md whitespace-nowrap">
+            <Link to="/file-converter" className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 whitespace-nowrap transition-colors">
               <Upload size={14} /><span>File Converter</span>
             </Link>
           </div>

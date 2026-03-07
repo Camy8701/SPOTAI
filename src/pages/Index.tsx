@@ -371,20 +371,34 @@ const Index = () => {
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-              <motion.button className="bg-blue-600 hover:bg-blue-700 text-white p-8 rounded-2xl shadow-lg text-center group" whileHover={{ scale: 1.05, y: -5 }} whileTap={{ scale: 0.95 }}>
+              <motion.button
+                className="rounded-2xl border border-border bg-card p-8 text-center shadow-sm transition-colors hover:bg-blue-50"
+                whileHover={{ scale: 1.03, y: -3 }}
+                whileTap={{ scale: 0.97 }}
+              >
                 <div className="text-4xl mb-4">📧</div>
-                <h3 className="text-xl font-bold mb-2">Contact Us</h3>
-                <p className="text-blue-100 group-hover:text-white transition-colors">Get in touch with our team</p>
+                <h3 className="text-xl font-bold mb-2 text-foreground">Contact Us</h3>
+                <p className="text-muted-foreground">Get in touch with our team</p>
               </motion.button>
-              <motion.button className="bg-green-600 hover:bg-green-700 text-white p-8 rounded-2xl shadow-lg text-center group" whileHover={{ scale: 1.05, y: -5 }} whileTap={{ scale: 0.95 }} onClick={() => window.open("https://ko-fi.com/utopai", "_blank")}>
+              <motion.button
+                className="rounded-2xl border border-border bg-card p-8 text-center shadow-sm transition-colors hover:bg-orange-50"
+                whileHover={{ scale: 1.03, y: -3 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => window.open("https://ko-fi.com/spotai", "_blank")}
+              >
                 <div className="text-4xl mb-4">☕</div>
-                <h3 className="text-xl font-bold mb-2">Support Us</h3>
-                <p className="text-green-100 group-hover:text-white transition-colors">Help us create more content</p>
+                <h3 className="text-xl font-bold mb-2 text-foreground">Support Us</h3>
+                <p className="text-muted-foreground">Help us create more content</p>
               </motion.button>
-              <motion.button className="bg-red-600 hover:bg-red-700 text-white p-8 rounded-2xl shadow-lg text-center group" whileHover={{ scale: 1.05, y: -5 }} whileTap={{ scale: 0.95 }} onClick={() => window.open("https://www.youtube.com/channel/UC6D5mUGNBRB80j_5A-QkazA", "_blank")}>
+              <motion.button
+                className="rounded-2xl border border-border bg-card p-8 text-center shadow-sm transition-colors hover:bg-red-50"
+                whileHover={{ scale: 1.03, y: -3 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => window.open("https://www.youtube.com/channel/UC6D5mUGNBRB80j_5A-QkazA", "_blank")}
+              >
                 <div className="text-4xl mb-4">📺</div>
-                <h3 className="text-xl font-bold mb-2">YouTube</h3>
-                <p className="text-red-100 group-hover:text-white transition-colors">Watch our latest videos</p>
+                <h3 className="text-xl font-bold mb-2 text-foreground">YouTube</h3>
+                <p className="text-muted-foreground">Watch our latest videos</p>
               </motion.button>
             </div>
           </div>
