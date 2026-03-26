@@ -61,6 +61,7 @@ const App = () => (
             <Route path="/freebies/podcasts" element={<PodcastLibrary />} />
             <Route path="/image-library" element={<ImageLibrary />} />
             <Route path="/prompt-library" element={<PromptLibrary />} />
+            <Route path="/notifications" element={<Notifications />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
