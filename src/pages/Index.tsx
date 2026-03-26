@@ -299,7 +299,7 @@ const Index = () => {
                         <span className="bg-purple-500 text-white rounded-full px-3 py-1 text-xs font-semibold">{article.category}</span>
                         <span className="text-white text-xs bg-black/50 rounded-full px-2 py-1">📅 {new Date(article.published_at || article.created_at).toLocaleDateString()}</span>
                       </div>
-                    </div>
+                    </Link>
                     <div className="p-4 sm:p-6 space-y-4 flex-1 flex flex-col justify-between">
                       <div className="flex-1">
                         <h3 className="text-lg sm:text-xl font-bold group-hover:text-purple-600 transition-colors text-foreground line-clamp-2">{article.title}</h3>
