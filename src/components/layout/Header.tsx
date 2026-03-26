@@ -4,6 +4,7 @@ import { Search, Calculator, Type, Upload, X, Moon, Sun, LogOut, LayoutDashboard
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
+import NotificationBell from "@/components/NotificationBell";
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
