@@ -28,31 +28,18 @@ const Popular = () => {
   const { data: posts, isLoading } = useQuery({
     queryKey: ["popular-posts"],
     queryFn: async () => {
-      const { data: allPosts, error } = await supabase
-        .from("blog_posts")
-        .select("*")
-        .eq("status", "published")
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.rpc("get_popular_posts");
 
       if (error) throw error;
 
-      // Get counts for each post (weighted: likes x2, comments x3)
-      const postsWithCounts = await Promise.all(
-        (allPosts || []).map(async (post) => {
-          const [{ count: likeCount }, { count: commentCount }] = await Promise.all([
-            supabase.from("likes").select("*", { count: "exact", head: true }).eq("post_id", post.id),
-            supabase.from("comments").select("*", { count: "exact", head: true }).eq("post_id", post.id),
-          ]);
-          const likes = likeCount || 0;
-          const comments = commentCount || 0;
-          const recencyBonus = getTimeDecayBonus(post.published_at, post.created_at);
-          const score = (likes * 2) + (comments * 3) + recencyBonus;
-          const isTrending = recencyBonus >= 7 && (likes + comments) >= 1;
-          return { ...post, likeCount: likes, commentCount: comments, score, isTrending };
-        })
-      );
-
-      return postsWithCounts.sort((a, b) => b.score - a.score);
+      return (data || []).map((post) => {
+        const likes = Number(post.like_count) || 0;
+        const comments = Number(post.comment_count) || 0;
+        const recencyBonus = getTimeDecayBonus(post.published_at, post.created_at);
+        const score = (likes * 2) + (comments * 3) + recencyBonus;
+        const isTrending = recencyBonus >= 7 && (likes + comments) >= 1;
+        return { ...post, likeCount: likes, commentCount: comments, score, isTrending };
+      }).sort((a, b) => b.score - a.score);
     },
   });
 
