@@ -97,37 +97,41 @@ export default function PromptLibrary() {
             </div>
 
             <div className="mt-5 space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setActiveCategory(category)}
-                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors ${
-                      activeCategory === category
-                        ? "border-violet-500 bg-violet-500 text-white"
-                        : "border-input bg-background text-muted-foreground hover:border-violet-300 hover:text-violet-700"
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
+              {categories.length > 1 && (
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setActiveCategory(category)}
+                      className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+                        activeCategory === category
+                          ? "border-violet-500 bg-violet-500 text-white"
+                          : "border-input bg-background text-muted-foreground hover:border-violet-300 hover:text-violet-700"
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-              <div className="flex flex-wrap gap-2">
-                {models.map((model) => (
-                  <button
-                    key={model}
-                    onClick={() => setActiveModel(model)}
-                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors ${
-                      activeModel === model
-                        ? "border-sky-500 bg-sky-500 text-white"
-                        : "border-input bg-background text-muted-foreground hover:border-sky-300 hover:text-sky-700"
-                    }`}
-                  >
-                    {model}
-                  </button>
-                ))}
-              </div>
+              {models.length > 1 && (
+                <div className="flex flex-wrap gap-2">
+                  {models.map((model) => (
+                    <button
+                      key={model}
+                      onClick={() => setActiveModel(model)}
+                      className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+                        activeModel === model
+                          ? "border-sky-500 bg-sky-500 text-white"
+                          : "border-input bg-background text-muted-foreground hover:border-sky-300 hover:text-sky-700"
+                      }`}
+                    >
+                      {model}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </section>
