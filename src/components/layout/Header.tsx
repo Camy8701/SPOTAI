@@ -4,6 +4,7 @@ import { Search, Calculator, Type, Upload, X, Moon, Sun, LogOut, LayoutDashboard
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
+import NotificationBell from "@/components/NotificationBell";
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
@@ -135,6 +136,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
 
           {user ? (
             <div className="hidden md:flex items-center gap-2">
+              <NotificationBell />
               <Link to="/dashboard" className="p-2 rounded-md hover:bg-secondary transition-colors" title="My Dashboard">
                 <LayoutDashboard className="h-4 w-4" />
               </Link>
