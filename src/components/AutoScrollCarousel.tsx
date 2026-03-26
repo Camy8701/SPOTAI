@@ -54,12 +54,13 @@ export default function AutoScrollCarousel({ posts, speed = 20, className = "", 
             transition={{ duration: 0.3 }}
           >
             <div className="absolute inset-0 bg-black rounded-lg overflow-hidden m-[1px]">
-              <Link to={`/post/${post.slug}`} className="block w-full h-full">
+              <Link to={`/post/${post.slug}`} className="block w-full h-full cursor-pointer group/img">
                 <img
                   src={post.featured_image || "/placeholder.svg"}
                   alt={post.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
                 />
+                <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors duration-300" />
               </Link>
               {/* Overlay with title and buttons */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-6">
