@@ -136,6 +136,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
 
           {user ? (
             <div className="hidden md:flex items-center gap-2">
+              <NotificationBell />
               <Link to="/dashboard" className="p-2 rounded-md hover:bg-secondary transition-colors" title="My Dashboard">
                 <LayoutDashboard className="h-4 w-4" />
               </Link>
