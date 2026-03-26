@@ -91,7 +91,7 @@ const Index = () => {
       {/* Featured Content - Hero Image */}
       {hero ? (
         <AnimateInView className="max-w-[84rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="relative overflow-hidden rounded-lg group" style={{ aspectRatio: '16/9', maxHeight: '52.5rem' }}>
+          <Link to={`/post/${hero.slug}`} className="block relative overflow-hidden rounded-lg group" style={{ aspectRatio: '16/9', maxHeight: '52.5rem' }}>
             <img
               src={hero.featured_image || "/placeholder.svg"}
               alt={hero.title}
@@ -119,7 +119,7 @@ const Index = () => {
                 </motion.button>
               )}
             </div>
-          </div>
+          </Link>
         </AnimateInView>
       ) : (
         <div className="max-w-7xl mx-auto px-4 py-12 text-center text-muted-foreground">
@@ -161,12 +161,12 @@ const Index = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                 {featuredCollections.map((post) => (
                   <div key={post.id} className="bg-card rounded-lg shadow-md overflow-hidden group cursor-pointer flex flex-col card-hover">
-                    <div className="relative overflow-hidden h-48 sm:h-64">
+                    <Link to={`/post/${post.slug}`} className="block relative overflow-hidden h-48 sm:h-64">
                       <img src={post.featured_image || "/placeholder.svg"} alt={post.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
                       <div className="absolute top-4 left-4">
                         <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold">{post.category}</span>
                       </div>
-                    </div>
+                    </Link>
                     <div className="p-4 sm:p-6 space-y-4 flex-1 flex flex-col justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
@@ -240,9 +240,9 @@ const Index = () => {
                   <p className="col-span-full text-center text-muted-foreground py-8">No AI tools posts yet.</p>
                 ) : aiToolsPosts.map((post) => (
                   <div key={post.id} className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col card-hover">
-                    <div className="relative h-48 overflow-hidden">
+                    <Link to={`/post/${post.slug}`} className="block relative h-48 overflow-hidden">
                       <img src={post.featured_image || "/placeholder.svg"} alt={post.title} className="w-full h-full object-cover" loading="lazy" />
-                    </div>
+                    </Link>
                     <div className="p-4 flex-1 flex flex-col">
                       <span className="bg-secondary text-muted-foreground rounded-full px-3 py-1 text-sm font-medium self-start mb-3">{post.category}</span>
                       <h3 className="text-lg sm:text-xl font-semibold mb-3 text-foreground">{post.title}</h3>
@@ -293,13 +293,13 @@ const Index = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                 {newsArticles.map((article) => (
                   <div key={article.id} className="bg-card rounded-lg shadow-md overflow-hidden group flex flex-col card-hover">
-                    <div className="relative overflow-hidden aspect-[4/3] h-48">
+                    <Link to={`/post/${article.slug}`} className="block relative overflow-hidden aspect-[4/3] h-48">
                       <img src={article.featured_image || "/placeholder.svg"} alt={article.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
                       <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
                         <span className="bg-purple-500 text-white rounded-full px-3 py-1 text-xs font-semibold">{article.category}</span>
                         <span className="text-white text-xs bg-black/50 rounded-full px-2 py-1">📅 {new Date(article.published_at || article.created_at).toLocaleDateString()}</span>
                       </div>
-                    </div>
+                    </Link>
                     <div className="p-4 sm:p-6 space-y-4 flex-1 flex flex-col justify-between">
                       <div className="flex-1">
                         <h3 className="text-lg sm:text-xl font-bold group-hover:text-purple-600 transition-colors text-foreground line-clamp-2">{article.title}</h3>
