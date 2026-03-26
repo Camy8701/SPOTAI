@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/layout/Layout";
-import { TrendingUp, Heart, MessageCircle, Eye } from "lucide-react";
+import { TrendingUp, Heart, MessageCircle, Flame } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 const topicColors: Record<string, string> = {
   story: "from-blue-500 to-cyan-500",
@@ -13,11 +14,20 @@ const topicColors: Record<string, string> = {
   opinion: "from-amber-500 to-yellow-500",
 };
 
+const getTimeDecayBonus = (publishedAt: string | null, createdAt: string) => {
+  const date = new Date(publishedAt || createdAt);
+  const hoursAgo = (Date.now() - date.getTime()) / (1000 * 60 * 60);
+  // Posts < 24h get max bonus of 10, decays over 7 days
+  if (hoursAgo < 24) return 10;
+  if (hoursAgo < 72) return 7;
+  if (hoursAgo < 168) return 3;
+  return 0;
+};
+
 const Popular = () => {
   const { data: posts, isLoading } = useQuery({
     queryKey: ["popular-posts"],
     queryFn: async () => {
-      // Get posts with their like and comment counts
       const { data: allPosts, error } = await supabase
         .from("blog_posts")
         .select("*")
@@ -26,14 +36,19 @@ const Popular = () => {
 
       if (error) throw error;
 
-      // Get counts for each post
+      // Get counts for each post (weighted: likes x2, comments x3)
       const postsWithCounts = await Promise.all(
         (allPosts || []).map(async (post) => {
           const [{ count: likeCount }, { count: commentCount }] = await Promise.all([
             supabase.from("likes").select("*", { count: "exact", head: true }).eq("post_id", post.id),
             supabase.from("comments").select("*", { count: "exact", head: true }).eq("post_id", post.id),
           ]);
-          return { ...post, likeCount: likeCount || 0, commentCount: commentCount || 0, score: (likeCount || 0) + (commentCount || 0) };
+          const likes = likeCount || 0;
+          const comments = commentCount || 0;
+          const recencyBonus = getTimeDecayBonus(post.published_at, post.created_at);
+          const score = (likes * 2) + (comments * 3) + recencyBonus;
+          const isTrending = recencyBonus >= 7 && (likes + comments) >= 1;
+          return { ...post, likeCount: likes, commentCount: comments, score, isTrending };
         })
       );
 
@@ -89,7 +104,14 @@ const Popular = () => {
                     >
                       <span className="text-2xl font-black text-muted-foreground/40 w-8">#{idx + 1}</span>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground truncate">{post.title}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-foreground truncate">{post.title}</h3>
+                          {post.isTrending && (
+                            <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 gap-1 shrink-0">
+                              <Flame size={12} /> Trending
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground truncate">{post.excerpt}</p>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground flex-shrink-0">
