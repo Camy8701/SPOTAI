@@ -53,29 +53,26 @@ export default function AutoScrollCarousel({ posts, speed = 20, className = "", 
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="absolute inset-0 bg-black rounded-lg overflow-hidden m-[1px]">
-              <Link to={`/post/${post.slug}`} className="block w-full h-full cursor-pointer group/img">
-                <img
-                  src={post.featured_image || "/placeholder.svg"}
-                  alt={post.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors duration-300" />
-              </Link>
+            <Link to={`/post/${post.slug}`} className="absolute inset-0 bg-black rounded-lg overflow-hidden m-[1px] cursor-pointer group/img block">
+              <img
+                src={post.featured_image || "/placeholder.svg"}
+                alt={post.title}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors duration-300" />
               {/* Overlay with title and buttons */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-6">
                 <h3 className="text-white font-bold text-xl mb-1 drop-shadow-lg line-clamp-2">{post.title}</h3>
                 {post.excerpt && <p className="text-gray-300 text-sm mb-3 line-clamp-1">{post.excerpt}</p>}
                 <div className="flex gap-3">
-                  <Link to={`/post/${post.slug}`} onClick={(e) => e.stopPropagation()}>
-                    <motion.button
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm shadow-lg"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      Read
-                    </motion.button>
-                  </Link>
+                  <motion.button
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm shadow-lg"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Read
+                  </motion.button>
                   {post.audio_url && onListen && (
                     <motion.button
                       className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg font-medium text-sm shadow-lg"
@@ -88,7 +85,7 @@ export default function AutoScrollCarousel({ posts, speed = 20, className = "", 
                   )}
                 </div>
               </div>
-            </div>
+            </Link>
           </motion.div>
         ))}
       </motion.div>
