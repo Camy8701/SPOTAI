@@ -91,7 +91,7 @@ const Index = () => {
       {/* Featured Content - Hero Image */}
       {hero ? (
         <AnimateInView className="max-w-[84rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="relative overflow-hidden rounded-lg group" style={{ aspectRatio: '16/9', maxHeight: '52.5rem' }}>
+          <Link to={`/post/${hero.slug}`} className="block relative overflow-hidden rounded-lg group" style={{ aspectRatio: '16/9', maxHeight: '52.5rem' }}>
             <img
               src={hero.featured_image || "/placeholder.svg"}
               alt={hero.title}
