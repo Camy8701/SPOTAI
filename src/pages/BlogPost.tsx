@@ -48,6 +48,7 @@ const BlogPost = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [authorName, setAuthorName] = useState<string>("SpotAI Team");
+  const [relatedPosts, setRelatedPosts] = useState<BlogPostData[]>([]);
 
   useEffect(() => {
     if (slug) fetchPost();
@@ -85,6 +86,18 @@ const BlogPost = () => {
         .single();
       if (profile?.display_name) setAuthorName(profile.display_name);
     }
+
+    // Fetch related posts from same category
+    const { data: related } = await supabase
+      .from("blog_posts")
+      .select("id,title,slug,featured_image,category,excerpt,published_at,created_at,content,tags,reading_time_minutes,author_id")
+      .eq("status", "published")
+      .eq("category", data.category)
+      .neq("id", data.id)
+      .order("created_at", { ascending: false })
+      .limit(3);
+    if (related) setRelatedPosts(related as BlogPostData[]);
+
     setLoading(false);
   };
 
@@ -412,6 +425,42 @@ const BlogPost = () => {
             )}
           </div>
         </section>
+
+        {/* Related Posts */}
+        {relatedPosts.length > 0 && (
+          <section className="border-t border-border pt-10 mt-10">
+            <h2 className="text-2xl font-bold text-foreground mb-6">Related Posts</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {relatedPosts.map((rp) => (
+                <Link to={`/post/${rp.slug}`} key={rp.id} className="group">
+                  <div className="bg-secondary rounded-xl overflow-hidden transition-transform duration-300 group-hover:-translate-y-1">
+                    {rp.featured_image && (
+                      <div className="aspect-video overflow-hidden">
+                        <img
+                          src={rp.featured_image}
+                          alt={rp.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-xs font-semibold uppercase">
+                        {rp.category}
+                      </span>
+                      <h3 className="font-semibold text-foreground mt-2 line-clamp-2 group-hover:text-primary transition-colors">
+                        {rp.title}
+                      </h3>
+                      {rp.excerpt && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{rp.excerpt}</p>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </article>
     </Layout>
   );

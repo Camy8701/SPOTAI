@@ -11,16 +11,6 @@ import { supabase } from "@/integrations/supabase/client";
 
 // removed static carouselImages - now using DB data
 
-const staticAiTools = [
-  {
-    title: "ChatGPT - Your AI Assistant",
-    description: "Engage in natural language conversations with an AI that understands context.",
-    category: "AI Chatbot",
-    features: ["Natural Language", "Contextual Understanding", "Versatile"],
-    date: "March 2, 2026",
-    url: "https://chat.openai.com",
-  },
-];
 
 const Index = () => {
   const [heroPosts, setHeroPosts] = useState<any[]>([]);
@@ -210,37 +200,9 @@ const Index = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {/* Static AI tool card */}
-              {staticAiTools.map((tool, i) => (
-                <div key={i} className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col card-hover">
-                  <div className="relative h-48 bg-secondary flex items-center justify-center">
-                    <div className="w-8 h-8 border-2 border-muted-foreground rounded flex items-center justify-center">
-                      <div className="w-4 h-4 border border-muted-foreground" />
-                    </div>
-                  </div>
-                  <div className="p-4 flex-1 flex flex-col">
-                    <div className="flex justify-between items-start mb-3">
-                      <span className="bg-secondary text-muted-foreground rounded-full px-3 py-1 text-sm font-medium">{tool.category}</span>
-                      <span className="text-xs text-muted-foreground">{tool.date}</span>
-                    </div>
-                    <h3 className="text-xl font-semibold mb-3 text-foreground">{tool.title}</h3>
-                    <p className="text-muted-foreground text-sm mb-4 flex-1">{tool.description}</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {tool.features.map((feature, idx) => (
-                        <span key={idx} className="bg-secondary text-muted-foreground rounded-full px-3 py-1 text-sm">{feature}</span>
-                      ))}
-                    </div>
-                    <div className="flex gap-3 mt-auto">
-                      <a href={tool.url} target="_blank" rel="noopener noreferrer" className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg flex-1 text-center">
-                        Try Free
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* DB-driven AI tools posts */}
-              {aiToolsPosts.map((post) => (
+              {aiToolsPosts.length === 0 ? (
+                <p className="col-span-full text-center text-muted-foreground py-8">No AI tools posts yet.</p>
+              ) : aiToolsPosts.map((post) => (
                 <div key={post.id} className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col card-hover">
                   <div className="relative h-48 overflow-hidden">
                     <img src={post.featured_image || "/placeholder.svg"} alt={post.title} className="w-full h-full object-cover" loading="lazy" />
