@@ -711,6 +711,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_popular_posts: {
+        Args: never
+        Returns: {
+          category: string
+          comment_count: number
+          created_at: string
+          excerpt: string
+          featured_image: string
+          id: string
+          like_count: number
+          published_at: string
+          slug: string
+          status: string
+          title: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
