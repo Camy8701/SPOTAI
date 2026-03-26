@@ -119,7 +119,7 @@ const Index = () => {
                 </motion.button>
               )}
             </div>
-          </div>
+          </Link>
         </AnimateInView>
       ) : (
         <div className="max-w-7xl mx-auto px-4 py-12 text-center text-muted-foreground">
