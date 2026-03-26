@@ -27,6 +27,7 @@ import EbooksLibrary from "./pages/EbooksLibrary";
 import PodcastLibrary from "./pages/PodcastLibrary";
 import ImageLibrary from "./pages/ImageLibrary";
 import PromptLibrary from "./pages/PromptLibrary";
+import Notifications from "./pages/Notifications";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/freebies/podcasts" element={<PodcastLibrary />} />
             <Route path="/image-library" element={<ImageLibrary />} />
             <Route path="/prompt-library" element={<PromptLibrary />} />
+            <Route path="/notifications" element={<Notifications />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
