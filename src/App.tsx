@@ -27,6 +27,7 @@ import EbooksLibrary from "./pages/EbooksLibrary";
 import PodcastLibrary from "./pages/PodcastLibrary";
 import ImageLibrary from "./pages/ImageLibrary";
 import PromptLibrary from "./pages/PromptLibrary";
+import Notifications from "./pages/Notifications";
 
 const queryClient = new QueryClient();
 
