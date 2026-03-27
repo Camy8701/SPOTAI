@@ -35,7 +35,7 @@ const ResetPassword = () => {
       setError(null);
       await updatePassword(password);
       setSuccess(true);
-      setTimeout(() => navigate("/"), 2000);
+      setTimeout(() => navigate("/home"), 2000);
     } catch (err: any) {
       setError(err.message || "Failed to update password.");
     } finally {

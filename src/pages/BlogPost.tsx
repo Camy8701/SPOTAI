@@ -239,7 +239,7 @@ const BlogPost = () => {
         <div className="max-w-4xl mx-auto px-4 py-24 text-center">
           <h1 className="text-3xl font-bold text-foreground mb-4">Post Not Found</h1>
           <p className="text-muted-foreground mb-8">The post you're looking for doesn't exist.</p>
-          <Link to="/">
+          <Link to="/home">
             <Button>Back to Home</Button>
           </Link>
         </div>
@@ -252,7 +252,7 @@ const BlogPost = () => {
       <article className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
         {/* Back link */}
         <Link
-          to="/"
+          to="/home"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
           <ArrowLeft size={16} />

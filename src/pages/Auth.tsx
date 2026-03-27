@@ -73,7 +73,7 @@ const Auth = () => {
         setSuccess("Account created! Please check your email to verify your account.");
       } else {
         await signInWithEmail(email, password);
-        navigate("/");
+        navigate("/home");
       }
     } catch (err: any) {
       setError(err.message || `Failed to ${isSignUp ? "sign up" : "sign in"}.`);

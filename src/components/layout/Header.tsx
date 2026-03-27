@@ -67,7 +67,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
             <Menu className="h-5 w-5 text-foreground" />
           </button>
 
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/home" className="flex items-center gap-2">
             <span className="spotai-wordmark text-lg sm:text-xl font-extrabold tracking-tight">
               SpotAI
             </span>

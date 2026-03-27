@@ -2124,7 +2124,7 @@ export default function AdminDashboard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background gap-4">
         <p className="text-lg">Access denied. Admin privileges required.</p>
-        <Button onClick={() => navigate("/")} variant="outline"><ArrowLeft className="mr-2 h-4 w-4" /> Go Home</Button>
+        <Button onClick={() => navigate("/home")} variant="outline"><ArrowLeft className="mr-2 h-4 w-4" /> Go Home</Button>
       </div>
     );
   }
@@ -2156,7 +2156,7 @@ export default function AdminDashboard() {
       {/* Top Header Bar */}
       <header className="bg-background border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center h-14">
-          <button onClick={() => navigate("/")} className="mr-auto">
+          <button onClick={() => navigate("/home")} className="mr-auto">
             <span className="spotai-wordmark text-xl font-extrabold tracking-tight">
               SpotAI
             </span>
