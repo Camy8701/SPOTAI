@@ -88,19 +88,34 @@ const Onboarding = () => {
 
     setSaving(true);
 
-    const { error } = await supabase
+    const profilePayload = {
+      first_name: nextFirstName,
+      last_name: nextLastName || null,
+      display_name: nextDisplayName,
+      headline: nextHeadline || null,
+      bio: nextBio || null,
+      avatar_url: nextAvatarUrl,
+      google_auth_enabled: true,
+      onboarding_completed: true,
+    };
+
+    // Try update first (profile row may already exist from trigger)
+    const { data: updated, error: updateError } = await supabase
       .from("profiles")
-      .upsert({
-        user_id: user.id,
-        first_name: nextFirstName,
-        last_name: nextLastName || null,
-        display_name: nextDisplayName,
-        headline: nextHeadline || null,
-        bio: nextBio || null,
-        avatar_url: nextAvatarUrl,
-        google_auth_enabled: true,
-        onboarding_completed: true,
-      }, { onConflict: "user_id" });
+      .update(profilePayload)
+      .eq("user_id", user.id)
+      .select("id")
+      .maybeSingle();
+
+    let error = updateError;
+
+    // If no row was updated, insert instead
+    if (!error && !updated) {
+      const { error: insertError } = await supabase
+        .from("profiles")
+        .insert({ ...profilePayload, user_id: user.id });
+      error = insertError;
+    }
 
     if (error) {
       setSaving(false);

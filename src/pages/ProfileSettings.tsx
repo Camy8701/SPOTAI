@@ -56,15 +56,15 @@ const ProfileSettings = () => {
 
     const { error } = await supabase
       .from("profiles")
-      .upsert({
-        user_id: user.id,
+      .update({
         first_name: nextFirstName,
         last_name: lastName.trim() || null,
         display_name: nextDisplayName,
         headline: headline.trim() || null,
         bio: bio.trim() || null,
         avatar_url: getAvatarDataUrl(selectedAvatar),
-      }, { onConflict: "user_id" });
+      })
+      .eq("user_id", user.id);
 
     if (error) {
       setSaving(false);
