@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DEFAULT_AVATAR_ID, ProfileAvatarPicker, getAvatarDataUrlForId } from "@/components/auth/ProfileAvatarPicker";
 import CookieBanner from "@/components/CookieBanner";
+import LandingMascots from "@/components/landing/LandingMascots";
 
 const LandingPage = () => {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -14,6 +15,7 @@ const LandingPage = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -63,23 +65,33 @@ const LandingPage = () => {
       {/* Main content */}
       <div className="flex flex-1 flex-col lg:flex-row">
         {/* Left — branding & tagline */}
-        <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 lg:items-start lg:px-16 xl:px-24">
-          <span className="spotai-wordmark text-5xl font-extrabold tracking-tight md:text-6xl">
-            SpotAI
-          </span>
-          <h1
-            className="mt-6 max-w-md text-center text-3xl font-bold leading-tight tracking-tight text-foreground lg:text-left lg:text-5xl lg:leading-[1.1]"
-            style={{ fontFamily: '"Singo Sans", Georgia, serif' }}
-          >
-            Discover the world of{" "}
-            <span className="bg-gradient-to-r from-[hsl(var(--spotai-blue))] via-[hsl(var(--spotai-violet))] to-[hsl(var(--spotai-pink))] bg-clip-text text-transparent">
-              AI content
-            </span>
-            .
-          </h1>
-          <p className="mt-4 max-w-sm text-center text-base text-muted-foreground lg:text-left">
-            Articles, tools, communities, quizzes, and more — all in one place.
-          </p>
+        <div className="flex flex-1 items-center justify-center px-6 py-12 lg:px-12 xl:px-16 2xl:px-24">
+          <div className="flex w-full flex-col items-center gap-10 lg:items-start xl:flex-row xl:items-center xl:justify-between xl:gap-6">
+            <div className="max-w-md xl:max-w-[300px] 2xl:max-w-md">
+              <span className="spotai-wordmark block text-center text-5xl font-extrabold tracking-tight md:text-6xl lg:text-left">
+                SpotAI
+              </span>
+              <h1
+                className="mt-6 max-w-md text-center text-3xl font-bold leading-tight tracking-tight text-foreground lg:text-left lg:text-5xl lg:leading-[1.1]"
+                style={{ fontFamily: '"Singo Sans", Georgia, serif' }}
+              >
+                Discover the world of{" "}
+                <span className="bg-gradient-to-r from-[hsl(var(--spotai-blue))] via-[hsl(var(--spotai-violet))] to-[hsl(var(--spotai-pink))] bg-clip-text text-transparent">
+                  AI content
+                </span>
+                .
+              </h1>
+              <p className="mt-4 max-w-sm text-center text-base text-muted-foreground lg:text-left">
+                Articles, tools, communities, quizzes, and more — all in one place.
+              </p>
+            </div>
+
+            <LandingMascots
+              isTyping={isTyping}
+              passwordLength={password.length}
+              showPassword={showPassword}
+            />
+          </div>
         </div>
 
         {/* Right — auth form */}
@@ -108,6 +120,8 @@ const LandingPage = () => {
                     placeholder="Full name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    onFocus={() => setIsTyping(true)}
+                    onBlur={() => setIsTyping(false)}
                     required
                     className="h-12 rounded-lg border-border bg-muted/50 px-4"
                   />
@@ -124,6 +138,8 @@ const LandingPage = () => {
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={() => setIsTyping(true)}
+                onBlur={() => setIsTyping(false)}
                 required
                 className="h-12 rounded-lg border-border bg-muted/50 px-4"
               />
@@ -134,6 +150,8 @@ const LandingPage = () => {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setIsTyping(true)}
+                  onBlur={() => setIsTyping(false)}
                   required
                   className="h-12 rounded-lg border-border bg-muted/50 px-4 pr-10"
                 />
