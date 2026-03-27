@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Gamepad2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
@@ -35,6 +35,18 @@ const SectionSkeleton = () => (
         </div>
       </div>
     ))}
+  </div>
+);
+
+const StoryStripSkeleton = () => (
+  <div className="overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex min-w-max gap-4">
+      {Array.from({ length: 7 }).map((_, index) => (
+        <div key={index} className="w-[142px] shrink-0">
+          <Skeleton className="h-[232px] w-full rounded-[24px]" />
+        </div>
+      ))}
+    </div>
   </div>
 );
 
@@ -77,20 +89,24 @@ const Index = () => {
     <Layout>
       <SectionNavigation />
 
-      {/* Hero Section */}
-      <section className="relative py-12 sm:py-16 lg:py-24 flex items-center justify-center bg-background">
-        <div className="container mx-auto px-4 text-center">
-          <AnimateInView>
-            <h1 className="font-semibold text-foreground tracking-tighter leading-none uppercase text-[2rem] sm:text-[3rem] md:text-[5.2rem] lg:text-[7rem] xl:text-[8.5rem] w-full text-center">
-              LATEST AI CHRONICLES
-            </h1>
-          </AnimateInView>
-        </div>
+      <section className="bg-background py-6 sm:py-8" id="featured-stories">
+        <AnimateInView>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {storiesLoading ? (
+              <StoryStripSkeleton />
+            ) : (
+              <AutoScrollCarousel
+                posts={featuredStories}
+                onListen={(src, title) => setAudio({ src, title })}
+              />
+            )}
+          </div>
+        </AnimateInView>
       </section>
 
       {/* Featured Content - Hero Image */}
       {hero ? (
-        <AnimateInView className="max-w-[84rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <AnimateInView className="max-w-[84rem] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
            <Link to={`/post/${hero.slug}`} className="block relative overflow-hidden rounded-lg group cursor-pointer" style={{ aspectRatio: '16/9', maxHeight: '52.5rem' }}>
             <img
               src={hero.featured_image || "/placeholder.svg"}
@@ -127,23 +143,6 @@ const Index = () => {
           <p>No hero post assigned yet. Assign a post to the "Hero" section from the admin dashboard.</p>
         </div>
       )}
-
-      {/* Featured Stories Carousel */}
-      <section className="py-12 sm:py-16 bg-background border-t border-border" id="featured-stories">
-        <AnimateInView>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 sm:mb-12 gap-2">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Featured AI Fictions</h2>
-                <p className="text-muted-foreground text-sm sm:text-base">Curated collection of outstanding AI narratives</p>
-              </div>
-            </div>
-            {storiesLoading ? <SectionSkeleton /> : (
-              <AutoScrollCarousel posts={featuredStories} speed={30} onListen={(src, title) => setAudio({ src, title })} />
-            )}
-          </div>
-        </AnimateInView>
-      </section>
 
       {/* Featured Collections */}
       <section className="py-12 sm:py-16 bg-secondary" id="featured-collections">

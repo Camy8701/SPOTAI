@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Headphones, Sparkles } from "lucide-react";
 
 interface CarouselPost {
   id: string;
@@ -18,77 +18,70 @@ interface AutoScrollCarouselProps {
   onListen?: (src: string, title: string) => void;
 }
 
-export default function AutoScrollCarousel({ posts, speed = 20, className = "", onListen }: AutoScrollCarouselProps) {
-  const [duplicated, setDuplicated] = useState<CarouselPost[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
-
-  useEffect(() => {
-    if (posts.length > 0) {
-      setDuplicated([...posts, ...posts, ...posts]);
-    }
-  }, [posts]);
-
-  useEffect(() => {
-    if (containerRef.current) {
-      setWidth(containerRef.current.scrollWidth - containerRef.current.offsetWidth);
-    }
-  }, [duplicated]);
-
+export default function AutoScrollCarousel({
+  posts,
+  className = "",
+}: AutoScrollCarouselProps) {
   if (posts.length === 0) {
-    return <p className="text-center text-muted-foreground py-8">No featured stories yet.</p>;
+    return <p className="py-8 text-center text-muted-foreground">No featured stories yet.</p>;
   }
 
   return (
-    <div className={`overflow-hidden ${className}`} ref={containerRef}>
-      <motion.div
-        className="flex gap-6"
-        animate={{ x: [-width / 3, (-width * 2) / 3] }}
-        transition={{ x: { duration: speed, repeat: Infinity, repeatType: "loop", ease: "linear" } }}
-      >
-        {duplicated.map((post, index) => (
+    <div className={`overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}>
+      <div className="flex min-w-max gap-4">
+        {posts.map((post, index) => (
           <motion.div
-            key={`${post.id}-${index}`}
-            className="min-w-[560px] h-[400px] relative rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-r from-blue-600 to-red-600 p-[2px]"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.3 }}
+            key={post.id}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.32, delay: index * 0.04 }}
+            whileHover={{ y: -4 }}
+            className="w-[142px] shrink-0"
           >
-            <Link to={`/post/${post.slug}`} className="absolute inset-0 bg-black rounded-lg overflow-hidden m-[1px] cursor-pointer group/img block">
-              <img
-                src={post.featured_image || "/placeholder.svg"}
-                alt={post.title}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors duration-300" />
-              {/* Overlay with title and buttons */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-6">
-                <h3 className="text-white font-bold text-xl mb-1 drop-shadow-lg line-clamp-2">{post.title}</h3>
-                {post.excerpt && <p className="text-gray-300 text-sm mb-3 line-clamp-1">{post.excerpt}</p>}
-                <div className="flex gap-3">
-                  <motion.button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm shadow-lg"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Read
-                  </motion.button>
-                  {post.audio_url && onListen && (
-                    <motion.button
-                      className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg font-medium text-sm shadow-lg"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => { e.stopPropagation(); onListen(post.audio_url!, post.title); }}
-                    >
-                      Listen
-                    </motion.button>
-                  )}
+            <Link
+              to={`/post/${post.slug}`}
+              className="group block cursor-pointer overflow-hidden rounded-[24px] border border-border/70 bg-card shadow-[0_18px_50px_rgba(15,23,42,0.10)]"
+            >
+              <div className="relative h-[232px] overflow-hidden">
+                <img
+                  src={post.featured_image || "/placeholder.svg"}
+                  alt={post.title}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/5" />
+
+                <div className="absolute left-3 top-3 flex items-center gap-2">
+                  <div className="rounded-full bg-white/90 p-[2px] shadow-lg">
+                    <div className="h-9 w-9 overflow-hidden rounded-full ring-2 ring-[hsl(var(--spotai-blue))]">
+                      <img
+                        src={post.featured_image || "/placeholder.svg"}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {post.audio_url ? (
+                  <div className="absolute right-3 top-3 rounded-full bg-white/92 p-2 text-slate-700 shadow-lg">
+                    <Headphones className="h-4 w-4" />
+                  </div>
+                ) : null}
+
+                <div className="absolute inset-x-0 bottom-0 p-3 text-white">
+                  <div className="mb-2 inline-flex items-center gap-1 rounded-full bg-white/16 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/90 backdrop-blur">
+                    <Sparkles className="h-3 w-3" />
+                    AI fiction
+                  </div>
+                  <h3 className="line-clamp-3 text-base font-semibold leading-[1.15] drop-shadow-lg">
+                    {post.title}
+                  </h3>
                 </div>
               </div>
             </Link>
           </motion.div>
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 }
