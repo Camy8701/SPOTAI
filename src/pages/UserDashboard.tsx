@@ -422,7 +422,7 @@ function LikedTab() {
           icon={Heart}
           title="No likes yet"
           description="Like posts to keep track of the stories and collections that matter to you."
-          cta={<Link to="/"><Button className="rounded-full">Go to homepage</Button></Link>}
+          cta={<Link to="/home"><Button className="rounded-full">Go to homepage</Button></Link>}
         />
       ) : (
         <div className="overflow-hidden rounded-[1.5rem] border border-border">
@@ -956,7 +956,7 @@ export default function UserDashboard() {
             </p>
             <div className="mt-6 flex justify-center gap-3">
               <Button onClick={() => navigate("/auth")} className="rounded-full">Sign In</Button>
-              <Button onClick={() => navigate("/")} variant="outline" className="rounded-full">Back home</Button>
+              <Button onClick={() => navigate("/home")} variant="outline" className="rounded-full">Back home</Button>
             </div>
           </div>
         </div>

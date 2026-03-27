@@ -14,7 +14,7 @@ const Footer = () => {
           WebkitMaskImage: "linear-gradient(180deg, transparent, black 0%, black 58%, transparent)",
         }}
       >
-        <Link to="/" className="inline-block" onClick={handleFooterNavigate}>
+        <Link to="/home" className="inline-block" onClick={handleFooterNavigate}>
           <h2 className="spotai-wordmark select-none text-[18vw] font-bold leading-[0.72] tracking-[-0.08em] opacity-35 md:scale-y-110">
             SpotAI
           </h2>

@@ -119,7 +119,7 @@ const Library = () => {
           </section>
 
           <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-            <Link to="/" className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <Link to="/home" className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft size={16} /> Back to home
             </Link>
 
@@ -228,7 +228,7 @@ const Library = () => {
         </div>
       ) : (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8">
+          <Link to="/home" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8">
             <ArrowLeft size={16} /> Back to home
           </Link>
 
