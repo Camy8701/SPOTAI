@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 const sidebarItems = [
-  { name: "Home", icon: Home, path: "/", color: "from-blue-500 to-blue-600" },
+  { name: "Home", icon: Home, path: "/home", color: "from-blue-500 to-blue-600" },
   { name: "Marketplace", icon: ShoppingBag, path: "/marketplace", color: "from-emerald-500 to-green-600" },
   { name: "Popular", icon: TrendingUp, path: "/popular", color: "from-orange-500 to-red-500" },
   { name: "Messages", icon: MessageCircle, path: "/messages", color: "from-cyan-500 to-blue-500" },
