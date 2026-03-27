@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Layout from "@/components/layout/Layout";
+import BackToToolsButton from "@/components/tools/BackToToolsButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +72,7 @@ const TipCalculator = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <main className="container mx-auto px-4 py-12">
           <div className="mx-auto max-w-2xl space-y-8">
+            <BackToToolsButton />
             <div className="text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-teal-600 to-teal-400 px-4 py-2 text-sm font-medium text-white">
                 <Calculator className="h-4 w-4" />

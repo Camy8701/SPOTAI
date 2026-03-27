@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import Layout from "@/components/layout/Layout";
+import BackToToolsButton from "@/components/tools/BackToToolsButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Hash, Type, Clock, Copy, Download, RotateCcw, Volume2 } from "lucide-react";
@@ -101,6 +102,7 @@ ${text}`;
       <div className="min-h-screen bg-background text-foreground">
         <section className="border-b border-border bg-secondary">
           <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+            <BackToToolsButton className="mb-8" />
             <div className="text-center">
               <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-100 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-violet-700">
                 <Hash className="h-4 w-4" />

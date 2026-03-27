@@ -70,27 +70,6 @@ export default function AutoScrollCarousel({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="mb-4 flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={() => emblaApi?.scrollPrev()}
-          disabled={!canScrollPrev}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm transition disabled:cursor-not-allowed disabled:opacity-35"
-          aria-label="Previous stories"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => emblaApi?.scrollNext()}
-          disabled={!canScrollNext}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm transition disabled:cursor-not-allowed disabled:opacity-35"
-          aria-label="Next stories"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex gap-5">
           {posts.map((post, index) => (
@@ -174,6 +153,26 @@ export default function AutoScrollCarousel({
           ))}
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => emblaApi?.scrollPrev()}
+        disabled={!canScrollPrev}
+        className="absolute left-2 top-1/2 z-20 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-slate-700 shadow-[0_18px_38px_rgba(15,23,42,0.18)] backdrop-blur transition hover:scale-105 hover:bg-white disabled:cursor-not-allowed disabled:opacity-35 sm:left-4 sm:h-14 sm:w-14"
+        aria-label="Previous stories"
+      >
+        <ChevronLeft className="h-6 w-6" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => emblaApi?.scrollNext()}
+        disabled={!canScrollNext}
+        className="absolute right-2 top-1/2 z-20 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-slate-700 shadow-[0_18px_38px_rgba(15,23,42,0.18)] backdrop-blur transition hover:scale-105 hover:bg-white disabled:cursor-not-allowed disabled:opacity-35 sm:right-4 sm:h-14 sm:w-14"
+        aria-label="Next stories"
+      >
+        <ChevronRight className="h-6 w-6" />
+      </button>
     </div>
   );
 }

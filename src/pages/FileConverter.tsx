@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
+import BackToToolsButton from "@/components/tools/BackToToolsButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -464,6 +465,7 @@ const FileConverter = () => {
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 py-12 px-4">
         <div className="max-w-6xl mx-auto space-y-8">
+          <BackToToolsButton />
           {/* Header */}
           <div className="text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full text-sm font-medium mb-4">
