@@ -40,10 +40,10 @@ const SectionSkeleton = () => (
 
 const StoryStripSkeleton = () => (
   <div className="overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-    <div className="flex min-w-max gap-4">
+    <div className="flex min-w-max gap-5">
       {Array.from({ length: 7 }).map((_, index) => (
-        <div key={index} className="w-[142px] shrink-0">
-          <Skeleton className="h-[232px] w-full rounded-[24px]" />
+        <div key={index} className="w-[320px] shrink-0">
+          <Skeleton className="h-[380px] w-full rounded-[28px]" />
         </div>
       ))}
     </div>

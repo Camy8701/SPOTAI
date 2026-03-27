@@ -10,6 +10,8 @@ import Onboarding from "./pages/Onboarding";
 import TipCalculator from "./pages/TipCalculator";
 import CharacterCounter from "./pages/CharacterCounter";
 import FileConverter from "./pages/FileConverter";
+import PdfBrander from "./pages/PdfBrander";
+import Tools from "./pages/Tools";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -86,6 +88,8 @@ const App = () => (
             <Route path="/tip-calculator" element={<ProtectedRoute><TipCalculator /></ProtectedRoute>} />
             <Route path="/character-counter" element={<ProtectedRoute><CharacterCounter /></ProtectedRoute>} />
             <Route path="/file-converter" element={<ProtectedRoute><FileConverter /></ProtectedRoute>} />
+            <Route path="/pdf-brander" element={<ProtectedRoute><PdfBrander /></ProtectedRoute>} />
+            <Route path="/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
             <Route path="/post/:slug" element={<BlogPost />} />

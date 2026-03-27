@@ -60,6 +60,11 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        coral: "#ef6a5b",
+        "coral-light": "#f6dfd8",
+        sage: "#5d9b75",
+        "sage-light": "#e2f1e6",
+        sand: "#f6f1e7",
       },
       borderRadius: {
         lg: "var(--radius)",
