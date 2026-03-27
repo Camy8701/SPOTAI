@@ -35,10 +35,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
-  DEFAULT_AVATAR_ID,
   ProfileAvatarPicker,
-  getAvatarDataUrlForId,
-  getAvatarIdFromDataUrl,
+  getAvatarDataUrl,
+  getAvatarSelectionFromDataUrl,
+  getDefaultAvatarSelection,
 } from "@/components/auth/ProfileAvatarPicker";
 
 type Tab =
@@ -822,12 +822,15 @@ function MessagesTab() {
 }
 
 function ProfileTab() {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const [firstName, setFirstName] = useState(profile?.first_name || "");
+  const [lastName, setLastName] = useState(profile?.last_name || "");
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
+  const [headline, setHeadline] = useState(profile?.headline || "");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url || null);
-  const [selectedAvatarId, setSelectedAvatarId] = useState(DEFAULT_AVATAR_ID);
+  const [selectedAvatar, setSelectedAvatar] = useState(() => getDefaultAvatarSelection());
   const [avatarDirty, setAvatarDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -835,16 +838,19 @@ function ProfileTab() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("display_name, bio, avatar_url")
+      .select("first_name, last_name, display_name, headline, bio, avatar_url")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
         if (!data) return;
+        setFirstName(data.first_name || "");
+        setLastName(data.last_name || "");
         setDisplayName(data.display_name || "");
+        setHeadline(data.headline || "");
         setBio(data.bio || "");
         setAvatarUrl(data.avatar_url || null);
-        const matchedAvatarId = getAvatarIdFromDataUrl(data.avatar_url);
-        setSelectedAvatarId(matchedAvatarId ?? DEFAULT_AVATAR_ID);
+        const matchedAvatar = getAvatarSelectionFromDataUrl(data.avatar_url);
+        setSelectedAvatar(matchedAvatar ?? getDefaultAvatarSelection());
         setAvatarDirty(false);
       });
   }, [user]);
@@ -852,10 +858,17 @@ function ProfileTab() {
   const save = async () => {
     if (!user) return;
     setSaving(true);
-    const nextAvatarUrl = avatarDirty ? getAvatarDataUrlForId(selectedAvatarId) : avatarUrl;
+    const nextAvatarUrl = avatarDirty ? getAvatarDataUrl(selectedAvatar) : avatarUrl;
     const { error } = await supabase
       .from("profiles")
-      .update({ display_name: displayName, bio, avatar_url: nextAvatarUrl })
+      .update({
+        first_name: firstName.trim() || null,
+        last_name: lastName.trim() || null,
+        display_name: displayName.trim(),
+        headline: headline.trim() || null,
+        bio,
+        avatar_url: nextAvatarUrl,
+      })
       .eq("user_id", user.id);
     setSaving(false);
 
@@ -866,18 +879,21 @@ function ProfileTab() {
 
     setAvatarUrl(nextAvatarUrl);
     setAvatarDirty(false);
+    await refreshProfile();
     toast({ title: "Profile updated" });
   };
 
+  const previewAvatarUrl = avatarDirty ? getAvatarDataUrl(selectedAvatar) : avatarUrl;
+
   return (
-    <SpotlightShell title="Profile settings" description="Edit your name, bio, and SpotAI avatar from one place.">
+    <SpotlightShell title="Profile settings" description="Edit your identity details, bio, and SpotAI avatar from one place.">
       <div className="grid gap-8 xl:grid-cols-[0.8fr_1.2fr]">
         <div className="space-y-4">
           <div className="rounded-[1.7rem] border border-border bg-secondary/60 p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Current profile</p>
             <div className="mt-5 flex items-center gap-4">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-20 w-20 rounded-[1.25rem] border border-border object-cover" />
+              {previewAvatarUrl ? (
+                <img src={previewAvatarUrl} alt="" className="h-20 w-20 rounded-[1.25rem] border border-border object-cover" />
               ) : (
                 <div className="flex h-20 w-20 items-center justify-center rounded-[1.25rem] border border-border bg-background text-2xl font-semibold">
                   {(displayName || user?.email || "S").slice(0, 1).toUpperCase()}
@@ -885,21 +901,23 @@ function ProfileTab() {
               )}
               <div>
                 <p className="text-xl font-semibold">{displayName || "Your display name"}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{[firstName, lastName].filter(Boolean).join(" ") || "Name not set yet"}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{user?.email}</p>
               </div>
             </div>
-            {!avatarDirty && avatarUrl && !getAvatarIdFromDataUrl(avatarUrl) ? (
+            {headline ? <p className="mt-4 text-sm text-muted-foreground">{headline}</p> : null}
+            {!avatarDirty && avatarUrl && !getAvatarSelectionFromDataUrl(avatarUrl) ? (
               <p className="mt-4 text-xs text-muted-foreground">
-                You currently use a custom avatar. Choosing a SpotAI preset below will replace it.
+                You currently use an external custom avatar. Choosing a SpotAI avatar below will replace it.
               </p>
             ) : null}
           </div>
 
           <ProfileAvatarPicker
             className="bg-card"
-            value={selectedAvatarId}
-            onChange={(avatarId) => {
-              setSelectedAvatarId(avatarId);
+            value={selectedAvatar}
+            onChange={(selection) => {
+              setSelectedAvatar(selection);
               setAvatarDirty(true);
             }}
           />
@@ -907,9 +925,23 @@ function ProfileTab() {
 
         <div className="rounded-[1.7rem] border border-border bg-secondary/60 p-6">
           <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-semibold text-foreground">First name</label>
+                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="mt-2 rounded-2xl" />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-foreground">Last name</label>
+                <Input value={lastName} onChange={(e) => setLastName(e.target.value)} className="mt-2 rounded-2xl" />
+              </div>
+            </div>
             <div>
               <label className="text-sm font-semibold text-foreground">Display name</label>
               <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="mt-2 rounded-2xl" />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-foreground">Headline</label>
+              <Input value={headline} onChange={(e) => setHeadline(e.target.value)} className="mt-2 rounded-2xl" />
             </div>
             <div>
               <label className="text-sm font-semibold text-foreground">Bio</label>

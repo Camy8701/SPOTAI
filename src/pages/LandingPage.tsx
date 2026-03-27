@@ -1,48 +1,42 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DEFAULT_AVATAR_ID, ProfileAvatarPicker, getAvatarDataUrlForId } from "@/components/auth/ProfileAvatarPicker";
 import CookieBanner from "@/components/CookieBanner";
 import LandingMascots from "@/components/landing/LandingMascots";
+import { consumeAuthFlashMessage } from "@/lib/auth-flow";
 
 const LandingPage = () => {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [selectedAvatarId, setSelectedAvatarId] = useState(DEFAULT_AVATAR_ID);
-  const { signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
+  const { signInWithEmail, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  const isSignUp = mode === "signup";
+  useEffect(() => {
+    const flashMessage = consumeAuthFlashMessage();
+    if (flashMessage) {
+      setError(flashMessage);
+    }
+  }, []);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) { setError("Please fill in all required fields."); return; }
-    if (isSignUp && !fullName.trim()) { setError("Please enter your full name."); return; }
 
     try {
       setLoading(true);
       setError(null);
-      setSuccess(null);
-      if (isSignUp) {
-        await signUpWithEmail(email, password, fullName.trim(), getAvatarDataUrlForId(selectedAvatarId));
-        setSuccess("Account created! Please check your email to verify your account.");
-      } else {
-        await signInWithEmail(email, password);
-        navigate("/home");
-      }
+      await signInWithEmail(email, password);
+      navigate("/onboarding");
     } catch (err: any) {
-      setError(err.message || `Failed to ${isSignUp ? "sign up" : "sign in"}.`);
+      setError(err.message || "Failed to sign in.");
     } finally {
       setLoading(false);
     }
@@ -52,7 +46,7 @@ const LandingPage = () => {
     try {
       setLoading(true);
       setError(null);
-      await signInWithGoogle();
+      await signInWithGoogle("login");
     } catch (err: any) {
       setError(err.message || "Failed to sign in with Google.");
     } finally {
@@ -97,42 +91,15 @@ const LandingPage = () => {
         {/* Right — auth form */}
         <div className="flex items-center justify-center px-6 py-8 lg:w-[420px] lg:border-l lg:border-border lg:px-10 xl:w-[460px]">
           <div className="w-full max-w-sm">
-            <h2 className="text-xl font-bold text-foreground">
-              {isSignUp ? "Create a new account" : "Log in to SpotAI"}
-            </h2>
+            <h2 className="text-xl font-bold text-foreground">Log in to SpotAI</h2>
 
             {error && (
               <Alert className="mt-4 border-destructive/30 bg-destructive/10 text-destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            {success && (
-              <Alert className="mt-4 border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-200">
-                <AlertDescription>{success}</AlertDescription>
-              </Alert>
-            )}
 
             <form onSubmit={handleEmailAuth} className="mt-5 space-y-4">
-              {isSignUp && (
-                <>
-                  <Input
-                    type="text"
-                    placeholder="Full name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    onFocus={() => setIsTyping(true)}
-                    onBlur={() => setIsTyping(false)}
-                    required
-                    className="h-12 rounded-lg border-border bg-muted/50 px-4"
-                  />
-                  <ProfileAvatarPicker
-                    className="bg-background"
-                    onChange={setSelectedAvatarId}
-                    value={selectedAvatarId}
-                  />
-                </>
-              )}
-
               <Input
                 type="email"
                 placeholder="Email address"
@@ -172,25 +139,23 @@ const LandingPage = () => {
                 {loading ? (
                   <div className="flex items-center gap-2">
                     <div className="h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
-                    {isSignUp ? "Creating account..." : "Logging in..."}
+                    Logging in...
                   </div>
                 ) : (
                   <>
                     <LogIn className="mr-2 h-4 w-4" />
-                    {isSignUp ? "Sign Up" : "Log In"}
+                    Log In
                   </>
                 )}
               </Button>
             </form>
 
-            {!isSignUp && (
-              <Link
-                to="/forgot-password"
-                className="mt-3 block text-center text-sm font-medium text-primary hover:underline"
-              >
-                Forgotten password?
-              </Link>
-            )}
+            <Link
+              to="/forgot-password"
+              className="mt-3 block text-center text-sm font-medium text-primary hover:underline"
+            >
+              Forgotten password?
+            </Link>
 
             {/* Google sign in */}
             <div className="my-4 flex items-center gap-3">
@@ -219,14 +184,10 @@ const LandingPage = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setMode(isSignUp ? "signin" : "signup");
-                  setError(null);
-                  setSuccess(null);
-                }}
+                onClick={() => navigate("/auth?mode=signup")}
                 className="h-12 w-full rounded-lg border-primary text-sm font-semibold text-primary hover:bg-primary/5"
               >
-                {isSignUp ? "Already have an account? Log in" : "Create new account"}
+                Create new account
               </Button>
             </div>
 
@@ -240,14 +201,6 @@ const LandingPage = () => {
       {/* Footer links */}
       <footer className="border-t border-border bg-muted/30 px-6 py-4">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span>English (UK)</span>
-          <span>Español</span>
-          <span>Français</span>
-          <span>Deutsch</span>
-          <span>Italiano</span>
-          <span>Português</span>
-        </div>
-        <div className="mx-auto mt-2 flex max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span>About</span>
           <span>Blog</span>
           <span>Help</span>

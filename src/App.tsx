@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import LandingPage from "./pages/LandingPage";
+import Onboarding from "./pages/Onboarding";
 import TipCalculator from "./pages/TipCalculator";
 import CharacterCounter from "./pages/CharacterCounter";
 import FileConverter from "./pages/FileConverter";
@@ -29,13 +30,41 @@ import PodcastLibrary from "./pages/PodcastLibrary";
 import ImageLibrary from "./pages/ImageLibrary";
 import PromptLibrary from "./pages/PromptLibrary";
 import Notifications from "./pages/Notifications";
+import { hasCompletedOnboarding } from "@/lib/profile";
 
 const queryClient = new QueryClient();
 
+const AuthLoadingScreen = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+    Loading SpotAI...
+  </div>
+);
+
 const LandingRoute = () => {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  return user ? <Navigate to="/home" replace /> : <LandingPage />;
+  const { user, profile, loading, profileLoading } = useAuth();
+  if (loading || (user && profileLoading)) return <AuthLoadingScreen />;
+  return user ? <Navigate to={hasCompletedOnboarding(profile) ? "/home" : "/onboarding"} replace /> : <LandingPage />;
+};
+
+const AuthRoute = () => {
+  const { user, profile, loading, profileLoading } = useAuth();
+  if (loading || (user && profileLoading)) return <AuthLoadingScreen />;
+  return user ? <Navigate to={hasCompletedOnboarding(profile) ? "/home" : "/onboarding"} replace /> : <Auth />;
+};
+
+const OnboardingRoute = () => {
+  const { user, profile, loading, profileLoading } = useAuth();
+  if (loading || (user && profileLoading)) return <AuthLoadingScreen />;
+  if (!user) return <Navigate to="/" replace />;
+  return hasCompletedOnboarding(profile) ? <Navigate to="/home" replace /> : <Onboarding />;
+};
+
+const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+  const { user, profile, loading, profileLoading } = useAuth();
+  if (loading || (user && profileLoading)) return <AuthLoadingScreen />;
+  if (!user) return <Navigate to="/" replace />;
+  if (!hasCompletedOnboarding(profile)) return <Navigate to="/onboarding" replace />;
+  return children;
 };
 
 const App = () => (
@@ -47,29 +76,30 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<LandingRoute />} />
-            <Route path="/home" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
+            <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/auth" element={<AuthRoute />} />
+            <Route path="/onboarding" element={<OnboardingRoute />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/quiz" element={<Quiz />} />
-            <Route path="/tip-calculator" element={<TipCalculator />} />
-            <Route path="/character-counter" element={<CharacterCounter />} />
-            <Route path="/file-converter" element={<FileConverter />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/dashboard" element={<UserDashboard />} />
+            <Route path="/quiz" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
+            <Route path="/tip-calculator" element={<ProtectedRoute><TipCalculator /></ProtectedRoute>} />
+            <Route path="/character-counter" element={<ProtectedRoute><CharacterCounter /></ProtectedRoute>} />
+            <Route path="/file-converter" element={<ProtectedRoute><FileConverter /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
             <Route path="/post/:slug" element={<BlogPost />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/create-post" element={<CreatePost />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/popular" element={<Popular />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/communities" element={<Communities />} />
-            <Route path="/groups" element={<Groups />} />
-            <Route path="/freebies/ebooks" element={<EbooksLibrary />} />
-            <Route path="/freebies/podcasts" element={<PodcastLibrary />} />
-            <Route path="/image-library" element={<ImageLibrary />} />
-            <Route path="/prompt-library" element={<PromptLibrary />} />
-            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+            <Route path="/create-post" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
+            <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
+            <Route path="/popular" element={<ProtectedRoute><Popular /></ProtectedRoute>} />
+            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+            <Route path="/communities" element={<ProtectedRoute><Communities /></ProtectedRoute>} />
+            <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+            <Route path="/freebies/ebooks" element={<ProtectedRoute><EbooksLibrary /></ProtectedRoute>} />
+            <Route path="/freebies/podcasts" element={<ProtectedRoute><PodcastLibrary /></ProtectedRoute>} />
+            <Route path="/image-library" element={<ProtectedRoute><ImageLibrary /></ProtectedRoute>} />
+            <Route path="/prompt-library" element={<ProtectedRoute><PromptLibrary /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

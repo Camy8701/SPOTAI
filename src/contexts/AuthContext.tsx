@@ -1,18 +1,39 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import {
+  clearGoogleAuthIntent,
+  getGoogleAuthIntent,
+  isGoogleUser,
+  setAuthFlashMessage,
+  setGoogleAuthIntent,
+  type GoogleAuthIntent,
+} from "@/lib/auth-flow";
+
+export interface AuthProfile {
+  avatar_url: string | null;
+  bio: string | null;
+  display_name: string | null;
+  first_name: string | null;
+  google_auth_enabled: boolean;
+  headline: string | null;
+  last_name: string | null;
+  onboarding_completed: boolean;
+}
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  profileLoading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string, fullName: string, avatarUrl: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<{ requiresEmailVerification: boolean }>;
+  signInWithGoogle: (intent: GoogleAuthIntent) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
-  profile: { display_name: string | null; avatar_url: string | null } | null;
+  profile: AuthProfile | null;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,34 +48,113 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<{ display_name: string | null; avatar_url: string | null } | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profile, setProfile] = useState<AuthProfile | null>(null);
+
+  const fetchProfileData = async (userId: string) => {
+    setProfileLoading(true);
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url, bio, first_name, google_auth_enabled, last_name, headline, onboarding_completed")
+        .eq("user_id", userId)
+        .single();
+
+      return data ?? null;
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const fetchProfile = async (userId: string) => {
+    const nextProfile = await fetchProfileData(userId);
+    setProfile(nextProfile);
+    return nextProfile;
+  };
+
+  const refreshProfile = async () => {
+    if (!user?.id) return;
+    await fetchProfile(user.id);
+  };
+
+  const resolveGoogleAuthIntent = async (
+    nextSession: Session,
+    nextProfile: AuthProfile | null,
+  ) => {
+    const intent = getGoogleAuthIntent();
+
+    if (!intent || !isGoogleUser(nextSession.user)) {
+      return { session: nextSession, profile: nextProfile };
+    }
+
+    if (intent === "signup") {
+      if (!nextProfile?.google_auth_enabled) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ google_auth_enabled: true })
+          .eq("user_id", nextSession.user.id);
+
+        if (!error) {
+          nextProfile = nextProfile
+            ? { ...nextProfile, google_auth_enabled: true }
+            : nextProfile;
+        }
+      }
+
+      clearGoogleAuthIntent();
+      return { session: nextSession, profile: nextProfile };
+    }
+
+    if (!nextProfile?.google_auth_enabled) {
+      clearGoogleAuthIntent();
+      setAuthFlashMessage("This Google account is not registered for login yet. Use Create new account to sign up first.");
+      await supabase.auth.signOut();
+      return { session: null, profile: null };
+    }
+
+    clearGoogleAuthIntent();
+    return { session: nextSession, profile: nextProfile };
+  };
+
+  const applySession = async (nextSession: Session | null) => {
+    setLoading(true);
+
+    if (!nextSession?.user) {
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setProfileLoading(false);
+      setLoading(false);
+      return;
+    }
+
+    const nextProfile = await fetchProfileData(nextSession.user.id);
+    const resolved = await resolveGoogleAuthIntent(nextSession, nextProfile);
+
+    if (!resolved.session?.user) {
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setProfileLoading(false);
+      setLoading(false);
+      return;
+    }
+
+    setSession(resolved.session);
+    setUser(resolved.session.user);
+    setProfile(resolved.profile);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-
-      if (session?.user) {
-        setTimeout(() => {
-          supabase
-            .from("profiles")
-            .select("display_name, avatar_url")
-            .eq("user_id", session.user.id)
-            .single()
-            .then(({ data }) => {
-              if (data) setProfile(data);
-            });
-        }, 0);
-      } else {
-        setProfile(null);
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setTimeout(() => {
+        void applySession(nextSession);
+      }, 0);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    supabase.auth.getSession().then(({ data: { session: nextSession } }) => {
+      void applySession(nextSession);
     });
 
     return () => subscription.unsubscribe();
@@ -65,27 +165,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (error) throw error;
   };
 
-  const signUpWithEmail = async (email: string, password: string, fullName: string, avatarUrl: string) => {
-    const { error } = await supabase.auth.signUp({
+  const signUpWithEmail = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName, avatar_url: avatarUrl },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/onboarding`,
       },
     });
     if (error) throw error;
+
+    return {
+      requiresEmailVerification: !data.session,
+    };
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (intent: GoogleAuthIntent) => {
     const { lovable } = await import("@/integrations/lovable/index");
+    setGoogleAuthIntent(intent);
     const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: intent === "signup"
+        ? `${window.location.origin}/auth?mode=signup`
+        : `${window.location.origin}/`,
     });
-    if (error) throw error;
+    if (error) {
+      clearGoogleAuthIntent();
+      throw error;
+    }
   };
 
   const signOut = async () => {
+    clearGoogleAuthIntent();
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
@@ -103,7 +213,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signOut, resetPassword, updatePassword, profile }}>
+    <AuthContext.Provider value={{ user, session, loading, profileLoading, signInWithEmail, signUpWithEmail, signInWithGoogle, signOut, resetPassword, updatePassword, profile, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
