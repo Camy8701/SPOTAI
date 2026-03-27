@@ -135,8 +135,8 @@ const Library = () => {
             ) : (
               <>
                 {featuredNews ? (
-                  <div className="grid overflow-hidden rounded-[2rem] border border-[#ffe0cf] bg-card lg:grid-cols-2">
-                    <div className="min-h-[420px] bg-[#fff3ec]">
+                  <div className="grid overflow-hidden rounded-[2rem] border border-[#ffe0cf] bg-card dark:border-orange-500/15 lg:grid-cols-2">
+                    <div className="min-h-[420px] bg-[#fff3ec] dark:bg-[#101826]">
                       <img
                         src={featuredNews.featured_image || "/placeholder.svg"}
                         alt={featuredNews.title}
@@ -145,10 +145,10 @@ const Library = () => {
                       />
                     </div>
                     <div className="flex flex-col items-center justify-center px-8 py-10 text-center">
-                      <span className="rounded-full border border-orange-200 bg-orange-100 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">
+                      <span className="rounded-full border border-orange-200 bg-orange-100 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-orange-700 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-200">
                         {featuredNews.category || "News"}
                       </span>
-                      <h2 className="mt-5 text-4xl leading-tight tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                      <h2 className="mt-5 text-4xl leading-tight tracking-tight text-foreground" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                         {featuredNews.title}
                       </h2>
                       <p className="mt-4 max-w-md text-muted-foreground">
@@ -164,7 +164,7 @@ const Library = () => {
                         {featuredNews.audio_url ? (
                           <button
                             onClick={() => setAudio({ src: featuredNews.audio_url, title: featuredNews.title })}
-                            className="inline-flex h-11 items-center rounded-full border border-orange-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition-colors hover:bg-orange-100"
+                            className="inline-flex h-11 items-center rounded-full border border-orange-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition-colors hover:bg-orange-100 dark:border-orange-500/25 dark:text-orange-200 dark:hover:bg-orange-500/10"
                           >
                             Listen
                           </button>
@@ -181,7 +181,7 @@ const Library = () => {
                     </h3>
                     <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                       {secondaryNews.map((post) => (
-                        <article key={post.id} className="overflow-hidden rounded-[1.7rem] border border-[#ffe0cf] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.05)]">
+                        <article key={post.id} className="overflow-hidden rounded-[1.7rem] border border-[#ffe0cf] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.05)] dark:border-orange-500/15 dark:bg-[#0f1728]">
                           <div className="h-56 overflow-hidden">
                             <img
                               src={post.featured_image || "/placeholder.svg"}
@@ -191,10 +191,10 @@ const Library = () => {
                             />
                           </div>
                           <div className="p-5">
-                            <span className="inline-flex rounded-full bg-orange-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-700">
+                            <span className="inline-flex rounded-full bg-orange-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-700 dark:bg-orange-500/10 dark:text-orange-200">
                               {post.category || "News"}
                             </span>
-                            <h4 className="mt-3 text-2xl leading-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                            <h4 className="mt-3 text-2xl leading-tight text-foreground" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                               {post.title}
                             </h4>
                             <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
@@ -203,14 +203,14 @@ const Library = () => {
                             <div className="mt-5 flex items-center gap-3">
                               <Link
                                 to={`/post/${post.slug}`}
-                                className="inline-flex h-10 items-center rounded-full border border-orange-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition-colors hover:bg-orange-100"
+                                className="inline-flex h-10 items-center rounded-full border border-orange-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition-colors hover:bg-orange-100 dark:border-orange-500/25 dark:text-orange-200 dark:hover:bg-orange-500/10"
                               >
                                 Read
                               </Link>
                               {post.audio_url ? (
                                 <button
                                   onClick={() => setAudio({ src: post.audio_url, title: post.title })}
-                                  className="inline-flex h-10 items-center rounded-full border border-orange-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition-colors hover:bg-orange-100"
+                                  className="inline-flex h-10 items-center rounded-full border border-orange-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition-colors hover:bg-orange-100 dark:border-orange-500/25 dark:text-orange-200 dark:hover:bg-orange-500/10"
                                 >
                                   Listen
                                 </button>

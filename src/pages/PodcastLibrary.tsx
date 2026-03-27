@@ -106,8 +106,8 @@ export default function PodcastLibrary() {
           ) : (
             <>
               {featured ? (
-                <div className="grid overflow-hidden rounded-[2rem] border border-[#dfd8ff] bg-card lg:grid-cols-2">
-                  <div className="min-h-[380px] bg-[#f2efff]">
+                <div className="grid overflow-hidden rounded-[2rem] border border-[#dfd8ff] bg-card dark:border-violet-500/15 lg:grid-cols-2">
+                  <div className="min-h-[380px] bg-[#f2efff] dark:bg-[#101425]">
                     {featured.cover_image ? (
                       <img
                         src={featured.cover_image}
@@ -122,10 +122,10 @@ export default function PodcastLibrary() {
                     )}
                   </div>
                   <div className="flex flex-col items-center justify-center px-8 py-10 text-center">
-                    <span className="rounded-full border border-violet-200 bg-violet-100 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-violet-700">
+                    <span className="rounded-full border border-violet-200 bg-violet-100 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-violet-700 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-200">
                       {featured.category || "Podcast"}
                     </span>
-                    <h2 className="mt-5 text-4xl leading-tight tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                    <h2 className="mt-5 text-4xl leading-tight tracking-tight text-foreground" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                       {featured.title}
                     </h2>
                     <p className="mt-4 max-w-md text-muted-foreground">{featured.description || "A featured episode from the SPOTAI audio library."}</p>
@@ -141,7 +141,7 @@ export default function PodcastLibrary() {
                       <a
                         href={featured.file_url}
                         download
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-violet-300 text-violet-700 transition-colors hover:bg-violet-100"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-violet-300 text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-500/25 dark:text-violet-200 dark:hover:bg-violet-500/10"
                         aria-label={`Download ${featured.title}`}
                       >
                         <Download className="h-4 w-4" />
@@ -158,7 +158,7 @@ export default function PodcastLibrary() {
                     </h3>
                     <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                       {cards.map((podcast) => (
-                      <article key={podcast.id} className="overflow-hidden rounded-[1.7rem] border border-[#dfd8ff] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.05)]">
+                      <article key={podcast.id} className="overflow-hidden rounded-[1.7rem] border border-[#dfd8ff] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.05)] dark:border-violet-500/15 dark:bg-[#0f1728]">
                         <div className="h-56 overflow-hidden">
                           {podcast.cover_image ? (
                             <img src={podcast.cover_image} alt={podcast.title} className="h-full w-full object-cover" loading="lazy" />
@@ -169,10 +169,10 @@ export default function PodcastLibrary() {
                           )}
                         </div>
                         <div className="p-5">
-                          <span className="inline-flex rounded-full bg-violet-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-700">
+                          <span className="inline-flex rounded-full bg-violet-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-700 dark:bg-violet-500/10 dark:text-violet-200">
                             {podcast.category || "Podcast"}
                           </span>
-                          <h4 className="mt-3 text-2xl leading-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                          <h4 className="mt-3 text-2xl leading-tight text-foreground" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                             {podcast.title}
                           </h4>
                           <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
@@ -183,14 +183,14 @@ export default function PodcastLibrary() {
                               href={podcast.file_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex h-10 items-center rounded-full border border-violet-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-violet-700 transition-colors hover:bg-violet-100"
+                              className="inline-flex h-10 items-center rounded-full border border-violet-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-500/25 dark:text-violet-200 dark:hover:bg-violet-500/10"
                             >
                               Open
                             </a>
                             <a
                               href={podcast.file_url}
                               download
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-violet-300 text-violet-700 transition-colors hover:bg-violet-100"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-violet-300 text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-500/25 dark:text-violet-200 dark:hover:bg-violet-500/10"
                               aria-label={`Download ${podcast.title}`}
                             >
                               <Download className="h-4 w-4" />

@@ -11,7 +11,7 @@ const BackToToolsButton = ({ className }: BackToToolsButtonProps) => {
     <Link
       to="/tools"
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border border-border bg-white/90 px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:bg-secondary",
+        "inline-flex items-center gap-2 rounded-full border border-border bg-white/90 px-4 py-2 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-secondary dark:border-white/10 dark:bg-[#121a2a] dark:text-white dark:hover:bg-[#1a2538]",
         className
       )}
     >

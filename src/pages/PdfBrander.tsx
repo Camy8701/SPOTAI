@@ -6,7 +6,6 @@
 
 import { useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -70,12 +69,12 @@ export default function Home() {
 
   return (
     <Layout>
-      <div className="min-h-full bg-[radial-gradient(circle_at_top_left,_rgba(239,106,91,0.08),_transparent_28%),linear-gradient(180deg,#fbf8f3_0%,#ffffff_38%)]">
-        <section className="border-b border-border/70 bg-white/75">
+      <div className="min-h-full bg-gradient-to-br from-[#fbf8f3] via-white to-[#fff8f0] dark:from-[#07101f] dark:via-[#0b1424] dark:to-[#111a2c]">
+        <section className="border-b border-border/70 bg-white/80 dark:bg-[#081120]/80">
           <div className="container py-8 sm:py-10">
             <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#f1d8d2] bg-[#fff3ef] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-coral">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#f1d8d2] bg-[#fff3ef] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-coral dark:border-orange-500/25 dark:bg-orange-500/10 dark:text-orange-200">
                   <Stamp className="h-3.5 w-3.5" />
                   SpotAI Tools
                 </div>
@@ -89,7 +88,7 @@ export default function Home() {
 
               <div className="flex flex-wrap items-center gap-3">
                 <BackToToolsButton />
-                <div className="inline-flex items-center gap-2 rounded-full border border-[#d9eadf] bg-[#eef8f1] px-4 py-2 text-sm font-medium text-[#3f7c56]">
+                <div className="inline-flex items-center gap-2 rounded-full border border-[#d9eadf] bg-[#eef8f1] px-4 py-2 text-sm font-medium text-[#3f7c56] dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
                   100% browser-based
                 </div>
               </div>
@@ -98,7 +97,7 @@ export default function Home() {
         </section>
 
         <section className="container py-6 sm:py-8">
-          <div className="overflow-hidden rounded-[32px] border border-[#eadfd3] bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+          <div className="overflow-hidden rounded-[32px] border border-[#eadfd3] bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[#0b1424] dark:shadow-[0_24px_80px_rgba(2,6,23,0.4)]">
             <PdfBranderHeader
               step={brander.step}
               onReset={brander.resetAll}
@@ -118,7 +117,7 @@ export default function Home() {
                 >
               {/* Hero section */}
                   {brander.pdfFiles.length === 0 && (
-                    <div className="relative overflow-hidden border-b border-border" style={{ backgroundColor: '#f5f3ef' }}>
+                    <div className="relative overflow-hidden border-b border-border bg-[#f5f3ef] dark:bg-[#0f1728]">
                   {/* Decorative background shapes */}
                       <div className="absolute top-0 right-0 h-80 w-80 opacity-20 pointer-events-none">
                         <img src={HERO_BG} alt="" className="h-full w-full object-cover" />
@@ -129,14 +128,14 @@ export default function Home() {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.5, delay: 0.1 }}
                         >
-                          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-coral/10 px-3 py-1.5 text-xs font-semibold text-coral">
+                          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-coral/10 px-3 py-1.5 text-xs font-semibold text-coral dark:bg-orange-500/12 dark:text-orange-200">
                             <Sparkles className="h-3.5 w-3.5" />
                             100% browser-based — your files stay private
                           </div>
-                          <h2 className="mb-3 text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: '#1a1a1a' }}>
+                          <h2 className="mb-3 text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
                             Brand your PDFs in seconds
                           </h2>
-                          <p className="mx-auto max-w-lg text-base" style={{ color: '#666' }}>
+                          <p className="mx-auto max-w-lg text-base text-slate-600 dark:text-slate-300">
                             Upload your ebooks or documents, add your logo, choose placement — and we&apos;ll stamp it on every page. Batch process up to 10 files at once.
                           </p>
                         </motion.div>
@@ -491,7 +490,7 @@ export default function Home() {
             </main>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-[#efe3d6] bg-[#f8f4ee] px-5 py-4 text-center text-sm text-[#6f6254]">
+          <div className="mt-4 rounded-2xl border border-[#efe3d6] bg-[#f8f4ee] px-5 py-4 text-center text-sm text-[#6f6254] dark:border-white/10 dark:bg-[#0f1728] dark:text-slate-300">
             PDF Brander processes files locally in your browser. Your PDFs and logo stay on your device.
           </div>
         </section>
