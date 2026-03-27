@@ -554,12 +554,7 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string | null
-          first_name: string | null
-          google_auth_enabled: boolean
-          headline: string | null
           id: string
-          last_name: string | null
-          onboarding_completed: boolean
           updated_at: string
           user_id: string
         }
@@ -568,12 +563,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
-          first_name?: string | null
-          google_auth_enabled?: boolean
-          headline?: string | null
           id?: string
-          last_name?: string | null
-          onboarding_completed?: boolean
           updated_at?: string
           user_id: string
         }
@@ -582,12 +572,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
-          first_name?: string | null
-          google_auth_enabled?: boolean
-          headline?: string | null
           id?: string
-          last_name?: string | null
-          onboarding_completed?: boolean
           updated_at?: string
           user_id?: string
         }
