@@ -31,6 +31,7 @@ import ImageLibrary from "./pages/ImageLibrary";
 import PromptLibrary from "./pages/PromptLibrary";
 import Notifications from "./pages/Notifications";
 import { hasCompletedOnboarding } from "@/lib/profile";
+import ProfileSettings from "./pages/ProfileSettings";
 
 const queryClient = new QueryClient();
 
@@ -100,6 +101,7 @@ const App = () => (
             <Route path="/image-library" element={<ProtectedRoute><ImageLibrary /></ProtectedRoute>} />
             <Route path="/prompt-library" element={<ProtectedRoute><PromptLibrary /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+            <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
