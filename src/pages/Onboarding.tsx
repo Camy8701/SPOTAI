@@ -90,7 +90,8 @@ const Onboarding = () => {
 
     const { error } = await supabase
       .from("profiles")
-      .update({
+      .upsert({
+        user_id: user.id,
         first_name: nextFirstName,
         last_name: nextLastName || null,
         display_name: nextDisplayName,
@@ -99,8 +100,7 @@ const Onboarding = () => {
         avatar_url: nextAvatarUrl,
         google_auth_enabled: true,
         onboarding_completed: true,
-      })
-      .eq("user_id", user.id);
+      }, { onConflict: "user_id" });
 
     if (error) {
       setSaving(false);

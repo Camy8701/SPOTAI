@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Calculator, Type, Upload, X, Moon, Sun, LogOut, LayoutDashboard, Shield, Menu } from "lucide-react";
+import { Search, Calculator, Type, Upload, X, Moon, Sun, LogOut, LayoutDashboard, Shield, Menu, UserCog } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
@@ -145,6 +145,9 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
                   <Shield className="h-4 w-4" />
                 </Link>
               )}
+              <Link to="/profile-settings" className="p-2 rounded-md hover:bg-secondary transition-colors" title="Profile Settings">
+                <UserCog className="h-4 w-4" />
+              </Link>
               <span className="text-sm text-foreground font-medium truncate max-w-[120px]">
                 {profile?.display_name || user.email?.split("@")[0]}
               </span>
@@ -242,6 +245,9 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
                     </div>
                     <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
                       <LayoutDashboard className="h-4 w-4" /> My Dashboard
+                    </Link>
+                    <Link to="/profile-settings" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
+                      <UserCog className="h-4 w-4" /> Profile Settings
                     </Link>
                     {isAdmin && (
                       <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
