@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -81,6 +82,31 @@ const ProfileSettings = () => {
     setSaving(false);
     toast({ title: "Profile updated" });
   };
+
+  if (!profile) {
+    return (
+      <Layout>
+        <div className="mx-auto max-w-2xl px-4 py-8">
+          <div className="mb-6 flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Profile Settings</h1>
+          </div>
+          <div className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Skeleton className="h-16 rounded-lg" />
+              <Skeleton className="h-16 rounded-lg" />
+            </div>
+            <Skeleton className="h-16 rounded-lg" />
+            <Skeleton className="h-16 rounded-lg" />
+            <Skeleton className="h-24 rounded-lg" />
+            <Skeleton className="h-32 rounded-lg" />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
