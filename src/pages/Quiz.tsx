@@ -1,104 +1,175 @@
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Brain,
+  CalendarDays,
+  CheckCircle2,
+  Flame,
+  Heart,
+  Layers3,
+  Rocket,
+  RotateCcw,
+  ShieldAlert,
+  Sparkles,
+  Star,
+  Swords,
+  XCircle,
+} from "lucide-react";
+
 import Layout from "@/components/layout/Layout";
-import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, XCircle, RotateCcw, Trophy, Brain, Zap, Star, Search } from "lucide-react";
+import QuizArenaHud from "@/components/quiz/QuizArenaHud";
+import QuizModeCard from "@/components/quiz/QuizModeCard";
+import QuizSummaryCard from "@/components/quiz/QuizSummaryCard";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
-import ShowcaseCard from "@/components/ui/showcase-card";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { fallbackQuizQuestions } from "@/lib/quiz-content";
+import {
+  QUIZ_MODE_CONFIG,
+  buildQuizSession,
+  getAvailableQuizCategories,
+  getQuestionPoints,
+  getQuizBankStats,
+  type QuizModeId,
+  type QuizQuestion,
+  type QuizSession,
+} from "@/lib/quiz-engine";
+import {
+  buildQuizAttemptsPayload,
+  computeUpdatedQuizPlayerStats,
+  type QuizPlayerStatsRow,
+} from "@/lib/quiz-progress";
+import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
-type Question = {
-  id: number | string;
-  question: string;
-  options: string[];
-  correctAnswer: number;
-  explanation: string;
+type QuizQuestionRow = Database["public"]["Tables"]["quiz_questions"]["Row"];
+
+type RevealState = {
+  selectedIndex: number;
+  isCorrect: boolean;
+  pointsEarned: number;
+  livesAfterAnswer: number | null;
 };
 
-const allQuizQuestions: Question[] = [
-  { id: 1, question: "What does 'AI' stand for?", options: ["Automated Intelligence", "Artificial Intelligence", "Advanced Intelligence"], correctAnswer: 1, explanation: "AI stands for Artificial Intelligence, which refers to the simulation of human intelligence in machines." },
-  { id: 2, question: "Who coined the term 'Artificial Intelligence'?", options: ["Alan Turing", "John McCarthy", "Marvin Minsky"], correctAnswer: 1, explanation: "John McCarthy coined the term 'Artificial Intelligence' in 1956 at the Dartmouth Conference." },
-  { id: 3, question: "Which chess-playing computer defeated world champion Garry Kasparov in 1997?", options: ["Deep Blue", "Watson", "AlphaGo"], correctAnswer: 0, explanation: "Deep Blue, IBM's chess-playing computer, defeated world champion Garry Kasparov in 1997." },
-  { id: 4, question: "What was the name of IBM's AI system that won at Jeopardy! in 2011?", options: ["Deep Blue", "Watson", "AlphaGo"], correctAnswer: 1, explanation: "Watson was IBM's AI system that won at Jeopardy! in 2011, demonstrating advanced natural language processing." },
-  { id: 5, question: "Which company created ChatGPT?", options: ["Google", "OpenAI", "Microsoft"], correctAnswer: 1, explanation: "ChatGPT was created by OpenAI, an AI research company founded in 2015." },
-  { id: 6, question: "What is Alexa?", options: ["Google's search engine", "Amazon's voice-controlled AI assistant", "Apple's smartphone"], correctAnswer: 1, explanation: "Alexa is Amazon's voice-controlled AI assistant that can perform various tasks through voice commands." },
-  { id: 7, question: "Which company created Siri?", options: ["Originally by SRI, then acquired by Apple", "Google", "Microsoft"], correctAnswer: 0, explanation: "Siri was originally created by a startup called SRI, but was acquired and developed by Apple." },
-  { id: 8, question: "Which company owns DeepMind?", options: ["Microsoft", "Google (Alphabet)", "Facebook"], correctAnswer: 1, explanation: "DeepMind is owned by Google (Alphabet), acquired in 2014 for AI research and development." },
-  { id: 9, question: "What major breakthrough did DeepMind achieve with AlphaGo?", options: ["Defeating a world champion Go player", "Winning at chess", "Creating realistic images"], correctAnswer: 0, explanation: "DeepMind's AlphaGo achieved the breakthrough of defeating world champion Go player Lee Sedol in 2016." },
-  { id: 10, question: "In which movie does the AI system HAL 9000 appear?", options: ["Blade Runner", "2001: A Space Odyssey", "The Matrix"], correctAnswer: 1, explanation: "HAL 9000 is the AI system that appears in Stanley Kubrick's '2001: A Space Odyssey'." },
-  { id: 11, question: "What is the name of the AI in the Iron Man movies?", options: ["FRIDAY", "JARVIS", "EDITH"], correctAnswer: 1, explanation: "JARVIS (Just A Rather Very Intelligent System) is Tony Stark's AI assistant in the Iron Man movies." },
-  { id: 12, question: "In the Terminator movies, what is the AI system that becomes self-aware?", options: ["HAL 9000", "Skynet", "The Matrix"], correctAnswer: 1, explanation: "Skynet is the AI system in the Terminator movies that becomes self-aware and turns against humanity." },
-  { id: 13, question: "Which AI character from Star Wars is known for protocol and etiquette?", options: ["R2-D2", "C-3PO", "BB-8"], correctAnswer: 1, explanation: "C-3PO is the protocol droid in Star Wars known for his knowledge of etiquette and over six million forms of communication." },
-  { id: 14, question: "In the movie 'Her,' what is the name of the AI operating system?", options: ["Samantha", "Cortana", "Alexa"], correctAnswer: 0, explanation: "Samantha is the AI operating system in the movie 'Her' that develops a relationship with the main character." },
-  { id: 15, question: "Which video game features an AI companion named Cortana?", options: ["Call of Duty", "Halo series", "Mass Effect"], correctAnswer: 1, explanation: "Cortana is the AI companion in the Halo video game series, assisting the Master Chief." },
-  { id: 16, question: "Which animated movie features a robot who develops emotions and saves humanity?", options: ["Big Hero 6", "WALL-E", "The Iron Giant"], correctAnswer: 1, explanation: "WALL-E is the Pixar animated movie about a robot who develops emotions and ultimately helps save humanity." },
-  { id: 17, question: "What is the main purpose of AI in autonomous vehicles?", options: ["To play music", "To enable self-driving capabilities", "To improve fuel efficiency"], correctAnswer: 1, explanation: "AI in autonomous vehicles processes sensor data and makes driving decisions to enable self-driving capabilities." },
-  { id: 18, question: "What type of AI is used in Netflix's recommendation system?", options: ["Machine learning algorithms", "Voice recognition", "Computer vision"], correctAnswer: 0, explanation: "Netflix uses machine learning and recommendation algorithms to suggest content based on viewing patterns." },
-  { id: 19, question: "What is the main concern about job displacement due to AI?", options: ["AI will make jobs more difficult", "AI might replace human workers", "AI will reduce salaries"], correctAnswer: 1, explanation: "The main concern is that AI automation might replace human workers in various industries." },
-  { id: 20, question: "What are 'deepfakes'?", options: ["Deep ocean exploration tools", "AI-generated fake videos or audio", "Advanced search algorithms"], correctAnswer: 1, explanation: "Deepfakes are AI-generated fake videos or audio that appear realistic but are fabricated." },
-  { id: 21, question: "How long did it take ChatGPT to reach 100 million users?", options: ["About 2 months", "1 year", "6 months"], correctAnswer: 0, explanation: "ChatGPT reached 100 million users in about 2 months, making it the fastest-growing app in history at the time." },
-  { id: 22, question: "Which country invests the most in AI research and development?", options: ["China", "The United States", "Japan"], correctAnswer: 1, explanation: "The United States invests the most in AI research and development, followed closely by China." },
-  { id: 23, question: "What is the name of Boston Dynamics' famous robot dog?", options: ["Spot", "Atlas", "Handle"], correctAnswer: 0, explanation: "Spot is Boston Dynamics' famous four-legged robot dog known for its mobility and agility." },
-  { id: 24, question: "What is the most common programming language used for AI development?", options: ["Java", "Python", "C++"], correctAnswer: 1, explanation: "Python is the most common programming language for AI development due to its simplicity and extensive libraries." },
-  { id: 25, question: "True or False: AI will replace all human jobs.", options: ["True", "False", "Only in some industries"], correctAnswer: 1, explanation: "False - While AI will automate some jobs, it will also create new ones and augment human capabilities." },
-  { id: 26, question: "Can current AI systems truly 'understand' like humans do?", options: ["Yes, they understand everything", "No, they process patterns but don't truly understand", "Only simple concepts"], correctAnswer: 1, explanation: "No - Current AI processes patterns in data but doesn't have consciousness or true understanding like humans." },
-  { id: 27, question: "True or False: AI is only useful for tech companies.", options: ["True", "False", "Only for large companies"], correctAnswer: 1, explanation: "False - AI is used across all industries including healthcare, finance, agriculture, and education." },
-  { id: 28, question: "Do AI systems have emotions?", options: ["Yes, they feel emotions", "No, they simulate but don't feel emotions", "Only advanced AI systems"], correctAnswer: 1, explanation: "No - Current AI systems can simulate emotional responses but don't actually feel emotions." },
-  { id: 29, question: "Is AI currently conscious or self-aware?", options: ["Yes, advanced AI is conscious", "No, current AI is not conscious", "Only some AI systems"], correctAnswer: 1, explanation: "No - Current AI systems are not conscious or self-aware, despite appearing sophisticated." },
-  { id: 30, question: "True or False: AI development is slowing down.", options: ["True", "False", "It's staying the same"], correctAnswer: 1, explanation: "False - AI development is accelerating rapidly with new breakthroughs happening regularly." },
-  { id: 31, question: "What is an algorithm in the context of AI?", options: ["A type of computer", "A set of rules for solving problems", "A programming language"], correctAnswer: 1, explanation: "An algorithm is a set of rules or instructions that tells a computer how to solve a problem." },
-  { id: 32, question: "What is the difference between AI and machine learning?", options: ["They are the same thing", "AI is broader, ML is a subset that learns from data", "ML is broader than AI"], correctAnswer: 1, explanation: "AI is the broader concept of intelligent machines, while machine learning is a subset of AI that learns from data." },
-  { id: 33, question: "What is training data in machine learning?", options: ["Data used to test the final model", "The dataset used to teach an AI model", "Data that needs to be cleaned"], correctAnswer: 1, explanation: "Training data is the dataset used to teach an AI model how to make predictions or decisions." },
-  { id: 34, question: "What does 'NLP' stand for in AI?", options: ["Natural Language Processing", "Neural Learning Protocol", "Network Learning Process"], correctAnswer: 0, explanation: "NLP stands for Natural Language Processing, which helps computers understand and work with human language." },
-  { id: 35, question: "What is the potential positive impact of AI on healthcare?", options: ["Only faster appointments", "Improved diagnosis and personalized treatment", "Just cost reduction"], correctAnswer: 1, explanation: "AI can improve healthcare through better diagnosis, drug discovery, personalized treatment, and medical imaging analysis." },
-  { id: 36, question: "What is machine learning?", options: ["Teaching machines to move", "AI that learns from data without explicit programming", "Programming machines manually"], correctAnswer: 1, explanation: "Machine learning is a subset of AI where computers learn and improve from data without being explicitly programmed for every task." },
-  { id: 37, question: "Which AI assistant is built into iPhones?", options: ["Alexa", "Siri", "Google Assistant"], correctAnswer: 1, explanation: "Siri is Apple's AI assistant that is built into iPhones and other Apple devices." },
-  { id: 38, question: "What do we call AI that can generate new images, text, or music?", options: ["Analytical AI", "Generative AI", "Predictive AI"], correctAnswer: 1, explanation: "Generative AI refers to AI systems that can create new content like images, text, or music." },
-  { id: 39, question: "True or False: You need to be a programmer to use AI tools like ChatGPT.", options: ["True", "False", "Only for advanced features"], correctAnswer: 1, explanation: "False - Many AI tools like ChatGPT are designed for everyday users with simple, user-friendly interfaces." },
-  { id: 40, question: "What is the main way AI learns new information?", options: ["By reading books", "By analyzing large amounts of data to find patterns", "By asking humans questions"], correctAnswer: 1, explanation: "AI learns primarily by analyzing large amounts of data to identify patterns and relationships." },
-];
+const modeIcons = {
+  daily: CalendarDays,
+  classic: Brain,
+  survival: ShieldAlert,
+  category: Layers3,
+  recovery: RotateCcw,
+} as const;
 
-const getRandomQuestions = (questions: Question[], count: number): Question[] => {
-  const shuffled = [...questions].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
+const modeStatLabels: Record<QuizModeId, string> = {
+  daily: "5-question ritual",
+  classic: "10-question ramp",
+  survival: "3 lives",
+  category: "Focused deck",
+  recovery: "Weak spots remixed",
 };
 
-const gameCards = [
-  {
-    title: "AI Knowledge Arena",
-    subtitle: "History, tools, ethics, and pop culture",
-    tag: "Trivia",
-    image:
-      "https://images.unsplash.com/photo-1516110833967-0b5716ca1387?auto=format&fit=crop&w=1400&q=80",
-  },
-  {
-    title: "Prompt Speed Run",
-    subtitle: "Quick rounds, faster scoring, bonus points",
-    tag: "Challenge",
-    image:
-      "https://images.unsplash.com/photo-1579567761406-4684ee0c75b6?auto=format&fit=crop&w=1400&q=80",
-  },
+const categoryThemes = [
+  "from-fuchsia-500/25 via-violet-500/10 to-transparent",
+  "from-cyan-500/25 via-sky-500/10 to-transparent",
+  "from-emerald-500/25 via-lime-500/10 to-transparent",
+  "from-amber-500/25 via-orange-500/10 to-transparent",
 ];
+
+const formatCategoryLabel = (value: string) =>
+  value
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
+const normalizeDifficulty = (value?: string | null): QuizQuestion["difficulty"] => {
+  if (value === "easy" || value === "hard") return value;
+  return "medium";
+};
+
+const normalizeQuestion = (item: QuizQuestionRow): QuizQuestion | null => {
+  const options = Array.isArray(item.options) ? item.options.map((option) => String(option)) : [];
+  const correctAnswer = Number(item.correct_answer);
+
+  if (options.length < 2 || Number.isNaN(correctAnswer) || correctAnswer < 0 || correctAnswer >= options.length) {
+    return null;
+  }
+
+  return {
+    id: item.id,
+    quizTitle: (item.quiz_title || "AI Knowledge Arena").trim(),
+    category: (item.category || "general").trim().toLowerCase().replace(/\s+/g, "-"),
+    difficulty: normalizeDifficulty(item.difficulty),
+    question: item.question,
+    options,
+    correctAnswer,
+    explanation: item.explanation?.trim() || "No explanation provided yet.",
+  };
+};
+
+const heroTips = [
+  "Shorter sessions keep the pace high and make replaying feel natural.",
+  "Answer feedback now lands inside the run instead of being hidden until the end.",
+  "Mode choice adds autonomy, which makes the game feel less repetitive.",
+];
+
+const getRecoveryIdsFromAttempts = (attempts: Array<{ question_id: string; is_correct: boolean }>) => {
+  const latestByQuestion = new Map<string, boolean>();
+
+  for (const attempt of attempts) {
+    const key = String(attempt.question_id);
+    if (latestByQuestion.has(key)) continue;
+    latestByQuestion.set(key, attempt.is_correct);
+  }
+
+  return Array.from(latestByQuestion.entries())
+    .filter(([, isCorrect]) => !isCorrect)
+    .map(([questionId]) => questionId);
+};
 
 const Quiz = () => {
+  const shouldReduceMotion = useReducedMotion();
   const { toast } = useToast();
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
-  const [showResults, setShowResults] = useState(false);
-  const [quizCompleted, setQuizCompleted] = useState(false);
-  const [quizStarted, setQuizStarted] = useState(false);
-  const [questionPool, setQuestionPool] = useState<Question[]>(allQuizQuestions);
-  const [questionsLoading, setQuestionsLoading] = useState(true);
-  const [quizSeed, setQuizSeed] = useState(0);
-  const [resultSaved, setResultSaved] = useState(false);
   const { user } = useAuth();
+
+  const [questionPool, setQuestionPool] = useState<QuizQuestion[]>(fallbackQuizQuestions);
+  const [questionsLoading, setQuestionsLoading] = useState(true);
+  const [selectedMode, setSelectedMode] = useState<QuizModeId>("daily");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [activeSession, setActiveSession] = useState<QuizSession | null>(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<Array<number | null>>([]);
+  const [revealState, setRevealState] = useState<RevealState | null>(null);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
+  const [roundPoints, setRoundPoints] = useState(0);
+  const [awardedPoints, setAwardedPoints] = useState<number[]>([]);
+  const [livesRemaining, setLivesRemaining] = useState<number | null>(null);
+  const [summaryVisible, setSummaryVisible] = useState(false);
+  const [sessionNonce, setSessionNonce] = useState(0);
+  const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
+  const [playerStats, setPlayerStats] = useState<QuizPlayerStatsRow | null>(null);
+  const [playerStatsLoading, setPlayerStatsLoading] = useState(true);
+  const [recentSessions, setRecentSessions] = useState<Array<{
+    id: string;
+    quiz_title: string;
+    mode: string;
+    correct_count: number;
+    total_questions: number;
+    completed_at: string;
+  }>>([]);
+  const [recoveryQuestionIds, setRecoveryQuestionIds] = useState<string[]>([]);
 
   useEffect(() => {
     let mounted = true;
 
     const loadQuestions = async () => {
       setQuestionsLoading(true);
+
       const { data, error } = await supabase
         .from("quiz_questions")
         .select("*")
@@ -107,30 +178,16 @@ const Quiz = () => {
       if (!mounted) return;
 
       if (error || !data || data.length === 0) {
-        setQuestionPool(allQuizQuestions);
+        setQuestionPool(fallbackQuizQuestions);
         setQuestionsLoading(false);
         return;
       }
 
       const mappedQuestions = data
-        .map((item) => {
-          const options = Array.isArray(item.options)
-            ? item.options.map((option) => String(option))
-            : [];
+        .map((item) => normalizeQuestion(item))
+        .filter((item): item is QuizQuestion => !!item);
 
-          if (options.length < 2) return null;
-
-          return {
-            id: item.id as string | number,
-            question: item.question,
-            options,
-            correctAnswer: item.correct_answer,
-            explanation: item.explanation || "No explanation provided.",
-          } as Question;
-        })
-        .filter((item): item is Question => !!item);
-
-      setQuestionPool(mappedQuestions.length > 0 ? mappedQuestions : allQuizQuestions);
+      setQuestionPool(mappedQuestions.length > 0 ? mappedQuestions : fallbackQuizQuestions);
       setQuestionsLoading(false);
     };
 
@@ -141,125 +198,337 @@ const Quiz = () => {
     };
   }, []);
 
-  const quizQuestions = useMemo(
-    () => getRandomQuestions(questionPool, Math.min(10, questionPool.length)),
-    [questionPool, quizSeed],
-  );
-
-  if (!user) {
-    return (
-      <Layout>
-        <div className="min-h-screen bg-background text-foreground">
-          <section className="border-b border-border bg-secondary">
-            <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-              <div className="text-center">
-                <h1 className="text-5xl tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                  Games
-                </h1>
-                <p className="mt-2 text-sm uppercase tracking-[0.22em] text-muted-foreground">
-                  Learn and play with SPOTAI
-                </p>
-              </div>
-              <div className="relative mx-auto mt-8 max-w-2xl">
-                <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  placeholder="Search games"
-                  className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-pink-500"
-                />
-              </div>
-            </div>
-          </section>
-
-          <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
-              {gameCards.map((card) => (
-                <ShowcaseCard
-                  key={card.title}
-                  title={card.title}
-                  subtitle={card.subtitle}
-                  tag={card.tag}
-                  image={card.image}
-                  className="min-h-[32rem]"
-                  imageClassName="h-[21rem]"
-                />
-              ))}
-            </div>
-
-            <div className="mt-10 rounded-[2rem] border border-border bg-card px-8 py-10 text-center shadow-[0_8px_26px_rgba(16,24,40,0.06)]">
-              <Brain className="mx-auto mb-4 h-14 w-14 text-pink-600" />
-              <h2 className="text-3xl font-semibold tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                Log In To Start Quiz
-              </h2>
-              <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-                Sign in to play the AI Knowledge Arena, save your scores, and unlock bonus rounds.
-              </p>
-              <Link
-                to="/auth"
-                className="mt-6 inline-flex h-12 items-center rounded-full border border-pink-500 bg-pink-500 px-8 text-sm font-semibold uppercase tracking-[0.2em] text-white transition-colors hover:bg-pink-600"
-              >
-                Enter The Arena
-              </Link>
-            </div>
-          </section>
-        </div>
-      </Layout>
-    );
-  }
-
-  const handleAnswerSelect = (answerIndex: number) => {
-    if (quizCompleted) return;
-    const newAnswers = [...selectedAnswers];
-    newAnswers[currentQuestion] = answerIndex;
-    setSelectedAnswers(newAnswers);
-  };
-
-  const handleNextQuestion = () => {
-    if (currentQuestion < quizQuestions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      setQuizCompleted(true);
-      setShowResults(true);
+  useEffect(() => {
+    if (!user) {
+      setPlayerStats(null);
+      setPlayerStatsLoading(false);
+      setRecentSessions([]);
+      setRecoveryQuestionIds([]);
+      return;
     }
-  };
 
-  const calculateScore = () => {
-    return selectedAnswers.reduce((score, answer, index) => {
-      return score + (answer === quizQuestions[index].correctAnswer ? 1 : 0);
-    }, 0);
-  };
+    let mounted = true;
+    setPlayerStatsLoading(true);
 
-  const getScoreMessage = (score: number) => {
-    const percentage = (score / quizQuestions.length) * 100;
-    if (percentage >= 90) return "🎉 AI Master! Outstanding knowledge!";
-    if (percentage >= 80) return "🚀 AI Expert! Excellent work!";
-    if (percentage >= 70) return "⭐ AI Enthusiast! Great job!";
-    if (percentage >= 60) return "📚 AI Learner! Good progress!";
-    return "🌱 AI Beginner! Keep learning!";
-  };
+    Promise.all([
+      supabase
+        .from("quiz_player_stats")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("quiz_sessions")
+        .select("id, quiz_title, mode, correct_count, total_questions, completed_at")
+        .eq("user_id", user.id)
+        .order("completed_at", { ascending: false })
+        .limit(4),
+      supabase
+        .from("quiz_question_attempts")
+        .select("question_id, is_correct")
+        .eq("user_id", user.id)
+        .order("answered_at", { ascending: false })
+        .limit(80),
+    ]).then(([statsRes, sessionsRes, attemptsRes]) => {
+        if (!mounted) return;
+        setPlayerStats(statsRes.data || null);
+        setRecentSessions(sessionsRes.data || []);
+        setRecoveryQuestionIds(getRecoveryIdsFromAttempts(attemptsRes.data || []));
+        setPlayerStatsLoading(false);
+      });
 
-  const resetQuiz = () => {
-    setCurrentQuestion(0);
-    setSelectedAnswers([]);
-    setShowResults(false);
-    setQuizCompleted(false);
-    setQuizStarted(false);
-    setResultSaved(false);
-    setQuizSeed((value) => value + 1);
-  };
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
 
-  const score = calculateScore();
-  const pointsEarned = score * 10;
+  const categoryOptions = useMemo(() => getAvailableQuizCategories(questionPool), [questionPool]);
+  const bankStats = useMemo(() => getQuizBankStats(questionPool), [questionPool]);
+  const recoveryQuestions = useMemo(() => {
+    if (recoveryQuestionIds.length === 0) return [];
+    const questionMap = new Map(questionPool.map((question) => [String(question.id), question]));
+    return recoveryQuestionIds
+      .map((id) => questionMap.get(id))
+      .filter((question): question is QuizQuestion => !!question);
+  }, [questionPool, recoveryQuestionIds]);
+  const currentMode = QUIZ_MODE_CONFIG[selectedMode];
+  const currentQuestion = activeSession?.questions[currentQuestionIndex] ?? null;
+  const answeredQuestionCount = selectedAnswers.filter((value) => typeof value === "number").length;
+  const overallAccuracy =
+    playerStats && playerStats.total_questions_answered > 0
+      ? Math.round((playerStats.total_correct_answers / playerStats.total_questions_answered) * 100)
+      : null;
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const completedDailyToday = playerStats?.last_daily_challenge_date === todayKey;
+  const favoriteCategoryLabel = playerStats?.favorite_category ? formatCategoryLabel(playerStats.favorite_category) : "Still learning your style";
+  const recommendedMode: QuizModeId =
+    recoveryQuestions.length >= 3 ? "recovery" : !completedDailyToday ? "daily" : overallAccuracy !== null && overallAccuracy >= 80 ? "survival" : "classic";
 
   useEffect(() => {
-    if (!user || !quizCompleted || !showResults || resultSaved || quizQuestions.length === 0) return;
+    if (selectedMode !== "category") return;
+
+    if (selectedCategory === "all" && categoryOptions[0]) {
+      setSelectedCategory(categoryOptions[0].key);
+      return;
+    }
+
+    if (
+      selectedCategory !== "all" &&
+      categoryOptions.length > 0 &&
+      !categoryOptions.some((option) => option.key === selectedCategory)
+    ) {
+      setSelectedCategory(categoryOptions[0].key);
+    }
+  }, [categoryOptions, selectedCategory, selectedMode]);
+
+  const resetRunState = () => {
+    setCurrentQuestionIndex(0);
+    setSelectedAnswers([]);
+    setRevealState(null);
+    setCorrectCount(0);
+    setStreak(0);
+    setMaxStreak(0);
+    setRoundPoints(0);
+    setAwardedPoints([]);
+    setSummaryVisible(false);
+    setSavedSessionId(null);
+  };
+
+  const startMode = (modeOverride?: QuizModeId, sourceQuestionsOverride?: QuizQuestion[]) => {
+    const nextMode = modeOverride || selectedMode;
+    const nextCategory =
+      nextMode === "category"
+        ? selectedCategory === "all"
+          ? categoryOptions[0]?.key ?? "general"
+          : selectedCategory
+        : null;
+    const sourceQuestions =
+      sourceQuestionsOverride ||
+      (nextMode === "recovery" ? recoveryQuestions : undefined);
+
+    if (nextMode === "recovery" && (!sourceQuestions || sourceQuestions.length === 0)) {
+      toast({
+        title: "Recovery run not ready",
+        description: "Play more rounds first and your missed questions will collect here.",
+      });
+      return;
+    }
+
+    const seedKey =
+      nextMode === "daily"
+        ? new Date().toISOString().slice(0, 10)
+        : `${Date.now()}-${sessionNonce}`;
+
+    const session = buildQuizSession({
+      questions: questionPool,
+      mode: nextMode,
+      category: nextCategory,
+      seedKey,
+      sourceQuestions,
+    });
+
+    if (session.questions.length === 0) {
+      toast({
+        title: "No questions available",
+        description: "Add more quiz questions or choose another category.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedMode(nextMode);
+    setActiveSession(session);
+    resetRunState();
+    setLivesRemaining(session.lives);
+    setSessionNonce((value) => value + 1);
+  };
+
+  const returnToHub = () => {
+    setActiveSession(null);
+    resetRunState();
+    setLivesRemaining(null);
+  };
+
+  const handleAnswerSelect = (answerIndex: number) => {
+    if (!currentQuestion || revealState) return;
+
+    const isCorrect = answerIndex === currentQuestion.correctAnswer;
+    const nextStreak = isCorrect ? streak + 1 : 0;
+    const pointsEarned = isCorrect ? getQuestionPoints(currentQuestion, streak) : 0;
+    const nextLives = livesRemaining === null ? null : isCorrect ? livesRemaining : Math.max(livesRemaining - 1, 0);
+
+    setSelectedAnswers((previous) => {
+      const next = [...previous];
+      next[currentQuestionIndex] = answerIndex;
+      return next;
+    });
+    setAwardedPoints((previous) => {
+      const next = [...previous];
+      next[currentQuestionIndex] = pointsEarned;
+      return next;
+    });
+    setRevealState({
+      selectedIndex: answerIndex,
+      isCorrect,
+      pointsEarned,
+      livesAfterAnswer: nextLives,
+    });
+    setCorrectCount((value) => value + (isCorrect ? 1 : 0));
+    setRoundPoints((value) => value + pointsEarned);
+    setStreak(nextStreak);
+    setMaxStreak((value) => Math.max(value, nextStreak));
+    setLivesRemaining(nextLives);
+  };
+
+  const advanceRun = () => {
+    if (!activeSession || !revealState) return;
+
+    const outOfLives = revealState.livesAfterAnswer !== null && revealState.livesAfterAnswer <= 0;
+    const isLastQuestion = currentQuestionIndex >= activeSession.questions.length - 1;
+
+    if (outOfLives || isLastQuestion) {
+      setSummaryVisible(true);
+      setRevealState(null);
+      return;
+    }
+
+    setCurrentQuestionIndex((value) => value + 1);
+    setRevealState(null);
+  };
+
+  const replayCurrentMode = () => {
+    if (!activeSession) {
+      startMode();
+      return;
+    }
+
+    startMode(activeSession.mode);
+  };
+
+  const categoryBreakdown = useMemo(() => {
+    if (!activeSession) return [];
+
+    const map = new Map<string, { label: string; correct: number; total: number }>();
+
+    activeSession.questions.slice(0, answeredQuestionCount).forEach((question, index) => {
+      const label = formatCategoryLabel(question.category);
+      const current = map.get(label) || { label, correct: 0, total: 0 };
+      current.total += 1;
+      if (selectedAnswers[index] === question.correctAnswer) current.correct += 1;
+      map.set(label, current);
+    });
+
+    return Array.from(map.values())
+      .map((item) => ({
+        ...item,
+        ratio: item.total === 0 ? 0 : item.correct / item.total,
+      }))
+      .sort((left, right) => right.total - left.total);
+  }, [activeSession, answeredQuestionCount, selectedAnswers]);
+
+  const immediateRecoveryQuestions = useMemo(() => {
+    if (!activeSession || answeredQuestionCount === 0) return [];
+
+    return activeSession.questions.slice(0, answeredQuestionCount).filter((question, index) => {
+      const answer = selectedAnswers[index];
+      return typeof answer === "number" && answer !== question.correctAnswer;
+    });
+  }, [activeSession, answeredQuestionCount, selectedAnswers]);
+
+  useEffect(() => {
+    if (!user || !activeSession || !summaryVisible || savedSessionId === activeSession.id || answeredQuestionCount === 0) return;
 
     const saveResult = async () => {
+      const playedSession: QuizSession = {
+        ...activeSession,
+        questions: activeSession.questions.slice(0, answeredQuestionCount),
+      };
+      const answeredSelections = selectedAnswers.slice(0, answeredQuestionCount);
+      const answeredPoints = awardedPoints.slice(0, answeredQuestionCount);
+      const incorrectCount = answeredQuestionCount - correctCount;
+      const difficultyBand = Array.from(new Set(playedSession.questions.map((question) => question.difficulty))).join(",");
+
+      const { data: sessionData, error: sessionError } = await supabase
+        .from("quiz_sessions")
+        .insert({
+          user_id: user.id,
+          mode: playedSession.mode,
+          quiz_title: playedSession.saveTitle,
+          category: playedSession.category?.toLowerCase().replace(/\s+/g, "-") || null,
+          difficulty_band: difficultyBand || null,
+          score: correctCount,
+          total_questions: answeredQuestionCount,
+          correct_count: correctCount,
+          incorrect_count: incorrectCount,
+          max_streak: maxStreak,
+          xp_earned: roundPoints,
+          lives_start: playedSession.lives,
+          lives_remaining: livesRemaining,
+          answers: answeredSelections.map((value) => (typeof value === "number" ? value : null)),
+        })
+        .select("id")
+        .single();
+
+      if (sessionError || !sessionData) {
+        toast({
+          title: "Could not save quiz session",
+          description: sessionError?.message || "The run session could not be written.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const attemptsPayload = buildQuizAttemptsPayload({
+        sessionId: sessionData.id,
+        userId: user.id,
+        session: playedSession,
+        selectedAnswers: answeredSelections,
+        awardedPoints: answeredPoints,
+      });
+
+      if (attemptsPayload.length > 0) {
+        const { error: attemptsError } = await supabase.from("quiz_question_attempts").insert(attemptsPayload);
+
+        if (attemptsError) {
+          toast({
+            title: "Could not save question attempts",
+            description: attemptsError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      const nextStats = computeUpdatedQuizPlayerStats({
+        previous: playerStats,
+        session: playedSession,
+        selectedAnswers: answeredSelections,
+        awardedPoints: answeredPoints,
+        maxStreak,
+      });
+
+      const { error: statsError } = await supabase.from("quiz_player_stats").upsert(
+        {
+          user_id: user.id,
+          ...nextStats,
+        },
+        { onConflict: "user_id" },
+      );
+
+      if (statsError) {
+        toast({
+          title: "Could not update quiz stats",
+          description: statsError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase.from("quiz_results").insert({
         user_id: user.id,
-        quiz_title: "AI Knowledge Arena",
-        score,
-        total_questions: quizQuestions.length,
-        answers: selectedAnswers,
+        quiz_title: playedSession.saveTitle,
+        score: correctCount,
+        total_questions: answeredQuestionCount,
+        answers: answeredSelections.map((value) => (typeof value === "number" ? value : null)),
       });
 
       if (error) {
@@ -271,238 +540,665 @@ const Quiz = () => {
         return;
       }
 
-      setResultSaved(true);
+      setSavedSessionId(activeSession.id);
+      setPlayerStats((previous) => ({
+        user_id: user.id,
+        current_streak_days: nextStats.current_streak_days,
+        best_streak_days: nextStats.best_streak_days,
+        total_sessions: nextStats.total_sessions,
+        total_correct_answers: nextStats.total_correct_answers,
+        total_questions_answered: nextStats.total_questions_answered,
+        total_xp: nextStats.total_xp,
+        longest_answer_streak: nextStats.longest_answer_streak,
+        favorite_category: nextStats.favorite_category,
+        last_daily_challenge_date: nextStats.last_daily_challenge_date,
+        created_at: previous?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }));
+      setRecentSessions((previous) => [
+        {
+          id: sessionData.id,
+          quiz_title: playedSession.saveTitle,
+          mode: playedSession.mode,
+          correct_count: correctCount,
+          total_questions: answeredQuestionCount,
+          completed_at: new Date().toISOString(),
+        },
+        ...previous,
+      ].slice(0, 4));
+      setRecoveryQuestionIds((previous) => {
+        const next = new Set(previous);
+        attemptsPayload.forEach((attempt) => {
+          const key = String(attempt.question_id);
+          if (attempt.is_correct) {
+            next.delete(key);
+          } else {
+            next.add(key);
+          }
+        });
+        return Array.from(next);
+      });
       toast({
-        title: "Quiz result saved",
-        description: "Your score is now available in your dashboard and admin analytics.",
+        title: "Run saved",
+        description: "Your quiz history, streak-ready stats, and latest run are now stored.",
       });
     };
 
     saveResult();
-  }, [quizCompleted, quizQuestions.length, resultSaved, score, selectedAnswers, showResults, toast, user]);
+  }, [
+    activeSession,
+    answeredQuestionCount,
+    awardedPoints,
+    correctCount,
+    livesRemaining,
+    maxStreak,
+    playerStats,
+    roundPoints,
+    savedSessionId,
+    selectedAnswers,
+    summaryVisible,
+    toast,
+    user,
+  ]);
 
   return (
     <Layout>
-      <div className="min-h-screen bg-background text-foreground">
-        <section className="border-b border-border bg-secondary">
-          <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h1 className="text-5xl tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                Games
-              </h1>
-              <p className="mt-2 text-sm uppercase tracking-[0.22em] text-muted-foreground">
-                Play, learn, and level up your AI knowledge
-              </p>
-            </div>
-            <div className="relative mx-auto mt-8 max-w-2xl">
-              <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                placeholder="Search game modes"
-                className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-pink-500"
-              />
-            </div>
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.18),transparent_24%),radial-gradient(circle_at_80%_0%,rgba(236,72,153,0.16),transparent_22%),linear-gradient(180deg,#0b1020_0%,#090d18_50%,#070a12_100%)] text-white">
+        <section className="relative overflow-hidden border-b border-white/8">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:88px_88px] opacity-20" />
+          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+            {!activeSession ? (
+              <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+                <div className="relative z-10 space-y-6">
+                  <Badge className="rounded-full border-white/15 bg-white/8 px-4 py-1 text-[11px] uppercase tracking-[0.24em] text-white/75" variant="outline">
+                    SpotAI quiz arena
+                  </Badge>
+
+                  <div className="space-y-4">
+                    <h1 className="max-w-3xl text-5xl leading-none text-white sm:text-6xl" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                      Faster rounds, sharper feedback, stronger replay hooks.
+                    </h1>
+                    <p className="max-w-2xl text-base leading-7 text-slate-200/75 sm:text-lg">
+                      Pick a mode, lean into one AI topic, and build momentum through streaks, layered feedback, and cleaner progression.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      type="button"
+                      onClick={() => startMode()}
+                      disabled={questionsLoading}
+                      className="h-12 rounded-full bg-white px-6 text-sm font-semibold text-slate-950 hover:bg-white/90"
+                    >
+                      {questionsLoading ? "Loading question bank..." : `Start ${currentMode.title}`}
+                      <Rocket className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setSelectedMode("daily")}
+                      className="h-12 rounded-full border-white/15 bg-white/5 px-6 text-sm text-white hover:bg-white/10 hover:text-white"
+                    >
+                      Reset to daily challenge
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="relative z-10 grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+                  <div className="rounded-[2rem] border border-white/10 bg-white/6 p-6 shadow-[0_18px_60px_rgba(10,14,39,0.18)] backdrop-blur-xl">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Arena profile</p>
+                        <p className="mt-2 text-2xl font-semibold text-white">
+                          {playerStatsLoading ? "Loading…" : `${playerStats?.current_streak_days || 0}-day streak`}
+                        </p>
+                      </div>
+                      <Badge className="rounded-full border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/72" variant="outline">
+                        {completedDailyToday ? "Daily cleared" : "Daily ready"}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-3xl font-semibold text-white">{playerStats?.total_sessions || 0}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/45">Runs played</p>
+                      </div>
+                      <div>
+                        <p className="text-3xl font-semibold text-white">{playerStats?.total_xp || 0}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/45">Arena XP</p>
+                      </div>
+                      <div>
+                        <p className="text-3xl font-semibold text-white">{overallAccuracy ?? "—"}{overallAccuracy !== null ? "%" : ""}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/45">Accuracy</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold text-white">{favoriteCategoryLabel}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/45">Favorite lane</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 border-t border-white/10 pt-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/45">Question bank</p>
+                      <div className="mt-3 grid grid-cols-3 gap-3">
+                        <div>
+                          <p className="text-2xl font-semibold text-white">{bankStats.totalQuestions}</p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/45">Questions</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-semibold text-white">{bankStats.categories}</p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/45">Categories</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-semibold text-white">{bankStats.decks}</p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/45">Decks</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {heroTips.map((tip, index) => (
+                    <div
+                      key={tip}
+                      className={cn(
+                        "rounded-[2rem] border border-white/10 p-5 text-sm leading-6 text-slate-200/72 shadow-[0_18px_60px_rgba(10,14,39,0.14)] backdrop-blur-xl",
+                        "bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]",
+                        categoryThemes[index % categoryThemes.length],
+                      )}
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/45">Design signal</p>
+                      <p className="mt-3">{tip}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="relative z-10 space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={returnToHub}
+                    className="h-11 rounded-full border-white/15 bg-white/5 px-5 text-white hover:bg-white/10 hover:text-white"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to quiz hub
+                  </Button>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="rounded-full border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white/70" variant="outline">
+                      {activeSession.title}
+                    </Badge>
+                    {activeSession.category && (
+                      <Badge className="rounded-full border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white/70" variant="outline">
+                        {activeSession.category}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h1 className="text-4xl text-white sm:text-5xl" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                    {activeSession.subtitle}
+                  </h1>
+                  <p className="max-w-2xl text-sm leading-6 text-slate-200/72 sm:text-base">
+                    {activeSession.description}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-          {!quizStarted ? (
-            <>
-              <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
-                {gameCards.map((card) => (
-                  <ShowcaseCard
-                    key={card.title}
-                    title={card.title}
-                    subtitle={card.subtitle}
-                    tag={card.tag}
-                    image={card.image}
-                    className="min-h-[32rem]"
-                    imageClassName="h-[21rem]"
-                  />
-                ))}
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          {!activeSession ? (
+            <div className="space-y-10">
+              <div className="grid gap-5 xl:grid-cols-4">
+                {Object.values(QUIZ_MODE_CONFIG).map((mode) => {
+                  const Icon = modeIcons[mode.id];
+                  const statLabel =
+                    mode.id === "recovery"
+                      ? recoveryQuestions.length > 0
+                        ? `${recoveryQuestions.length} weak spots`
+                        : "Build this deck by playing"
+                      : modeStatLabels[mode.id];
+                  return (
+                    <QuizModeCard
+                      key={mode.id}
+                      mode={mode}
+                      icon={Icon}
+                      isSelected={selectedMode === mode.id}
+                      statLabel={statLabel}
+                      onSelect={() => setSelectedMode(mode.id)}
+                    />
+                  );
+                })}
               </div>
 
-              <div className="mt-10 rounded-[2rem] border border-border bg-card px-8 py-10 text-center shadow-[0_8px_26px_rgba(16,24,40,0.06)]">
-                <div className="mx-auto mb-4 flex w-fit items-center gap-3 rounded-full border border-pink-200 bg-pink-100 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-pink-700">
-                  <Zap className="h-4 w-4" />
-                  {quizQuestions.length} Questions
-                </div>
-                <h2 className="text-3xl font-semibold tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                  Ready For The AI Knowledge Arena?
-                </h2>
-                <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-                  {questionsLoading
-                    ? "Loading the current quiz bank..."
-                    : `You will get ${quizQuestions.length} questions from the current quiz bank. Finish the round to unlock your score and answer review.`}
-                </p>
-                <button
-                  onClick={() => setQuizStarted(true)}
-                  disabled={questionsLoading || quizQuestions.length === 0}
-                  className="mt-6 inline-flex h-12 items-center rounded-full border border-pink-500 bg-pink-500 px-8 text-sm font-semibold uppercase tracking-[0.2em] text-white transition-colors hover:bg-pink-600"
-                >
-                  {questionsLoading ? "Loading..." : "Start Quiz"}
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="mx-auto max-w-3xl rounded-[2rem] border border-border bg-card p-8 shadow-[0_8px_30px_rgba(20,20,20,0.08)]">
-              <div className="text-center mb-8">
-                <div className="flex items-center justify-center gap-3 mb-4">
-                  <Brain className="h-8 w-8 text-pink-600" />
-                  <h2 className="text-3xl font-bold text-foreground">AI Knowledge Quiz</h2>
-                  <Zap className="h-8 w-8 text-violet-600" />
-                </div>
-                <p className="text-muted-foreground mb-4">
-                  Test your knowledge about artificial intelligence and machine learning.
-                </p>
-              </div>
-
-              <AnimatePresence mode="wait">
-                {!showResults ? (
-                  <motion.div
-                    key={currentQuestion}
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -50 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-6"
-                  >
-                    <div className="w-full rounded-full bg-secondary h-2">
-                      <div
-                        className="h-2 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 transition-all duration-300"
-                        style={{ width: `${((currentQuestion + 1) / quizQuestions.length) * 100}%` }}
-                      ></div>
+              <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
+                <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6 shadow-[0_18px_60px_rgba(10,14,39,0.18)] backdrop-blur-xl sm:p-7">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Mode setup</p>
+                      <h2 className="mt-2 text-3xl text-white" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                        {currentMode.title}
+                      </h2>
                     </div>
+                    <Badge className={cn("rounded-full border-0 px-4 py-1 text-[11px] uppercase tracking-[0.2em] text-white", `bg-gradient-to-r ${currentMode.accentClassName}`)}>
+                      {currentMode.questionCount} questions
+                    </Badge>
+                  </div>
 
-                    <div className="text-center">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        Question {currentQuestion + 1} of {quizQuestions.length}
-                      </span>
-                    </div>
+                  <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-200/75">
+                    {selectedMode === "recovery" && recoveryQuestions.length === 0
+                      ? "Recovery Run unlocks after you miss a few questions. It uses your stored attempts to build a smart retry deck."
+                      : currentMode.description}
+                  </p>
 
-                    <div className="rounded-2xl border border-border bg-background p-6">
-                      <h3 className="text-xl font-semibold mb-6 text-foreground">{quizQuestions[currentQuestion].question}</h3>
+                  {selectedMode === "category" && (
+                    <div className="mt-8 space-y-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Choose a topic deck</p>
+                          <p className="mt-1 text-sm text-slate-300/72">Pick one area to drill before you start the run.</p>
+                        </div>
+                        <Badge className="rounded-full border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70" variant="outline">
+                          {categoryOptions.length} choices
+                        </Badge>
+                      </div>
 
-                      <div className="space-y-3 mb-6">
-                        {quizQuestions[currentQuestion].options.map((option, index) => {
-                          const isSelected = selectedAnswers[currentQuestion] === index;
+                      <div className="flex flex-wrap gap-3">
+                        {categoryOptions.map((option, index) => {
+                          const isActive = selectedCategory === option.key;
                           return (
-                            <motion.button
-                              key={index}
-                              onClick={() => handleAnswerSelect(index)}
-                              className={`w-full p-4 text-left rounded-xl border-2 transition-all duration-300 ${
-                                isSelected
-                                  ? "border-pink-400 bg-pink-50 text-foreground"
-                                  : "border-border text-foreground hover:border-pink-300 hover:bg-pink-50/70"
-                              }`}
-                              whileHover={{ scale: 1.01 }}
-                              whileTap={{ scale: 0.99 }}
+                            <button
+                              key={option.key}
+                              type="button"
+                              onClick={() => setSelectedCategory(option.key)}
+                              className={cn(
+                                "min-w-[10rem] rounded-[1.4rem] border px-4 py-3 text-left transition-all",
+                                "bg-[linear-gradient(145deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))]",
+                                isActive
+                                  ? "border-white/40 ring-2 ring-white/50"
+                                  : "border-white/10 hover:border-white/25",
+                              )}
                             >
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium">{option}</span>
-                                {isSelected && (
-                                  <div className="w-4 h-4 rounded-full bg-pink-500 flex items-center justify-center">
-                                    <div className="w-2 h-2 rounded-full bg-white"></div>
-                                  </div>
-                                )}
-                              </div>
-                            </motion.button>
+                              <p className="text-sm font-semibold text-white">{option.label}</p>
+                              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/55">{option.count} questions</p>
+                              <div className={cn("mt-3 h-1.5 rounded-full bg-gradient-to-r", categoryThemes[index % categoryThemes.length])} />
+                            </button>
                           );
                         })}
                       </div>
-
-                      <div className="flex justify-between">
-                        <button
-                          onClick={() => setQuizStarted(false)}
-                          className="rounded-full border border-input px-5 py-2 text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground"
-                        >
-                          Back
-                        </button>
-                        <motion.button
-                          onClick={handleNextQuestion}
-                          disabled={selectedAnswers[currentQuestion] === undefined}
-                          className="rounded-full border border-pink-500 bg-pink-500 px-6 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-white disabled:cursor-not-allowed disabled:opacity-50 transition-colors hover:bg-pink-600"
-                          whileHover={{ scale: selectedAnswers[currentQuestion] !== undefined ? 1.03 : 1 }}
-                          whileTap={{ scale: selectedAnswers[currentQuestion] !== undefined ? 0.97 : 1 }}
-                        >
-                          {currentQuestion === quizQuestions.length - 1 ? "Finish Quiz" : "Next Question"}
-                        </motion.button>
-                      </div>
                     </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-center space-y-6"
-                  >
-                    <div className="rounded-2xl bg-gradient-to-r from-pink-500 to-violet-500 p-8 text-white">
-                      <Trophy className="h-16 w-16 mx-auto mb-4" />
-                      <h3 className="text-2xl font-bold mb-2">Quiz Complete!</h3>
-                      <p className="text-xl mb-2">
-                        You scored {score} out of {quizQuestions.length}
+                  )}
+
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <Button
+                      type="button"
+                      onClick={() => startMode()}
+                      disabled={questionsLoading || (selectedMode === "recovery" && recoveryQuestions.length === 0)}
+                      className="h-12 rounded-full bg-white px-6 text-sm font-semibold text-slate-950 hover:bg-white/90"
+                    >
+                      {questionsLoading
+                        ? "Loading..."
+                        : selectedMode === "recovery" && recoveryQuestions.length === 0
+                          ? "Recovery deck not ready yet"
+                          : `Enter ${currentMode.title}`}
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setSelectedMode("classic")}
+                      className="h-12 rounded-full border-white/15 bg-white/5 px-6 text-sm text-white hover:bg-white/10 hover:text-white"
+                    >
+                      Switch to Classic Arena
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6 shadow-[0_18px_60px_rgba(10,14,39,0.18)] backdrop-blur-xl sm:p-7">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Replay hooks</p>
+                      <h2 className="mt-2 text-3xl text-white" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                        Why this feels better
+                      </h2>
+                    </div>
+                    <Sparkles className="h-6 w-6 text-white/70" />
+                  </div>
+
+                  <div className="mt-6 space-y-4">
+                    {[
+                      "Immediate explanation cards make each answer feel like progress, not just grading.",
+                      "Mode variety breaks repetition and lets users choose tension, speed, or depth.",
+                      "Shorter rounds with cleaner summaries make the next tap obvious.",
+                    ].map((item) => (
+                      <div key={item} className="rounded-[1.3rem] border border-white/10 bg-black/15 p-4 text-sm leading-6 text-slate-200/74">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Daily challenge</p>
+                      <p className="mt-3 text-2xl font-semibold text-white">
+                        {completedDailyToday ? "Done today" : "1 clean run"}
                       </p>
-                      <p className="text-lg mb-4">{getScoreMessage(score)}</p>
-                      <div className="flex justify-center gap-6 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Star className="h-5 w-5" />
-                          <span>+{pointsEarned} Points Earned</span>
+                    </div>
+                    <div className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Best daily streak</p>
+                      <p className="mt-3 text-2xl font-semibold text-white">{playerStats?.best_streak_days || 0} days</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-black/15 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Recommended next</p>
+                        <p className="mt-2 text-xl font-semibold text-white">
+                          {QUIZ_MODE_CONFIG[recommendedMode].title}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          setSelectedMode(recommendedMode);
+                          startMode(recommendedMode);
+                        }}
+                        className="h-10 rounded-full bg-white px-4 text-sm font-semibold text-slate-950 hover:bg-white/90"
+                      >
+                        Play now
+                      </Button>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-slate-200/72">
+                      {recommendedMode === "recovery" && "You have enough recent misses to make a worthwhile cleanup run."}
+                      {recommendedMode === "daily" && "Your daily habit loop is still open. Close it with a quick ritual round."}
+                      {recommendedMode === "classic" && "Classic Arena is the best all-round session when you want balanced progression."}
+                      {recommendedMode === "survival" && "Your accuracy is strong enough to handle a higher-pressure run with lives at stake."}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Recent runs</p>
+                      <Badge className="rounded-full border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70" variant="outline">
+                        {recentSessions.length} sessions
+                      </Badge>
+                    </div>
+                    {recentSessions.length === 0 ? (
+                      <div className="rounded-[1.3rem] border border-white/10 bg-black/15 p-4 text-sm leading-6 text-slate-200/72">
+                        Finish your first run and it will appear here with score and mode history.
+                      </div>
+                    ) : (
+                      recentSessions.map((session) => (
+                        <div key={session.id} className="rounded-[1.3rem] border border-white/10 bg-black/15 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-white">{session.quiz_title}</p>
+                              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/50">
+                                {session.mode} · {new Date(session.completed_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-sm font-semibold text-white">
+                              {session.correct_count}/{session.total_questions}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              <QuizArenaHud
+                mode={QUIZ_MODE_CONFIG[activeSession.mode]}
+                questionIndex={currentQuestionIndex}
+                totalQuestions={activeSession.questions.length}
+                correctCount={correctCount}
+                streak={streak}
+                livesRemaining={livesRemaining}
+                roundPoints={roundPoints}
+              />
+
+              <AnimatePresence mode="wait">
+                {summaryVisible ? (
+                  <QuizSummaryCard
+                    key="summary"
+                    mode={QUIZ_MODE_CONFIG[activeSession.mode]}
+                    correctCount={correctCount}
+                    totalQuestions={answeredQuestionCount}
+                    maxStreak={maxStreak}
+                    roundPoints={roundPoints}
+                    categoryBreakdown={categoryBreakdown}
+                    onReplay={replayCurrentMode}
+                    onReturnToHub={returnToHub}
+                  />
+                ) : currentQuestion ? (
+                  <motion.div
+                    key={currentQuestion.id}
+                    initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+                    animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
+                    exit={shouldReduceMotion ? {} : { opacity: 0, y: -18 }}
+                    transition={{ duration: 0.28, ease: "easeOut" }}
+                    className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr]"
+                  >
+                    <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6 shadow-[0_18px_60px_rgba(10,14,39,0.18)] backdrop-blur-xl sm:p-8">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Badge className="rounded-full border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70" variant="outline">
+                          {formatCategoryLabel(currentQuestion.category)}
+                        </Badge>
+                        <Badge className="rounded-full border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70" variant="outline">
+                          {currentQuestion.difficulty}
+                        </Badge>
+                        <Badge className="rounded-full border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70" variant="outline">
+                          {currentQuestion.quizTitle}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-6 space-y-5">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/45">Now playing</p>
+                          <h2 className="mt-3 text-3xl leading-tight text-white sm:text-4xl" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                            {currentQuestion.question}
+                          </h2>
+                        </div>
+
+                        <div className="grid gap-3">
+                          {currentQuestion.options.map((option, index) => {
+                            const isSelected = revealState?.selectedIndex === index;
+                            const isCorrect = revealState && index === currentQuestion.correctAnswer;
+                            const isWrongPick = revealState && isSelected && !revealState.isCorrect;
+
+                            return (
+                              <motion.button
+                                key={option}
+                                type="button"
+                                onClick={() => handleAnswerSelect(index)}
+                                whileHover={shouldReduceMotion || revealState ? {} : { scale: 1.01, y: -1 }}
+                                whileTap={shouldReduceMotion || revealState ? {} : { scale: 0.995 }}
+                                className={cn(
+                                  "w-full rounded-[1.55rem] border p-4 text-left transition-all sm:p-5",
+                                  "bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]",
+                                  !revealState && "border-white/10 hover:border-white/28",
+                                  isSelected && "border-white/40 ring-2 ring-white/45",
+                                  isCorrect && revealState?.isCorrect && "border-emerald-400/70 bg-emerald-500/18",
+                                  isCorrect && !revealState?.isCorrect && "border-emerald-400/70 bg-emerald-500/16",
+                                  isWrongPick && "border-rose-400/70 bg-rose-500/18",
+                                )}
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex gap-4">
+                                    <div className={cn(
+                                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-semibold",
+                                      !revealState && "border-white/10 bg-white/6 text-white/80",
+                                      isCorrect && "border-emerald-300/40 bg-emerald-300/20 text-white",
+                                      isWrongPick && "border-rose-300/40 bg-rose-300/20 text-white",
+                                    )}>
+                                      {String.fromCharCode(65 + index)}
+                                    </div>
+                                    <div>
+                                      <p className="text-base font-medium text-white">{option}</p>
+                                      {!revealState && (
+                                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/45">Tap to lock in</p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {revealState && isCorrect && <CheckCircle2 className="mt-1 h-5 w-5 text-emerald-300" />}
+                                  {isWrongPick && <XCircle className="mt-1 h-5 w-5 text-rose-300" />}
+                                </div>
+                              </motion.button>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <h4 className="text-xl font-semibold text-foreground">Review Your Answers</h4>
-                      {quizQuestions.map((question, index) => {
-                        const userAnswer = selectedAnswers[index];
-                        const isCorrect = userAnswer === question.correctAnswer;
-                        return (
-                          <div
-                            key={question.id}
-                            className={`p-4 rounded-xl border-2 text-left ${
-                              isCorrect
-                                ? "border-green-500 bg-green-50"
-                                : "border-red-500 bg-red-50"
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              {isCorrect ? (
-                                <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
-                              ) : (
-                                <XCircle className="h-6 w-6 text-red-500 mt-1 flex-shrink-0" />
-                              )}
-                              <div className="flex-1">
-                                <p className="font-medium text-foreground mb-2">
-                                  {index + 1}. {question.question}
-                                </p>
-                                <p className={`text-sm mb-2 ${isCorrect ? "text-green-700" : "text-red-700"}`}>
-                                  Your answer: {question.options[userAnswer] || "No answer selected"}
-                                </p>
-                                {!isCorrect && (
-                                  <p className="text-sm text-green-700 mb-2">
-                                    Correct answer: {question.options[question.correctAnswer]}
-                                  </p>
-                                )}
-                                <p className="text-sm text-muted-foreground">{question.explanation}</p>
-                              </div>
+                    <div className="space-y-5">
+                      <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6 shadow-[0_18px_60px_rgba(10,14,39,0.18)] backdrop-blur-xl">
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Run context</p>
+                        <div className="mt-5 space-y-4 text-sm leading-6 text-slate-200/74">
+                          <div className="rounded-[1.3rem] border border-white/10 bg-black/15 p-4">
+                            {activeSession.mode === "daily" && "Today’s five-question lineup is fixed, so finishing the run is the win condition."}
+                            {activeSession.mode === "classic" && "Classic Arena starts broad, then pushes you into harder questions before the summary."}
+                            {activeSession.mode === "survival" && "Every wrong answer costs a life. Protect your streak and finish before lives run out."}
+                            {activeSession.mode === "category" && "This deck stays inside one topic so you can build focused mastery instead of jumping around."}
+                          </div>
+
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="rounded-[1.2rem] border border-white/10 bg-white/5 p-4">
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Current streak</p>
+                              <p className="mt-2 text-2xl font-semibold text-white">{streak}</p>
+                            </div>
+                            <div className="rounded-[1.2rem] border border-white/10 bg-white/5 p-4">
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Best streak</p>
+                              <p className="mt-2 text-2xl font-semibold text-white">{maxStreak}</p>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
+                        </div>
+                      </div>
 
-                    <motion.button
-                      onClick={resetQuiz}
-                      className="mx-auto flex items-center gap-2 rounded-full border border-pink-500 bg-pink-500 px-6 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-white transition-colors hover:bg-pink-600"
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      <RotateCcw className="h-5 w-5" />
-                      Take New Quiz
-                    </motion.button>
+                      <AnimatePresence mode="wait">
+                        {revealState ? (
+                          <motion.div
+                            key={`${currentQuestion.id}-reveal`}
+                            initial={shouldReduceMotion ? false : { opacity: 0, x: 20 }}
+                            animate={shouldReduceMotion ? {} : { opacity: 1, x: 0 }}
+                            exit={shouldReduceMotion ? {} : { opacity: 0, x: 14 }}
+                            transition={{ duration: 0.24, ease: "easeOut" }}
+                            role="alert"
+                            className={cn(
+                              "rounded-[2rem] border p-6 shadow-[0_18px_60px_rgba(10,14,39,0.18)] backdrop-blur-xl",
+                              revealState.isCorrect
+                                ? "border-emerald-400/25 bg-emerald-500/12"
+                                : "border-rose-400/25 bg-rose-500/12",
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Answer feedback</p>
+                                <h3 className="mt-2 text-2xl text-white" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                                  {revealState.isCorrect ? "Nice hit." : "Close, but not this one."}
+                                </h3>
+                              </div>
+                              <div className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/72">
+                                +{revealState.pointsEarned} XP
+                              </div>
+                            </div>
+
+                            <p className="mt-4 text-sm leading-6 text-slate-100/78">
+                              {currentQuestion.explanation}
+                            </p>
+
+                            {!revealState.isCorrect && (
+                              <div className="mt-4 rounded-[1.2rem] border border-white/10 bg-black/15 p-4 text-sm text-slate-100/78">
+                                Correct answer: <span className="font-semibold text-white">{currentQuestion.options[currentQuestion.correctAnswer]}</span>
+                              </div>
+                            )}
+
+                            <div className="mt-5 flex flex-wrap gap-3">
+                              <Button type="button" onClick={advanceRun} className="h-11 rounded-full bg-white px-5 text-slate-950 hover:bg-white/90">
+                                {currentQuestionIndex >= activeSession.questions.length - 1 || (revealState.livesAfterAnswer !== null && revealState.livesAfterAnswer <= 0)
+                                  ? "View summary"
+                                  : "Next question"}
+                                <ArrowRight className="h-4 w-4" />
+                              </Button>
+                              {!revealState.isCorrect && activeSession.mode === "survival" && (
+                                <div className="inline-flex h-11 items-center rounded-full border border-white/10 bg-white/5 px-4 text-xs font-semibold uppercase tracking-[0.18em] text-white/72">
+                                  <Heart className="mr-2 h-4 w-4" />
+                                  {revealState.livesAfterAnswer} lives left
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="prompt"
+                            initial={shouldReduceMotion ? false : { opacity: 0, x: 12 }}
+                            animate={shouldReduceMotion ? {} : { opacity: 1, x: 0 }}
+                            exit={shouldReduceMotion ? {} : { opacity: 0, x: 12 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6 shadow-[0_18px_60px_rgba(10,14,39,0.18)] backdrop-blur-xl"
+                          >
+                            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Momentum cue</p>
+                            <h3 className="mt-2 text-2xl text-white" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                              Lock your answer with confidence.
+                            </h3>
+                            <p className="mt-4 text-sm leading-6 text-slate-200/72">
+                              Each correct answer adds to your streak and boosts the XP payout. In Survival, wrong picks also cost lives.
+                            </p>
+                            <div className="mt-5 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/65">
+                              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+                                <Star className="h-3.5 w-3.5" />
+                                Difficulty-based scoring
+                              </span>
+                              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+                                <Flame className="h-3.5 w-3.5" />
+                                Streak multiplier
+                              </span>
+                              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+                                <Swords className="h-3.5 w-3.5" />
+                                One-more-run pacing
+                              </span>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </motion.div>
-                )}
+                ) : null}
               </AnimatePresence>
+
+              {summaryVisible && (
+                <div className="flex flex-wrap gap-3">
+                  <Button type="button" onClick={replayCurrentMode} className="h-11 rounded-full bg-white px-5 text-slate-950 hover:bg-white/90">
+                    <RotateCcw className="h-4 w-4" />
+                    Play again
+                  </Button>
+                  {immediateRecoveryQuestions.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => startMode("recovery", immediateRecoveryQuestions)}
+                      className="h-11 rounded-full border-white/15 bg-white/5 px-5 text-white hover:bg-white/10 hover:text-white"
+                    >
+                      Fix missed questions
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={returnToHub}
+                    className="h-11 rounded-full border-white/15 bg-white/5 px-5 text-white hover:bg-white/10 hover:text-white"
+                  >
+                    Back to hub
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </section>

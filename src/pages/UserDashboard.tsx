@@ -523,15 +523,26 @@ function CommentsTab() {
 function QuizResultsTab() {
   const { user } = useAuth();
   const [results, setResults] = useState<any[]>([]);
+  const [playerStats, setPlayerStats] = useState<any | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("quiz_results")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("completed_at", { ascending: false })
-      .then(({ data }) => setResults(data || []));
+
+    Promise.all([
+      supabase
+        .from("quiz_results")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("completed_at", { ascending: false }),
+      supabase
+        .from("quiz_player_stats")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]).then(([resultsRes, playerStatsRes]) => {
+      setResults(resultsRes.data || []);
+      setPlayerStats(playerStatsRes.data || null);
+    });
   }, [user]);
 
   const bestScore = useMemo(() => {
@@ -569,6 +580,34 @@ function QuizResultsTab() {
               </p>
             </div>
           </div>
+
+          {playerStats && (
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="rounded-[1.5rem] border border-border bg-secondary/60 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Current daily streak</p>
+                <p className="mt-3 text-4xl font-semibold">{playerStats.current_streak_days}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-border bg-secondary/60 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Best streak</p>
+                <p className="mt-3 text-4xl font-semibold">{playerStats.best_streak_days}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-border bg-secondary/60 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Arena XP</p>
+                <p className="mt-3 text-4xl font-semibold">{playerStats.total_xp}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-border bg-secondary/60 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Favorite lane</p>
+                <p className="mt-3 text-lg font-semibold">
+                  {playerStats.favorite_category
+                    ? playerStats.favorite_category
+                        .split("-")
+                        .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
+                        .join(" ")
+                    : "Not enough runs yet"}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="overflow-hidden rounded-[1.5rem] border border-border">
             <Table>

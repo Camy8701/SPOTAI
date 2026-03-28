@@ -850,6 +850,9 @@ function QuizTab() {
   const [questions, setQuestions] = useState<any[]>([]);
   const [recentResults, setRecentResults] = useState<any[]>([]);
   const [allResults, setAllResults] = useState<any[]>([]);
+  const [quizSessions, setQuizSessions] = useState<any[]>([]);
+  const [playerStats, setPlayerStats] = useState<any[]>([]);
+  const [playerProfiles, setPlayerProfiles] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<any>(null);
   const emptyForm = {
@@ -863,16 +866,43 @@ function QuizTab() {
   };
   const [form, setForm] = useState(emptyForm);
 
-  const load = () => {
-    Promise.all([
+  const load = async () => {
+    const [
+      questionsRes,
+      allResultsRes,
+      recentResultsRes,
+      sessionsRes,
+      playerStatsRes,
+    ] = await Promise.all([
       supabase.from("quiz_questions").select("*").order("created_at", { ascending: false }),
       supabase.from("quiz_results").select("score, total_questions"),
       supabase.from("quiz_results").select("*").order("completed_at", { ascending: false }).limit(20),
-    ]).then(([questionsRes, allResultsRes, recentResultsRes]) => {
-      if (questionsRes.data) setQuestions(questionsRes.data);
-      if (allResultsRes.data) setAllResults(allResultsRes.data);
-      if (recentResultsRes.data) setRecentResults(recentResultsRes.data);
-    });
+      supabase.from("quiz_sessions").select("*").order("completed_at", { ascending: false }).limit(20),
+      supabase.from("quiz_player_stats").select("*").order("total_xp", { ascending: false }).limit(12),
+    ]);
+
+    if (questionsRes.data) setQuestions(questionsRes.data);
+    if (allResultsRes.data) setAllResults(allResultsRes.data);
+    if (recentResultsRes.data) setRecentResults(recentResultsRes.data);
+    if (sessionsRes.data) setQuizSessions(sessionsRes.data);
+    if (playerStatsRes.data) setPlayerStats(playerStatsRes.data);
+
+    const profileIds = Array.from(new Set((playerStatsRes.data || []).map((item) => item.user_id)));
+    if (profileIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, display_name")
+        .in("user_id", profileIds);
+
+      if (profiles) {
+        setPlayerProfiles(
+          profiles.reduce<Record<string, string>>((acc, profile) => {
+            acc[profile.user_id] = profile.display_name || "Unnamed";
+            return acc;
+          }, {}),
+        );
+      }
+    }
   };
 
   useEffect(() => {
@@ -956,11 +986,15 @@ function QuizTab() {
   const avgScore = allResults.length > 0
     ? Math.round(allResults.reduce((a, r) => a + (r.score / r.total_questions) * 100, 0) / allResults.length)
     : 0;
+  const avgXp = quizSessions.length > 0
+    ? Math.round(quizSessions.reduce((sum, session) => sum + (session.xp_earned || 0), 0) / quizSessions.length)
+    : 0;
+  const activeStreakers = playerStats.filter((item) => item.current_streak_days > 0).length;
 
   return (
     <div className="space-y-8">
       {/* Quiz Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(270,67%,80%)] p-5">
           <HelpCircle className="h-8 w-8 mb-3 text-foreground/70" />
           <div className="text-4xl font-black">{questions.length}</div>
@@ -975,6 +1009,16 @@ function QuizTab() {
           <TrendingUp className="h-8 w-8 mb-3 text-foreground/70" />
           <div className="text-4xl font-black">{avgScore}%</div>
           <div className="text-xs font-bold uppercase tracking-wider mt-1">Avg Score</div>
+        </div>
+        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(201,92%,84%)] p-5">
+          <Sparkles className="h-8 w-8 mb-3 text-foreground/70" />
+          <div className="text-4xl font-black">{avgXp}</div>
+          <div className="text-xs font-bold uppercase tracking-wider mt-1">Avg XP / Session</div>
+        </div>
+        <div className="rounded-xl border-2 border-dashed border-border bg-[hsl(330,93%,88%)] p-5">
+          <Crown className="h-8 w-8 mb-3 text-foreground/70" />
+          <div className="text-4xl font-black">{activeStreakers}</div>
+          <div className="text-xs font-bold uppercase tracking-wider mt-1">Active Streakers</div>
         </div>
       </div>
 
@@ -1053,6 +1097,86 @@ function QuizTab() {
               )}
             </TableBody>
           </Table>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <div>
+          <h2 className="text-2xl font-black tracking-tight uppercase mb-4">Recent Quiz Sessions</h2>
+          <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mode</TableHead>
+                  <TableHead>Quiz</TableHead>
+                  <TableHead>XP</TableHead>
+                  <TableHead>Streak</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {quizSessions.map((session) => (
+                  <TableRow key={session.id}>
+                    <TableCell><Badge variant="secondary">{session.mode}</Badge></TableCell>
+                    <TableCell className="max-w-xs truncate">{session.quiz_title}</TableCell>
+                    <TableCell>{session.xp_earned}</TableCell>
+                    <TableCell>{session.max_streak}</TableCell>
+                  </TableRow>
+                ))}
+                {quizSessions.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      No session-level quiz data yet
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-black tracking-tight uppercase mb-4">Player Progress</h2>
+          <div className="rounded-xl border-2 border-dashed border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Player</TableHead>
+                  <TableHead>Current Streak</TableHead>
+                  <TableHead>Best</TableHead>
+                  <TableHead>XP</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {playerStats.map((player) => (
+                  <TableRow key={player.user_id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{playerProfiles[player.user_id] || "Unnamed"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {player.favorite_category
+                            ? `Favorite: ${String(player.favorite_category)
+                                .split("-")
+                                .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                                .join(" ")}`
+                            : "Favorite lane pending"}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>{player.current_streak_days}</TableCell>
+                    <TableCell>{player.best_streak_days}</TableCell>
+                    <TableCell>{player.total_xp}</TableCell>
+                  </TableRow>
+                ))}
+                {playerStats.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      No player progression data yet
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
 
