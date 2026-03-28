@@ -287,7 +287,7 @@ export function useBrander() {
 
   const downloadSinglePdf = useCallback((item: PDFFileItem) => {
     if (!item.brandedPdfBytes) return;
-    const blob = new Blob([item.brandedPdfBytes], { type: 'application/pdf' });
+    const blob = new Blob([item.brandedPdfBytes as BlobPart], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
