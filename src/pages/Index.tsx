@@ -128,7 +128,7 @@ const Index = () => {
                   className="bg-red-500 hover:bg-red-600 text-white px-5 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg shadow-2xl"
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setAudio({ src: hero.audio_url, title: hero.title })}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setAudio({ src: hero.audio_url!, title: hero.title }); }}
                 >
                   Listen
                 </motion.button>
