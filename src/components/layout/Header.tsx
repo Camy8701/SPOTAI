@@ -11,7 +11,22 @@ interface HeaderProps {
 }
 
 const Header = ({ onToggleSidebar }: HeaderProps) => {
-  const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
+  const [dark, setDark] = useState(() => {
+    const stored = localStorage.getItem("theme");
+    if (stored === "dark") return true;
+    if (stored === "light") return false;
+    return document.documentElement.classList.contains("dark");
+  });
+
+  // Apply persisted theme on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("theme");
+    if (stored === "dark") {
+      document.documentElement.classList.add("dark");
+    } else if (stored === "light") {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
