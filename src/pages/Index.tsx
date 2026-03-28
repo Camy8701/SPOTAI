@@ -120,11 +120,9 @@ const Index = () => {
               {hero.excerpt && <p className="text-sm sm:text-lg md:text-xl text-gray-200 drop-shadow-lg line-clamp-2">{hero.excerpt}</p>}
             </div>
             <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 flex gap-3 sm:gap-4">
-              <Link to={`/post/${hero.slug}`}>
                 <motion.button className="bg-blue-600 hover:bg-blue-700 text-white px-5 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg shadow-2xl" whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
                   Read
                 </motion.button>
-              </Link>
               {hero.audio_url && (
                 <motion.button
                   className="bg-red-500 hover:bg-red-600 text-white px-5 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg shadow-2xl"
