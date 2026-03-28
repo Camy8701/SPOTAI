@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, Calculator, Type, Upload, X, Moon, Sun, LogOut, LayoutDashboard, Shield, Menu, UserCog } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +17,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
   const { user, profile, signOut } = useAuth();
   const { isAdmin } = useRole();
   const navigate = useNavigate();
+  const location = useLocation();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const toggleDark = () => {
@@ -43,7 +44,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
   // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
-  }, [navigate]);
+  }, [location.pathname]);
 
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50">

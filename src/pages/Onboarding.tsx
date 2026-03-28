@@ -139,20 +139,20 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f7f4ee_0%,#ffffff_30%,#f8fbff_100%)] px-4 py-6 dark:bg-[linear-gradient(180deg,#040814_0%,#07101f_38%,#0a1324_100%)] sm:px-6 lg:px-10">
+    <div className="min-h-screen bg-gradient-to-b from-sand via-background to-background px-4 py-6 dark:from-background dark:via-background dark:to-background sm:px-6 lg:px-10">
       <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[0.86fr_1.14fr]">
-        <section className="relative overflow-hidden rounded-[2rem] border border-black/10 bg-white/90 p-7 shadow-[0_28px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-[#07101f]/90 dark:shadow-[0_30px_80px_rgba(0,0,0,0.34)] md:p-9">
+        <section className="relative overflow-hidden rounded-[2rem] border border-border bg-card/90 p-7 shadow-lg backdrop-blur md:p-9">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(74,169,255,0.16),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(255,143,122,0.12),transparent_30%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(74,169,255,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(141,92,255,0.16),transparent_30%)]" />
           <div className="relative">
             <span className="spotai-wordmark text-3xl font-extrabold tracking-tight">SpotAI</span>
             <div className="mt-8 max-w-xl">
-              <span className="inline-flex rounded-full border border-black/10 bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300">
+              <span className="inline-flex rounded-full border border-border bg-secondary/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                 Profile setup
               </span>
-              <h1 className="mt-5 text-5xl leading-[0.94] tracking-tight text-slate-950 dark:text-white" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+              <h1 className="mt-5 text-5xl leading-[0.94] tracking-tight text-foreground" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                 Finish your profile in one pass.
               </h1>
-              <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-300">
+              <p className="mt-4 text-base leading-7 text-muted-foreground">
                 Add the details people will actually see across SpotAI, then choose an avatar that feels like you. This only happens once, and you can edit it later from your dashboard.
               </p>
             </div>
@@ -178,14 +178,14 @@ const Onboarding = () => {
                 const Icon = item.icon;
 
                 return (
-                  <div key={item.title} className="rounded-[1.5rem] border border-black/8 bg-white/70 p-5 backdrop-blur dark:border-white/10 dark:bg-white/[0.05]">
+                  <div key={item.title} className="rounded-[1.5rem] border border-border bg-card/70 p-5 backdrop-blur">
                     <div className="flex items-start gap-4">
-                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white dark:bg-white dark:text-slate-950">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background">
                         <Icon className="h-5 w-5" />
                       </span>
                       <div>
-                        <p className="font-semibold text-slate-950 dark:text-white">{item.title}</p>
-                        <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">{item.description}</p>
+                        <p className="font-semibold text-foreground">{item.title}</p>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.description}</p>
                       </div>
                     </div>
                   </div>
@@ -193,28 +193,28 @@ const Onboarding = () => {
               })}
             </div>
 
-            <div className="mt-8 rounded-[1.6rem] border border-black/8 bg-slate-950 p-5 text-white dark:border-white/10 dark:bg-white/95 dark:text-slate-950">
+            <div className="mt-8 rounded-[1.6rem] border border-border bg-foreground p-5 text-background">
               <div className="flex items-center gap-4">
                 <img
                   src={getAvatarDataUrl(selectedAvatar)}
                   alt=""
-                  className="h-16 w-16 rounded-2xl border border-white/15 object-cover dark:border-slate-950/10"
+                  className="h-16 w-16 rounded-2xl border border-background/15 object-cover"
                 />
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60 dark:text-slate-500">Preview</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-background/60">Preview</p>
                   <p className="mt-1 text-xl font-semibold">{displayName || "Your display name"}</p>
-                  <p className="mt-1 text-sm text-white/70 dark:text-slate-600">{headline || "Your short profile headline appears here."}</p>
+                  <p className="mt-1 text-sm text-background/70">{headline || "Your short profile headline appears here."}</p>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-[0_28px_80px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[#07101f] dark:shadow-[0_30px_80px_rgba(0,0,0,0.34)] md:p-8">
+        <section className="rounded-[2rem] border border-border bg-card p-6 shadow-lg md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-300">One last step</p>
-              <h2 className="mt-3 text-4xl tracking-tight text-slate-950 dark:text-white" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-foreground">One last step</p>
+              <h2 className="mt-3 text-4xl tracking-tight text-foreground" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                 Set up your public profile
               </h2>
             </div>
@@ -226,27 +226,27 @@ const Onboarding = () => {
 
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             <div>
-              <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">First name</label>
+              <label className="text-sm font-semibold text-foreground">First name</label>
               <Input
                 value={firstName}
                 onChange={(event) => setFirstName(event.target.value)}
                 placeholder="Enter your first name"
-                className="mt-2 h-12 rounded-2xl border-black/10 bg-slate-50 px-4 dark:border-white/10 dark:bg-white/[0.05]"
+                className="mt-2 h-12 rounded-2xl border-border bg-secondary px-4"
               />
             </div>
             <div>
-              <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Last name</label>
+              <label className="text-sm font-semibold text-foreground">Last name</label>
               <Input
                 value={lastName}
                 onChange={(event) => setLastName(event.target.value)}
                 placeholder="Optional"
-                className="mt-2 h-12 rounded-2xl border-black/10 bg-slate-50 px-4 dark:border-white/10 dark:bg-white/[0.05]"
+                className="mt-2 h-12 rounded-2xl border-border bg-secondary px-4"
               />
             </div>
           </div>
 
           <div className="mt-5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Display name</label>
+            <label className="text-sm font-semibold text-foreground">Display name</label>
             <Input
               value={displayName}
               onChange={(event) => {
@@ -254,44 +254,44 @@ const Onboarding = () => {
                 setDisplayNameTouched(true);
               }}
               placeholder="How people will see you"
-              className="mt-2 h-12 rounded-2xl border-black/10 bg-slate-50 px-4 dark:border-white/10 dark:bg-white/[0.05]"
+              className="mt-2 h-12 rounded-2xl border-border bg-secondary px-4"
             />
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-2 text-xs text-muted-foreground">
               This is the name shown in comments, groups, messages, and your dashboard.
             </p>
           </div>
 
           <div className="mt-5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Headline</label>
+            <label className="text-sm font-semibold text-foreground">Headline</label>
             <Input
               value={headline}
               onChange={(event) => setHeadline(event.target.value)}
               placeholder="AI writer, marketer, founder, student..."
-              className="mt-2 h-12 rounded-2xl border-black/10 bg-slate-50 px-4 dark:border-white/10 dark:bg-white/[0.05]"
+              className="mt-2 h-12 rounded-2xl border-border bg-secondary px-4"
             />
           </div>
 
           <div className="mt-5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Bio</label>
+            <label className="text-sm font-semibold text-foreground">Bio</label>
             <Textarea
               value={bio}
               onChange={(event) => setBio(event.target.value)}
               rows={4}
               placeholder="A short introduction for your SpotAI profile."
-              className="mt-2 rounded-[1.35rem] border-black/10 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/[0.05]"
+              className="mt-2 rounded-[1.35rem] border-border bg-secondary px-4 py-3"
             />
           </div>
 
           <div className="mt-6">
             <ProfileAvatarPicker
-              className="bg-white dark:bg-[#07101f]"
+              className="bg-card"
               value={selectedAvatar}
               onChange={setSelectedAvatar}
             />
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-muted-foreground">
               You can update all of this later from your profile settings.
             </p>
             <Button
