@@ -21,8 +21,10 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const toggleDark = () => {
-    document.documentElement.classList.toggle("dark");
-    setDark(!dark);
+    const next = !dark;
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+    setDark(next);
   };
 
   useEffect(() => {
