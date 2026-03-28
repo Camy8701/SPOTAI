@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, BadgeCheck, Palette, Sparkles, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { isGoogleUser } from "@/lib/auth-flow";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
