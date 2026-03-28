@@ -95,7 +95,7 @@ const Onboarding = () => {
       headline: nextHeadline || null,
       bio: nextBio || null,
       avatar_url: nextAvatarUrl,
-      google_auth_enabled: true,
+      google_auth_enabled: isGoogleUser(user),
       onboarding_completed: true,
     };
 
