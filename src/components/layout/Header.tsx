@@ -6,10 +6,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import NotificationBell from "@/components/NotificationBell";
 import UserSearch from "@/components/layout/UserSearch";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/contexts/AuthContext";
-import { useRole } from "@/hooks/useRole";
-import NotificationBell from "@/components/NotificationBell";
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
