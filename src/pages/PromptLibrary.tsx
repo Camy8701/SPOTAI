@@ -79,11 +79,6 @@ export default function PromptLibrary() {
               >
                 Request a prompt
               </Link>
-              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                <span className="rounded-full bg-white/75 px-3 py-1.5">SpotAI originals</span>
-                <span className="rounded-full bg-white/75 px-3 py-1.5">Loop builds</span>
-                <span className="rounded-full bg-white/75 px-3 py-1.5">AI image realism</span>
-              </div>
             </div>
 
             <div className="mt-10 rounded-[36px] border border-violet-200 bg-[linear-gradient(180deg,#f4efff_0%,#ede7ff_100%)] p-6 shadow-[0_20px_60px_rgba(139,92,246,0.12)]">
@@ -122,12 +117,9 @@ export default function PromptLibrary() {
         </section>
 
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="mb-6">
             <p className="text-sm font-medium text-slate-500">
               {visiblePrompts.length} prompt{visiblePrompts.length === 1 ? "" : "s"} available
-            </p>
-            <p className="text-sm text-slate-500">
-              Source mix: SpotAI, loop promptlibrary, and curated image prompting patterns
             </p>
           </div>
 
@@ -157,9 +149,6 @@ export default function PromptLibrary() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
                         {item.category}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                        {item.source}
                       </span>
                     </div>
                     <button

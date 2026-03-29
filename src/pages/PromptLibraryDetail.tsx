@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Copy, ExternalLink } from "lucide-react";
+import { ArrowLeft, Check, Copy } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -189,22 +189,10 @@ const PromptLibraryDetail = () => {
                         <Button onClick={handleCopy} className="rounded-full bg-[#d7ff3f] px-6 text-sm font-semibold text-slate-900 hover:bg-[#ebff86]">
                           {copied ? "Copied" : "Copy Prompt"}
                         </Button>
-                        {item.source_url ? (
-                          <a
-                            href={item.source_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white px-5 py-2.5 text-sm font-semibold text-[#2c2cff] transition hover:border-[#2c2cff]/30"
-                          >
-                            View Source
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                        ) : null}
                       </div>
                     </div>
 
                     <div className="text-sm leading-7 text-slate-500">
-                      <div><span className="font-semibold text-slate-700">Source:</span> {item.source_label}</div>
                       <div><span className="font-semibold text-slate-700">Difficulty:</span> {formatDifficulty(item.difficulty)}</div>
                     </div>
                   </div>
