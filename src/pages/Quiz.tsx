@@ -9,10 +9,8 @@ import {
   Flame,
   Heart,
   Layers3,
-  Rocket,
   RotateCcw,
   ShieldAlert,
-  Sparkles,
   Star,
   Swords,
   XCircle,
@@ -30,7 +28,6 @@ import { fallbackQuizQuestions } from "@/lib/quiz-content";
 import {
   QUIZ_MODE_CONFIG,
   buildQuizSession,
-  getAvailableQuizCategories,
   getQuestionPoints,
   getQuizBankStats,
   type QuizModeId,
@@ -71,12 +68,7 @@ const modeStatLabels: Record<QuizModeId, string> = {
   recovery: "Weak spots remixed",
 };
 
-const categoryThemes = [
-  "from-fuchsia-500/25 via-violet-500/10 to-transparent",
-  "from-cyan-500/25 via-sky-500/10 to-transparent",
-  "from-emerald-500/25 via-lime-500/10 to-transparent",
-  "from-amber-500/25 via-orange-500/10 to-transparent",
-];
+const visibleModes: QuizModeId[] = ["daily", "classic", "survival"];
 
 const formatCategoryLabel = (value: string) =>
   value
@@ -110,12 +102,6 @@ const normalizeQuestion = (item: QuizQuestionRow): QuizQuestion | null => {
   };
 };
 
-const heroTips = [
-  "Shorter sessions keep the pace high and make replaying feel natural.",
-  "Answer feedback now lands inside the run instead of being hidden until the end.",
-  "Mode choice adds autonomy, which makes the game feel less repetitive.",
-];
-
 const getRecoveryIdsFromAttempts = (attempts: Array<{ question_id: string; is_correct: boolean }>) => {
   const latestByQuestion = new Map<string, boolean>();
 
@@ -138,7 +124,6 @@ const Quiz = () => {
   const [questionPool, setQuestionPool] = useState<QuizQuestion[]>(fallbackQuizQuestions);
   const [questionsLoading, setQuestionsLoading] = useState(true);
   const [selectedMode, setSelectedMode] = useState<QuizModeId>("daily");
-  const [selectedCategory, setSelectedCategory] = useState("all");
   const [activeSession, setActiveSession] = useState<QuizSession | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Array<number | null>>([]);
@@ -241,7 +226,6 @@ const Quiz = () => {
     };
   }, [user]);
 
-  const categoryOptions = useMemo(() => getAvailableQuizCategories(questionPool), [questionPool]);
   const bankStats = useMemo(() => getQuizBankStats(questionPool), [questionPool]);
   const recoveryQuestions = useMemo(() => {
     if (recoveryQuestionIds.length === 0) return [];
@@ -250,7 +234,6 @@ const Quiz = () => {
       .map((id) => questionMap.get(id))
       .filter((question): question is QuizQuestion => !!question);
   }, [questionPool, recoveryQuestionIds]);
-  const currentMode = QUIZ_MODE_CONFIG[selectedMode];
   const currentQuestion = activeSession?.questions[currentQuestionIndex] ?? null;
   const answeredQuestionCount = selectedAnswers.filter((value) => typeof value === "number").length;
   const overallAccuracy =
@@ -261,24 +244,7 @@ const Quiz = () => {
   const completedDailyToday = playerStats?.last_daily_challenge_date === todayKey;
   const favoriteCategoryLabel = playerStats?.favorite_category ? formatCategoryLabel(playerStats.favorite_category) : "Still learning your style";
   const recommendedMode: QuizModeId =
-    recoveryQuestions.length >= 3 ? "recovery" : !completedDailyToday ? "daily" : overallAccuracy !== null && overallAccuracy >= 80 ? "survival" : "classic";
-
-  useEffect(() => {
-    if (selectedMode !== "category") return;
-
-    if (selectedCategory === "all" && categoryOptions[0]) {
-      setSelectedCategory(categoryOptions[0].key);
-      return;
-    }
-
-    if (
-      selectedCategory !== "all" &&
-      categoryOptions.length > 0 &&
-      !categoryOptions.some((option) => option.key === selectedCategory)
-    ) {
-      setSelectedCategory(categoryOptions[0].key);
-    }
-  }, [categoryOptions, selectedCategory, selectedMode]);
+    !completedDailyToday ? "daily" : overallAccuracy !== null && overallAccuracy >= 80 ? "survival" : "classic";
 
   const resetRunState = () => {
     setCurrentQuestionIndex(0);
@@ -295,12 +261,6 @@ const Quiz = () => {
 
   const startMode = (modeOverride?: QuizModeId, sourceQuestionsOverride?: QuizQuestion[]) => {
     const nextMode = modeOverride || selectedMode;
-    const nextCategory =
-      nextMode === "category"
-        ? selectedCategory === "all"
-          ? categoryOptions[0]?.key ?? "general"
-          : selectedCategory
-        : null;
     const sourceQuestions =
       sourceQuestionsOverride ||
       (nextMode === "recovery" ? recoveryQuestions : undefined);
@@ -321,7 +281,7 @@ const Quiz = () => {
     const session = buildQuizSession({
       questions: questionPool,
       mode: nextMode,
-      category: nextCategory,
+      category: null,
       seedKey,
       sourceQuestions,
     });
@@ -616,35 +576,27 @@ const Quiz = () => {
 
                   <div className="space-y-4">
                     <h1 className="max-w-3xl text-5xl leading-none text-white sm:text-6xl" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                      Faster rounds, sharper feedback, stronger replay hooks.
+                      Pick a lane and jump straight into the quiz arena.
                     </h1>
                     <p className="max-w-2xl text-base leading-7 text-slate-200/75 sm:text-lg">
-                      Pick a mode, lean into one AI topic, and build momentum through streaks, layered feedback, and cleaner progression.
+                      Three streamlined modes, cleaner pacing, and recovery runs that unlock automatically after you miss a few questions.
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <Button
-                      type="button"
-                      onClick={() => startMode()}
-                      disabled={questionsLoading}
-                      className="h-12 rounded-full bg-white px-6 text-sm font-semibold text-slate-950 hover:bg-white/90"
-                    >
-                      {questionsLoading ? "Loading question bank..." : `Start ${currentMode.title}`}
-                      <Rocket className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setSelectedMode("daily")}
-                      className="h-12 rounded-full border-white/15 bg-white/5 px-6 text-sm text-white hover:bg-white/10 hover:text-white"
-                    >
-                      Reset to daily challenge
-                    </Button>
+                  <div className="flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+                    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2">
+                      3 core modes
+                    </span>
+                    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2">
+                      Instant answer feedback
+                    </span>
+                    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2">
+                      Recovery runs after misses
+                    </span>
                   </div>
                 </div>
 
-                <div className="relative z-10 grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+                <div className="relative z-10">
                   <div className="rounded-[2rem] border border-white/10 bg-white/6 p-6 shadow-[0_18px_60px_rgba(10,14,39,0.18)] backdrop-blur-xl">
                     <div className="flex items-center justify-between gap-3">
                       <div>
@@ -694,21 +646,49 @@ const Quiz = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {heroTips.map((tip, index) => (
-                    <div
-                      key={tip}
-                      className={cn(
-                        "rounded-[2rem] border border-white/10 p-5 text-sm leading-6 text-slate-200/72 shadow-[0_18px_60px_rgba(10,14,39,0.14)] backdrop-blur-xl",
-                        "bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]",
-                        categoryThemes[index % categoryThemes.length],
-                      )}
-                    >
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/45">Design signal</p>
-                      <p className="mt-3">{tip}</p>
+                    <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-black/15 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Suggested next</p>
+                      <p className="mt-2 text-xl font-semibold text-white">{QUIZ_MODE_CONFIG[recommendedMode].title}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-200/74">
+                        {recommendedMode === "daily" && "Your daily rhythm is open. Clear a quick run to keep the streak simple."}
+                        {recommendedMode === "classic" && "Classic Arena is the cleanest all-round session when you want balanced progression."}
+                        {recommendedMode === "survival" && "Your accuracy is strong enough to handle a longer run with lives on the line."}
+                      </p>
                     </div>
-                  ))}
+
+                    <div className="mt-5 border-t border-white/10 pt-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/45">Recent runs</p>
+                        <Badge className="rounded-full border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70" variant="outline">
+                          {recentSessions.length}
+                        </Badge>
+                      </div>
+                      {recentSessions.length === 0 ? (
+                        <p className="mt-3 text-sm leading-6 text-slate-200/72">
+                          Finish your first run and it will show up here with score and mode history.
+                        </p>
+                      ) : (
+                        <div className="mt-3 space-y-3">
+                          {recentSessions.slice(0, 2).map((session) => (
+                            <div key={session.id} className="rounded-[1.25rem] border border-white/10 bg-white/5 p-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-semibold text-white">{session.quiz_title}</p>
+                                  <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/50">
+                                    {session.mode} · {new Date(session.completed_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <div className="rounded-full border border-white/10 bg-black/15 px-3 py-1 text-sm font-semibold text-white">
+                                  {session.correct_count}/{session.total_questions}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -752,202 +732,52 @@ const Quiz = () => {
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           {!activeSession ? (
             <div className="space-y-10">
-              <div className="grid gap-5 xl:grid-cols-4">
-                {Object.values(QUIZ_MODE_CONFIG).map((mode) => {
+              <div className="grid gap-5 lg:grid-cols-3">
+                {visibleModes.map((modeId) => {
+                  const mode = QUIZ_MODE_CONFIG[modeId];
                   const Icon = modeIcons[mode.id];
-                  const statLabel =
-                    mode.id === "recovery"
-                      ? recoveryQuestions.length > 0
-                        ? `${recoveryQuestions.length} weak spots`
-                        : "Build this deck by playing"
-                      : modeStatLabels[mode.id];
                   return (
                     <QuizModeCard
                       key={mode.id}
                       mode={mode}
                       icon={Icon}
-                      isSelected={selectedMode === mode.id}
-                      statLabel={statLabel}
-                      onSelect={() => setSelectedMode(mode.id)}
+                      isSelected={recommendedMode === mode.id}
+                      statLabel={modeStatLabels[mode.id]}
+                      onSelect={() => startMode(mode.id)}
                     />
                   );
                 })}
               </div>
 
-              <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
-                <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6 shadow-[0_18px_60px_rgba(10,14,39,0.18)] backdrop-blur-xl sm:p-7">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Mode setup</p>
-                      <h2 className="mt-2 text-3xl text-white" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                        {currentMode.title}
-                      </h2>
-                    </div>
-                    <Badge className={cn("rounded-full border-0 px-4 py-1 text-[11px] uppercase tracking-[0.2em] text-white", `bg-gradient-to-r ${currentMode.accentClassName}`)}>
-                      {currentMode.questionCount} questions
-                    </Badge>
+              <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6 shadow-[0_18px_60px_rgba(10,14,39,0.18)] backdrop-blur-xl sm:p-7">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Recovery runs</p>
+                    <h2 className="mt-2 text-3xl text-white" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                      Clean up missed questions when they matter.
+                    </h2>
                   </div>
-
-                  <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-200/75">
-                    {selectedMode === "recovery" && recoveryQuestions.length === 0
-                      ? "Recovery Run unlocks after you miss a few questions. It uses your stored attempts to build a smart retry deck."
-                      : currentMode.description}
-                  </p>
-
-                  {selectedMode === "category" && (
-                    <div className="mt-8 space-y-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Choose a topic deck</p>
-                          <p className="mt-1 text-sm text-slate-300/72">Pick one area to drill before you start the run.</p>
-                        </div>
-                        <Badge className="rounded-full border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70" variant="outline">
-                          {categoryOptions.length} choices
-                        </Badge>
-                      </div>
-
-                      <div className="flex flex-wrap gap-3">
-                        {categoryOptions.map((option, index) => {
-                          const isActive = selectedCategory === option.key;
-                          return (
-                            <button
-                              key={option.key}
-                              type="button"
-                              onClick={() => setSelectedCategory(option.key)}
-                              className={cn(
-                                "min-w-[10rem] rounded-[1.4rem] border px-4 py-3 text-left transition-all",
-                                "bg-[linear-gradient(145deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))]",
-                                isActive
-                                  ? "border-white/40 ring-2 ring-white/50"
-                                  : "border-white/10 hover:border-white/25",
-                              )}
-                            >
-                              <p className="text-sm font-semibold text-white">{option.label}</p>
-                              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/55">{option.count} questions</p>
-                              <div className={cn("mt-3 h-1.5 rounded-full bg-gradient-to-r", categoryThemes[index % categoryThemes.length])} />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-8 flex flex-wrap gap-3">
-                    <Button
-                      type="button"
-                      onClick={() => startMode()}
-                      disabled={questionsLoading || (selectedMode === "recovery" && recoveryQuestions.length === 0)}
-                      className="h-12 rounded-full bg-white px-6 text-sm font-semibold text-slate-950 hover:bg-white/90"
-                    >
-                      {questionsLoading
-                        ? "Loading..."
-                        : selectedMode === "recovery" && recoveryQuestions.length === 0
-                          ? "Recovery deck not ready yet"
-                          : `Enter ${currentMode.title}`}
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setSelectedMode("classic")}
-                      className="h-12 rounded-full border-white/15 bg-white/5 px-6 text-sm text-white hover:bg-white/10 hover:text-white"
-                    >
-                      Switch to Classic Arena
-                    </Button>
-                  </div>
+                  <Badge className="rounded-full border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70" variant="outline">
+                    {recoveryQuestions.length} queued
+                  </Badge>
                 </div>
 
-                <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6 shadow-[0_18px_60px_rgba(10,14,39,0.18)] backdrop-blur-xl sm:p-7">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Replay hooks</p>
-                      <h2 className="mt-2 text-3xl text-white" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                        Why this feels better
-                      </h2>
-                    </div>
-                    <Sparkles className="h-6 w-6 text-white/70" />
-                  </div>
+                <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-200/75">
+                  Recovery is no longer a full top-level mode. It appears as a lightweight follow-up once you miss enough questions to make a useful retry deck.
+                </p>
 
-                  <div className="mt-6 space-y-4">
-                    {[
-                      "Immediate explanation cards make each answer feel like progress, not just grading.",
-                      "Mode variety breaks repetition and lets users choose tension, speed, or depth.",
-                      "Shorter rounds with cleaner summaries make the next tap obvious.",
-                    ].map((item) => (
-                      <div key={item} className="rounded-[1.3rem] border border-white/10 bg-black/15 p-4 text-sm leading-6 text-slate-200/74">
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Daily challenge</p>
-                      <p className="mt-3 text-2xl font-semibold text-white">
-                        {completedDailyToday ? "Done today" : "1 clean run"}
-                      </p>
-                    </div>
-                    <div className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Best daily streak</p>
-                      <p className="mt-3 text-2xl font-semibold text-white">{playerStats?.best_streak_days || 0} days</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-black/15 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Recommended next</p>
-                        <p className="mt-2 text-xl font-semibold text-white">
-                          {QUIZ_MODE_CONFIG[recommendedMode].title}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          setSelectedMode(recommendedMode);
-                          startMode(recommendedMode);
-                        }}
-                        className="h-10 rounded-full bg-white px-4 text-sm font-semibold text-slate-950 hover:bg-white/90"
-                      >
-                        Play now
-                      </Button>
-                    </div>
-                    <p className="mt-3 text-sm leading-6 text-slate-200/72">
-                      {recommendedMode === "recovery" && "You have enough recent misses to make a worthwhile cleanup run."}
-                      {recommendedMode === "daily" && "Your daily habit loop is still open. Close it with a quick ritual round."}
-                      {recommendedMode === "classic" && "Classic Arena is the best all-round session when you want balanced progression."}
-                      {recommendedMode === "survival" && "Your accuracy is strong enough to handle a higher-pressure run with lives at stake."}
-                    </p>
-                  </div>
-
-                  <div className="mt-6 space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Recent runs</p>
-                      <Badge className="rounded-full border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70" variant="outline">
-                        {recentSessions.length} sessions
-                      </Badge>
-                    </div>
-                    {recentSessions.length === 0 ? (
-                      <div className="rounded-[1.3rem] border border-white/10 bg-black/15 p-4 text-sm leading-6 text-slate-200/72">
-                        Finish your first run and it will appear here with score and mode history.
-                      </div>
-                    ) : (
-                      recentSessions.map((session) => (
-                        <div key={session.id} className="rounded-[1.3rem] border border-white/10 bg-black/15 p-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-semibold text-white">{session.quiz_title}</p>
-                              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/50">
-                                {session.mode} · {new Date(session.completed_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <div className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-sm font-semibold text-white">
-                              {session.correct_count}/{session.total_questions}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Button
+                    type="button"
+                    onClick={() => startMode("recovery", recoveryQuestions)}
+                    disabled={recoveryQuestions.length === 0}
+                    className="h-12 rounded-full bg-white px-6 text-sm font-semibold text-slate-950 hover:bg-white/90"
+                  >
+                    {recoveryQuestions.length === 0 ? "Unlock recovery by playing first" : "Fix missed questions"}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                  <div className="inline-flex h-12 items-center rounded-full border border-white/10 bg-white/5 px-4 text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
+                    {completedDailyToday ? "Daily cleared today" : "Daily challenge still open"}
                   </div>
                 </div>
               </div>

@@ -16,6 +16,7 @@ import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Quiz from "./pages/Quiz";
+import Games from "./pages/Games";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserDashboard from "./pages/UserDashboard";
 import NotFound from "./pages/NotFound";
@@ -84,7 +85,8 @@ const App = () => (
             <Route path="/onboarding" element={<OnboardingRoute />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/quiz" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
+            <Route path="/quiz" element={<ProtectedRoute><Games /></ProtectedRoute>} />
+            <Route path="/quiz/arena" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
             <Route path="/tip-calculator" element={<ProtectedRoute><TipCalculator /></ProtectedRoute>} />
             <Route path="/character-counter" element={<ProtectedRoute><CharacterCounter /></ProtectedRoute>} />
             <Route path="/file-converter" element={<ProtectedRoute><FileConverter /></ProtectedRoute>} />

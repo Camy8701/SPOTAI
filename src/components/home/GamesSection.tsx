@@ -14,7 +14,7 @@ const GamesSection = () => (
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link to="/quiz">
+          <Link to="/quiz/arena">
             <motion.button className="bg-pink-500 hover:bg-pink-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg" whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
               Start Quiz
             </motion.button>

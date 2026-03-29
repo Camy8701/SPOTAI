@@ -56,7 +56,7 @@ const QuizModeCard = ({ mode, icon: Icon, isSelected, statLabel, onSelect }: Qui
         isSelected && "shadow-[0_10px_30px_rgba(255,255,255,0.2)]",
       )}
     >
-      {isSelected ? "Selected mode" : "Choose mode"}
+      {isSelected ? "Play recommended mode" : "Play this mode"}
     </Button>
   </motion.div>
 );
