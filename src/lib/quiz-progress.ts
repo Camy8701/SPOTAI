@@ -1,7 +1,20 @@
 import type { Database } from "@/integrations/supabase/types";
 import type { QuizQuestion, QuizSession } from "@/lib/quiz-engine";
 
-export type QuizPlayerStatsRow = Database["public"]["Tables"]["quiz_player_stats"]["Row"];
+export type QuizPlayerStatsRow = {
+  user_id: string;
+  current_streak_days: number;
+  best_streak_days: number;
+  total_sessions: number;
+  total_correct_answers: number;
+  total_questions_answered: number;
+  total_xp: number;
+  longest_answer_streak: number;
+  favorite_category: string | null;
+  last_daily_challenge_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 type AttemptRecord = {
   question: QuizQuestion;

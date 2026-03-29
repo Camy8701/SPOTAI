@@ -36,6 +36,7 @@ import PromptLibraryDetail from "./pages/PromptLibraryDetail";
 import Notifications from "./pages/Notifications";
 import { hasCompletedOnboarding } from "@/lib/profile";
 import ProfileSettings from "./pages/ProfileSettings";
+import UserProfile from "./pages/UserProfile";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +111,7 @@ const App = () => (
             <Route path="/prompt-library/:id" element={<ProtectedRoute><PromptLibraryDetail /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
+            <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
