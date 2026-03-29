@@ -67,15 +67,15 @@ export default function ImageLibrary() {
       <div className="min-h-screen bg-background text-foreground">
         <section className="border-b border-border bg-secondary">
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <div className="rounded-2xl border border-white/10 bg-[#0a0d12] p-4 text-white shadow-[0_22px_40px_rgba(2,6,23,0.35)] sm:p-5">
+            <div className="rounded-2xl border border-sky-200 bg-[linear-gradient(180deg,#f1f8ff_0%,#e8f4ff_100%)] p-4 text-slate-900 shadow-[0_22px_40px_rgba(14,116,144,0.12)] sm:p-5">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/45" />
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-sky-500" />
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder={`Search ${items.length.toLocaleString()} assets...`}
-                    className="h-11 w-full rounded-xl border border-white/10 bg-black/40 pl-9 pr-3 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/30"
+                    className="h-11 w-full rounded-xl border border-sky-200 bg-white pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15"
                   />
                 </div>
 
@@ -86,8 +86,8 @@ export default function ImageLibrary() {
                       onClick={() => setSortMode(button.key)}
                       className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-colors ${
                         sortMode === button.key
-                          ? "border-blue-400/80 bg-blue-500/20 text-blue-200"
-                          : "border-white/10 bg-black/30 text-white/65 hover:border-white/25 hover:text-white"
+                          ? "border-sky-500 bg-sky-500 text-white"
+                          : "border-sky-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700"
                       }`}
                     >
                       <button.icon className="h-3.5 w-3.5" />
@@ -104,8 +104,8 @@ export default function ImageLibrary() {
                     onClick={() => setActiveCategory(category)}
                     className={`rounded-full border px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] transition-colors ${
                       activeCategory === category
-                        ? "border-violet-300/80 bg-violet-500/20 text-violet-100"
-                        : "border-white/10 bg-black/25 text-white/65 hover:border-white/20 hover:text-white"
+                        ? "border-sky-500 bg-sky-500 text-white"
+                        : "border-sky-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700"
                     }`}
                   >
                     {category}
