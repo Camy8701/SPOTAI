@@ -20,6 +20,8 @@ const fetchPostsBySection = async (section: string, limit: number) => {
     .from("blog_posts")
     .select("*")
     .eq("status", "published")
+    .is("community_id", null)
+    .is("group_id", null)
     .eq("homepage_section", section)
     .order("created_at", { ascending: false })
     .limit(limit);

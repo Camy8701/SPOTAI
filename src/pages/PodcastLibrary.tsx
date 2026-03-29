@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, Headphones, Search } from "lucide-react";
+import { ArrowLeft, Download, Headphones, Search } from "lucide-react";
 
 export default function PodcastLibrary() {
   const [podcasts, setPodcasts] = useState<any[]>([]);
@@ -44,6 +45,19 @@ export default function PodcastLibrary() {
       <div className="min-h-screen bg-background text-foreground">
         <section className="border-b border-border bg-secondary">
           <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <Link
+                to="/home"
+                className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white px-4 py-2 text-sm font-semibold text-violet-700 transition hover:border-violet-300 hover:text-violet-800"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to home
+              </Link>
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-700/75">
+                Explore all podcasts
+              </span>
+            </div>
+
             <div className="text-center">
               <h1 className="text-5xl tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                 Free Podcasts

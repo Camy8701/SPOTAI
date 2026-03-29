@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import { ArrowRight, Check, Copy, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, Search, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -60,7 +60,14 @@ export default function PromptLibrary() {
         <section className="border-b border-[#d6e3ef] bg-[linear-gradient(180deg,#dceeff_0%,#edf5ff_100%)]">
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
             <div className="max-w-4xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-100 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-violet-700">
+              <Link
+                to="/home"
+                className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white/80 px-4 py-2 text-sm font-semibold text-violet-700 shadow-[0_10px_24px_rgba(139,92,246,0.06)] transition hover:border-violet-300 hover:text-violet-800"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to home
+              </Link>
+              <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-100 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-violet-700">
                 <Sparkles className="h-4 w-4" />
                 Prompt Hub
               </div>

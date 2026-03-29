@@ -17,8 +17,10 @@ export interface AuthProfile {
   first_name: string | null;
   google_auth_enabled: boolean;
   headline: string | null;
+  is_platform_banned: boolean;
   last_name: string | null;
   onboarding_completed: boolean;
+  platform_ban_reason: string | null;
 }
 
 interface AuthContextType {
@@ -56,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url, bio, first_name, google_auth_enabled, last_name, headline, onboarding_completed")
+        .select("display_name, avatar_url, bio, first_name, google_auth_enabled, last_name, headline, onboarding_completed, is_platform_banned, platform_ban_reason")
         .eq("user_id", userId)
         .single();
 

@@ -122,11 +122,11 @@ const Auth = () => {
         if (result.requiresEmailVerification) {
           setSuccess("Account created. Verify your email, then continue into profile setup.");
         } else {
-          navigate("/onboarding");
+          navigate("/home");
         }
       } else {
         await signInWithEmail(email, password);
-        navigate("/onboarding");
+        navigate("/home");
       }
     } catch (err: any) {
       setError(err.message || `Failed to ${isSignUp ? "sign up" : "sign in"}.`);

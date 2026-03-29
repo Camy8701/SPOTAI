@@ -37,6 +37,7 @@ import Notifications from "./pages/Notifications";
 import { hasCompletedOnboarding } from "@/lib/profile";
 import ProfileSettings from "./pages/ProfileSettings";
 import UserProfile from "./pages/UserProfile";
+import AccountRestricted from "./pages/AccountRestricted";
 
 const queryClient = new QueryClient();
 
@@ -46,15 +47,20 @@ const AuthLoadingScreen = () => (
   </div>
 );
 
+const isRestrictedProfile = (profile: ReturnType<typeof useAuth>["profile"]) =>
+  Boolean(profile?.is_platform_banned);
+
 const LandingRoute = () => {
   const { user, profile, loading, profileLoading } = useAuth();
   if (loading || (user && profileLoading)) return <AuthLoadingScreen />;
+  if (user && isRestrictedProfile(profile)) return <Navigate to="/account-restricted" replace />;
   return user ? <Navigate to={hasCompletedOnboarding(profile) ? "/home" : "/onboarding"} replace /> : <LandingPage />;
 };
 
 const AuthRoute = () => {
   const { user, profile, loading, profileLoading } = useAuth();
   if (loading || (user && profileLoading)) return <AuthLoadingScreen />;
+  if (user && isRestrictedProfile(profile)) return <Navigate to="/account-restricted" replace />;
   return user ? <Navigate to={hasCompletedOnboarding(profile) ? "/home" : "/onboarding"} replace /> : <Auth />;
 };
 
@@ -62,6 +68,7 @@ const OnboardingRoute = () => {
   const { user, profile, loading, profileLoading } = useAuth();
   if (loading || (user && profileLoading)) return <AuthLoadingScreen />;
   if (!user) return <Navigate to="/" replace />;
+  if (isRestrictedProfile(profile)) return <Navigate to="/account-restricted" replace />;
   return hasCompletedOnboarding(profile) ? <Navigate to="/home" replace /> : <Onboarding />;
 };
 
@@ -69,8 +76,17 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { user, profile, loading, profileLoading } = useAuth();
   if (loading || (user && profileLoading)) return <AuthLoadingScreen />;
   if (!user) return <Navigate to="/" replace />;
+  if (isRestrictedProfile(profile)) return <Navigate to="/account-restricted" replace />;
   if (!hasCompletedOnboarding(profile)) return <Navigate to="/onboarding" replace />;
   return children;
+};
+
+const RestrictedRoute = () => {
+  const { user, profile, loading, profileLoading } = useAuth();
+  if (loading || (user && profileLoading)) return <AuthLoadingScreen />;
+  if (!user) return <Navigate to="/" replace />;
+  if (!isRestrictedProfile(profile)) return <Navigate to={hasCompletedOnboarding(profile) ? "/home" : "/onboarding"} replace />;
+  return <AccountRestricted />;
 };
 
 const App = () => (
@@ -85,6 +101,7 @@ const App = () => (
             <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/onboarding" element={<OnboardingRoute />} />
+            <Route path="/account-restricted" element={<RestrictedRoute />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/quiz" element={<ProtectedRoute><Games /></ProtectedRoute>} />

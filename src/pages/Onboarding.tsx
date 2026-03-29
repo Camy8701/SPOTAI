@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, BadgeCheck, Palette, Sparkles, UserRound } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, ArrowRight, BadgeCheck, Palette, Sparkles, UserRound } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { isGoogleUser } from "@/lib/auth-flow";
 import { useAuth } from "@/contexts/AuthContext";
@@ -144,7 +144,21 @@ const Onboarding = () => {
         <section className="relative overflow-hidden rounded-[2rem] border border-border bg-card/90 p-7 shadow-lg backdrop-blur md:p-9">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(74,169,255,0.16),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(255,143,122,0.12),transparent_30%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(74,169,255,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(141,92,255,0.16),transparent_30%)]" />
           <div className="relative">
-            <span className="spotai-wordmark text-3xl font-extrabold tracking-tight">SpotAI</span>
+            <div className="flex items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => navigate(-1)}
+                className="h-11 rounded-full border border-border bg-background/80 px-4 text-sm font-semibold text-foreground hover:bg-accent"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+
+              <Link to="/home" className="inline-flex items-center">
+                <span className="spotai-wordmark text-3xl font-extrabold tracking-tight">SpotAI</span>
+              </Link>
+            </div>
             <div className="mt-8 max-w-xl">
               <span className="inline-flex rounded-full border border-border bg-secondary/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                 Profile setup

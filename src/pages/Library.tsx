@@ -7,6 +7,7 @@ import AnimateInView from "@/components/AnimateInView";
 import AudioPlayer from "@/components/AudioPlayer";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { shouldShowPostInLibrarySection } from "@/lib/publishing";
 
 const SECTION_LABELS: Record<string, string> = {
   all: "All Posts",
@@ -21,6 +22,33 @@ const SECTION_LABELS: Record<string, string> = {
   opinion: "Opinions",
 };
 
+const SECTION_ACCENTS: Record<string, { tint: string; active: string; hover: string; badge: string }> = {
+  featured_stories: {
+    tint: "bg-[linear-gradient(180deg,#fff1f7_0%,#fff8fc_100%)]",
+    active: "border-pink-500 bg-pink-500 text-white",
+    hover: "hover:border-pink-400 hover:text-pink-600",
+    badge: "text-pink-700",
+  },
+  featured_collections: {
+    tint: "bg-[linear-gradient(180deg,#edf5ff_0%,#f8fbff_100%)]",
+    active: "border-blue-500 bg-blue-500 text-white",
+    hover: "hover:border-blue-400 hover:text-blue-600",
+    badge: "text-blue-700",
+  },
+  best_ai_tools: {
+    tint: "bg-[linear-gradient(180deg,#effcf6_0%,#f8fdfb_100%)]",
+    active: "border-emerald-500 bg-emerald-500 text-white",
+    hover: "hover:border-emerald-400 hover:text-emerald-700",
+    badge: "text-emerald-700",
+  },
+  news_articles: {
+    tint: "bg-[linear-gradient(180deg,#fff3ec_0%,#fffaf7_100%)]",
+    active: "border-orange-500 bg-orange-500 text-white",
+    hover: "hover:border-orange-400 hover:text-orange-600",
+    badge: "text-orange-700",
+  },
+};
+
 const Library = () => {
   const [params] = useSearchParams();
   const section = params.get("section") || "all";
@@ -28,18 +56,18 @@ const Library = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [audio, setAudio] = useState<{ src: string; title: string } | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchPosts = async () => {
       setLoading(true);
-      let q = supabase.from("blog_posts").select("*").eq("status", "published").order("created_at", { ascending: false });
-
-      if (section !== "all" && ["featured_stories", "featured_collections", "best_ai_tools", "news_articles"].includes(section)) {
-        q = q.eq("homepage_section", section);
-      }
-      if (category && ["story", "news", "tutorial", "review", "opinion"].includes(category)) {
-        q = q.eq("category", category as any);
-      }
+      const q = supabase
+        .from("blog_posts")
+        .select("*")
+        .eq("status", "published")
+        .is("community_id", null)
+        .is("group_id", null)
+        .order("created_at", { ascending: false });
 
       const { data } = await q;
       setPosts(data || []);
@@ -50,15 +78,16 @@ const Library = () => {
 
   const title = SECTION_LABELS[section] || SECTION_LABELS[category] || "Library";
   const isNewsView = section === "news_articles" || category === "news";
-  const [newsSearch, setNewsSearch] = useState("");
+  const accent = SECTION_ACCENTS[section] || SECTION_ACCENTS[category] || SECTION_ACCENTS.featured_collections;
 
   const visiblePosts = useMemo(() => {
-    if (!isNewsView) return posts;
     return posts.filter((post) => {
-      const text = `${post.title} ${post.excerpt || ""} ${post.category || ""}`.toLowerCase();
-      return text.includes(newsSearch.toLowerCase());
+      const text = `${post.title} ${post.excerpt || ""} ${post.category || ""} ${post.post_kind || ""}`.toLowerCase();
+      const matchesSearch = text.includes(searchTerm.toLowerCase());
+      const matchesSection = shouldShowPostInLibrarySection(post, section, category);
+      return matchesSearch && matchesSection;
     });
-  }, [isNewsView, posts, newsSearch]);
+  }, [posts, searchTerm, section, category]);
 
   const featuredNews = isNewsView ? visiblePosts[0] : null;
   const secondaryNews = isNewsView ? visiblePosts.slice(1) : [];
@@ -82,8 +111,8 @@ const Library = () => {
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
-                    value={newsSearch}
-                    onChange={(e) => setNewsSearch(e.target.value)}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search articles"
                     className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-orange-500"
                   />
@@ -228,14 +257,43 @@ const Library = () => {
         </div>
       ) : (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <Link to="/home" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8">
-            <ArrowLeft size={16} /> Back to home
-          </Link>
+          <section className={`mb-10 rounded-[2rem] border border-border p-6 shadow-[0_14px_34px_rgba(15,23,42,0.05)] ${accent.tint}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Link
+                to="/home"
+                className="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+              >
+                <ArrowLeft size={16} /> Back to home
+              </Link>
+              <span className={`text-xs font-semibold uppercase tracking-[0.2em] ${accent.badge}`}>
+                Explore all posts
+              </span>
+            </div>
 
-          <AnimateInView>
-            <h1 className="text-4xl font-bold text-foreground mb-2">{title}</h1>
-            <p className="text-muted-foreground mb-10">Browse the full collection</p>
-          </AnimateInView>
+            <AnimateInView>
+              <div className="mt-6">
+                <h1 className="text-4xl font-bold text-foreground mb-2">{title}</h1>
+                <p className="text-muted-foreground">Browse the full collection from most recent to oldest.</p>
+              </div>
+            </AnimateInView>
+
+            <div className="mt-6 flex flex-col gap-4 md:flex-row">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={`Search ${title.toLowerCase()}`}
+                  className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge variant="outline" className="rounded-full border-border bg-white px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  {visiblePosts.length} result{visiblePosts.length === 1 ? "" : "s"}
+                </Badge>
+              </div>
+            </div>
+          </section>
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -243,11 +301,11 @@ const Library = () => {
                 <div key={i} className="animate-pulse bg-muted rounded-lg h-72" />
               ))}
             </div>
-          ) : posts.length === 0 ? (
+          ) : visiblePosts.length === 0 ? (
             <p className="text-center text-muted-foreground py-16">No posts found in this section yet.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {posts.map((post) => (
+              {visiblePosts.map((post) => (
                 <div key={post.id} className="bg-card rounded-lg shadow-md overflow-hidden group flex flex-col card-hover">
                   {post.featured_image && (
                     <div className="relative overflow-hidden h-48">

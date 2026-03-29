@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, Navigate } from "react-router-dom";
 import { Heart, MessageCircle, Bookmark, Share2, ArrowLeft, Send, Trash2, Reply, ThumbsUp, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Layout from "@/components/layout/Layout";
@@ -51,8 +51,12 @@ interface LikerProfile {
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
+
+  if (user && profile?.is_platform_banned) {
+    return <Navigate to="/account-restricted" replace />;
+  }
 
   const [post, setPost] = useState<BlogPostData | null>(null);
   const [loading, setLoading] = useState(true);

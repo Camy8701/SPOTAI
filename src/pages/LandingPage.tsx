@@ -34,7 +34,7 @@ const LandingPage = () => {
       setLoading(true);
       setError(null);
       await signInWithEmail(email, password);
-      navigate("/onboarding");
+      navigate("/home");
     } catch (err: any) {
       setError(err.message || "Failed to sign in.");
     } finally {

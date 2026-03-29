@@ -69,7 +69,6 @@ export const buildQuizAttemptsPayload = ({
     points_earned: number;
   }>>((items, question, index) => {
     const selectedAnswer = typeof selectedAnswers[index] === "number" ? selectedAnswers[index] : null;
-    if (selectedAnswer === null) return items;
 
     items.push({
       session_id: sessionId,
@@ -82,7 +81,7 @@ export const buildQuizAttemptsPayload = ({
       question_text: question.question,
       selected_answer: selectedAnswer,
       correct_answer: question.correctAnswer,
-      is_correct: selectedAnswer === question.correctAnswer,
+      is_correct: selectedAnswer !== null && selectedAnswer === question.correctAnswer,
       points_earned: awardedPoints[index] || 0,
     });
 

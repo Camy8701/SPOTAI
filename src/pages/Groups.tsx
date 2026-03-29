@@ -1,10 +1,34 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { motion } from "framer-motion";
+import {
+  Ban,
+  CheckCircle,
+  Clock,
+  Crown,
+  Lock,
+  PenSquare,
+  Plus,
+  Shield,
+  Trash2,
+  UserPlus,
+  UsersRound,
+  XCircle,
+} from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/contexts/AuthContext";
-import { UsersRound, Plus, Lock, Clock, CheckCircle, XCircle } from "lucide-react";
-import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  addGroupAdmin,
+  banGroupUser,
+  deleteScopedPost,
+  fetchGroupManagementData,
+  removeGroupAdmin,
+  removeGroupMember,
+  unbanGroupUser,
+  updateGroupRequest,
+} from "@/lib/social-moderation";
 import { toast } from "sonner";
 
 const languageFlags: Record<string, string> = {
@@ -28,64 +52,103 @@ const Groups = () => {
   const [managingGroup, setManagingGroup] = useState<string | null>(null);
 
   const { data: groups, isLoading } = useQuery({
-    queryKey: ["groups"],
+    queryKey: ["groups", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("groups").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       if (!data) return [];
 
       const enriched = await Promise.all(
-        data.map(async (g) => {
-          const { count } = await supabase.from("group_members").select("*", { count: "exact", head: true }).eq("group_id", g.id).eq("status", "approved");
-          let memberStatus: string | null = null;
-          if (user) {
-            const { data: mem } = await supabase.from("group_members").select("status").eq("group_id", g.id).eq("user_id", user.id).maybeSingle();
-            memberStatus = mem?.status || null;
-          }
-          return { ...g, memberCount: count || 0, memberStatus, isOwner: g.created_by === user?.id };
-        })
+        data.map(async (group) => {
+          const [{ count }, memberRes, adminRes, banRes] = await Promise.all([
+            supabase
+              .from("group_members")
+              .select("*", { count: "exact", head: true })
+              .eq("group_id", group.id)
+              .eq("status", "approved"),
+            user
+              ? supabase
+                  .from("group_members")
+                  .select("status")
+                  .eq("group_id", group.id)
+                  .eq("user_id", user.id)
+                  .maybeSingle()
+              : Promise.resolve({ data: null }),
+            user
+              ? supabase
+                  .from("group_admins")
+                  .select("id")
+                  .eq("group_id", group.id)
+                  .eq("user_id", user.id)
+                  .maybeSingle()
+              : Promise.resolve({ data: null }),
+            user
+              ? supabase
+                  .from("group_bans")
+                  .select("id")
+                  .eq("group_id", group.id)
+                  .eq("user_id", user.id)
+                  .maybeSingle()
+              : Promise.resolve({ data: null }),
+          ]);
+
+          const isOwner = group.created_by === user?.id;
+          const isAdmin = Boolean(adminRes.data) || isOwner;
+          const memberStatus = memberRes.data?.status || null;
+          const isBanned = Boolean(banRes.data);
+          const canPost = (memberStatus === "approved" || isAdmin) && !isBanned;
+
+          return {
+            ...group,
+            memberCount: count || 0,
+            isOwner,
+            isAdmin,
+            memberStatus,
+            isBanned,
+            canManage: isAdmin,
+            canPost,
+          };
+        }),
       );
+
       return enriched;
     },
   });
 
-  // Pending members for group owner
-  const { data: pendingMembers } = useQuery({
-    queryKey: ["pending-members", managingGroup],
-    enabled: !!managingGroup,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("group_members")
-        .select("*")
-        .eq("group_id", managingGroup!)
-        .eq("status", "pending");
-      if (error) throw error;
+  const selectedGroup = groups?.find((group) => group.id === managingGroup) || null;
 
-      // Get profiles
-      const userIds = (data || []).map((m) => m.user_id);
-      const { data: profiles } = await supabase.from("profiles").select("*").in("user_id", userIds);
-      return (data || []).map((m) => ({
-        ...m,
-        profile: profiles?.find((p) => p.user_id === m.user_id),
-      }));
-    },
+  const { data: managementData, isLoading: managementLoading } = useQuery({
+    queryKey: ["group-management", managingGroup, selectedGroup?.created_by],
+    enabled: Boolean(managingGroup && selectedGroup),
+    queryFn: () => fetchGroupManagementData(managingGroup!, selectedGroup?.created_by),
   });
+
+  const refreshGroupData = () => {
+    queryClient.invalidateQueries({ queryKey: ["groups"] });
+    if (managingGroup) {
+      queryClient.invalidateQueries({ queryKey: ["group-management", managingGroup] });
+    }
+  };
 
   const createGroup = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("groups").insert({
-        name: form.name, description: form.description,
-        language: form.language, topic: form.topic,
-        created_by: user!.id, is_private: true,
+        name: form.name,
+        description: form.description,
+        language: form.language,
+        topic: form.topic,
+        created_by: user!.id,
+        is_private: true,
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Group created!");
+      toast.success("Group created");
       setShowCreate(false);
       setForm({ name: "", description: "", language: "en", topic: "general" });
-      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      refreshGroupData();
     },
+    onError: (error) => toast.error(error.message || "Failed to create group"),
   });
 
   const requestJoin = useMutation({
@@ -94,22 +157,21 @@ const Groups = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Join request sent!");
-      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      toast.success("Join request sent");
+      refreshGroupData();
     },
+    onError: (error) => toast.error(error.message || "Could not request access"),
   });
 
-  const handleMember = useMutation({
-    mutationFn: async ({ memberId, status }: { memberId: string; status: "approved" | "rejected" }) => {
-      const { error } = await supabase.from("group_members").update({ status }).eq("id", memberId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Member updated");
-      queryClient.invalidateQueries({ queryKey: ["pending-members", managingGroup] });
-      queryClient.invalidateQueries({ queryKey: ["groups"] });
-    },
-  });
+  const withModerationRefresh = async (task: () => Promise<void>, success: string) => {
+    try {
+      await task();
+      toast.success(success);
+      refreshGroupData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Moderation action failed");
+    }
+  };
 
   return (
     <Layout>
@@ -121,11 +183,14 @@ const Groups = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">Groups</h1>
-              <p className="text-muted-foreground">Private groups — admin approves members</p>
+              <p className="text-muted-foreground">Private spaces with approval flow, local admins, and scoped moderation.</p>
             </div>
           </div>
           {user && (
-            <button onClick={() => setShowCreate(!showCreate)} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90">
+            <button
+              onClick={() => setShowCreate((current) => !current)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90"
+            >
               <Plus size={16} /> Create
             </button>
           )}
@@ -133,55 +198,275 @@ const Groups = () => {
 
         {showCreate && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mb-8 p-6 rounded-xl border border-border bg-card">
-            <h3 className="font-bold text-foreground mb-4">Create a Private Group</h3>
+            <h3 className="font-bold text-foreground mb-4">Create a private group</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input placeholder="Group name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-              <input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-              <select value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })} className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary">
-                {languages.map((l) => <option key={l.code} value={l.code}>{l.flag} {l.code.toUpperCase()}</option>)}
+              <input
+                placeholder="Group name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <input
+                placeholder="Description"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <select
+                value={form.language}
+                onChange={(e) => setForm({ ...form, language: e.target.value })}
+                className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {languages.map((language) => (
+                  <option key={language.code} value={language.code}>
+                    {language.flag} {language.code.toUpperCase()}
+                  </option>
+                ))}
               </select>
-              <select value={form.topic} onChange={(e) => setForm({ ...form, topic: e.target.value })} className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary">
-                {topics.map((t) => <option key={t.name} value={t.name}>{t.icon} {t.name}</option>)}
+              <select
+                value={form.topic}
+                onChange={(e) => setForm({ ...form, topic: e.target.value })}
+                className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {topics.map((topic) => (
+                  <option key={topic.name} value={topic.name}>
+                    {topic.icon} {topic.name}
+                  </option>
+                ))}
               </select>
             </div>
-            <button onClick={() => form.name && createGroup.mutate()} disabled={!form.name} className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 disabled:opacity-50">
+            <button
+              onClick={() => form.name && createGroup.mutate()}
+              disabled={!form.name}
+              className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 disabled:opacity-50"
+            >
               Create Group
             </button>
           </motion.div>
         )}
 
-        {/* Manage pending members modal */}
-        {managingGroup && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8 p-6 rounded-xl border border-border bg-card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-foreground">Pending Requests</h3>
-              <button onClick={() => setManagingGroup(null)} className="text-sm text-muted-foreground hover:text-foreground">Close</button>
-            </div>
-            {(pendingMembers || []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No pending requests</p>
-            ) : (
-              <div className="space-y-2">
-                {pendingMembers!.map((m) => (
-                  <div key={m.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                    <span className="text-sm font-medium text-foreground">{(m as any).profile?.display_name || "User"}</span>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleMember.mutate({ memberId: m.id, status: "approved" })} className="p-1.5 rounded-lg bg-green-500/10 text-green-600 hover:bg-green-500/20">
-                        <CheckCircle size={16} />
-                      </button>
-                      <button onClick={() => handleMember.mutate({ memberId: m.id, status: "rejected" })} className="p-1.5 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20">
-                        <XCircle size={16} />
-                      </button>
-                    </div>
+        {managingGroup && selectedGroup ? (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8 rounded-[1.75rem] border border-border bg-card p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">{topicIcons[selectedGroup.topic] || "💬"}</span>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground">{selectedGroup.name}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Review requests, assign local admins, remove members, and moderate group posts.
+                    </p>
                   </div>
-                ))}
+                </div>
               </div>
-            )}
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  to={`/create-post?groupId=${selectedGroup.id}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
+                >
+                  <PenSquare size={15} /> Create post
+                </Link>
+                <button
+                  onClick={() => setManagingGroup(null)}
+                  className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            {managementLoading ? (
+              <div className="mt-6 rounded-2xl border border-border bg-secondary/60 p-8 text-center text-sm text-muted-foreground">
+                Loading moderation tools...
+              </div>
+            ) : managementData ? (
+              <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
+                <div className="space-y-6">
+                  <section className="rounded-2xl border border-border bg-background p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Pending requests</p>
+                    <h3 className="mt-1 text-xl font-semibold text-foreground">{managementData.pendingMembers.length} waiting</h3>
+                    <div className="mt-4 space-y-3">
+                      {managementData.pendingMembers.length === 0 ? (
+                        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">No pending requests.</p>
+                      ) : (
+                        managementData.pendingMembers.map((member) => (
+                          <div key={member.id} className="flex flex-col gap-3 rounded-2xl border border-border p-4 md:flex-row md:items-center md:justify-between">
+                            <div>
+                              <p className="font-medium text-foreground">{member.profile?.display_name || "User"}</p>
+                              <p className="mt-1 text-sm text-muted-foreground">Requested {new Date(member.joined_at).toLocaleDateString()}</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => withModerationRefresh(() => updateGroupRequest(member.id, "approved"), "Request approved")}
+                                className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700 hover:bg-emerald-100"
+                              >
+                                <CheckCircle className="mr-1 inline h-3.5 w-3.5" />
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => withModerationRefresh(() => updateGroupRequest(member.id, "rejected"), "Request rejected")}
+                                className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-red-700 hover:bg-red-100"
+                              >
+                                <XCircle className="mr-1 inline h-3.5 w-3.5" />
+                                Reject
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="rounded-2xl border border-border bg-background p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Approved members</p>
+                    <h3 className="mt-1 text-xl font-semibold text-foreground">{managementData.approvedMembers.length} inside</h3>
+                    <div className="mt-4 space-y-3">
+                      {managementData.approvedMembers.map((member) => (
+                        <div key={member.id} className="flex flex-col gap-3 rounded-2xl border border-border p-4 md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <p className="font-medium text-foreground">{member.profile?.display_name || "User"}</p>
+                            <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                              <span>Joined {new Date(member.joined_at).toLocaleDateString()}</span>
+                              {member.isOwner ? <span className="rounded-full bg-amber-100 px-2 py-1 text-amber-700">Owner</span> : null}
+                              {!member.isOwner && member.isAdmin ? <span className="rounded-full bg-violet-100 px-2 py-1 text-violet-700">Admin</span> : null}
+                            </div>
+                          </div>
+                          {!member.isOwner ? (
+                            <div className="flex flex-wrap gap-2">
+                              {member.isAdmin ? (
+                                <button
+                                  onClick={() => withModerationRefresh(() => removeGroupAdmin(selectedGroup.id, member.user_id), "Admin removed")}
+                                  className="rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-foreground hover:bg-secondary"
+                                >
+                                  Remove admin
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => withModerationRefresh(() => addGroupAdmin(selectedGroup.id, member.user_id), "Admin added")}
+                                  className="rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-violet-700 hover:bg-violet-100"
+                                >
+                                  <UserPlus className="mr-1 inline h-3.5 w-3.5" />
+                                  Make admin
+                                </button>
+                              )}
+                              <button
+                                onClick={() => withModerationRefresh(() => removeGroupMember(selectedGroup.id, member.user_id), "Member removed")}
+                                className="rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-foreground hover:bg-secondary"
+                              >
+                                Remove
+                              </button>
+                              <button
+                                onClick={() => withModerationRefresh(() => banGroupUser(selectedGroup.id, member.user_id), "User banned from group")}
+                                className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-red-700 hover:bg-red-100"
+                              >
+                                <Ban className="mr-1 inline h-3.5 w-3.5" />
+                                Ban
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="rounded-2xl border border-border bg-background p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Group posts</p>
+                    <h3 className="mt-1 text-xl font-semibold text-foreground">{managementData.posts.length} scoped posts</h3>
+                    <div className="mt-4 space-y-3">
+                      {managementData.posts.length === 0 ? (
+                        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">
+                          No group posts yet.
+                        </p>
+                      ) : (
+                        managementData.posts.map((post) => (
+                          <div key={post.id} className="flex flex-col gap-3 rounded-2xl border border-border p-4 md:flex-row md:items-center md:justify-between">
+                            <div>
+                              <Link to={`/post/${post.slug}`} className="font-medium text-foreground hover:underline">
+                                {post.title}
+                              </Link>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {post.authorName} • {new Date(post.created_at).toLocaleDateString()} • {post.status}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => withModerationRefresh(() => deleteScopedPost(post.id), "Group post deleted")}
+                              className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-red-700 hover:bg-red-100"
+                            >
+                              <Trash2 className="mr-1 inline h-3.5 w-3.5" />
+                              Delete post
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </section>
+                </div>
+
+                <div className="space-y-6">
+                  <section className="rounded-2xl border border-border bg-background p-5">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-violet-600" />
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Admins</p>
+                        <h3 className="mt-1 text-xl font-semibold text-foreground">{managementData.admins.length + 1} moderators</h3>
+                      </div>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                        <p className="font-medium text-foreground">{selectedGroup.isOwner ? "You" : "Owner"}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">Group creator keeps permanent local control.</p>
+                        <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+                          <Crown className="h-3.5 w-3.5" />
+                          Owner
+                        </div>
+                      </div>
+                      {managementData.admins.map((admin) => (
+                        <div key={admin.id} className="rounded-2xl border border-border p-4">
+                          <p className="font-medium text-foreground">{admin.profile?.display_name || "Admin"}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">Can approve members and moderate this group only.</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="rounded-2xl border border-border bg-background p-5">
+                    <div className="flex items-center gap-2">
+                      <Ban className="h-4 w-4 text-red-600" />
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Banned users</p>
+                        <h3 className="mt-1 text-xl font-semibold text-foreground">{managementData.bans.length} blocked</h3>
+                      </div>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {managementData.bans.length === 0 ? (
+                        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">No bans yet.</p>
+                      ) : (
+                        managementData.bans.map((ban) => (
+                          <div key={ban.id} className="flex items-center justify-between rounded-2xl border border-border p-4">
+                            <div>
+                              <p className="font-medium text-foreground">{ban.profile?.display_name || "User"}</p>
+                              <p className="mt-1 text-sm text-muted-foreground">{ban.reason || "No reason supplied"}</p>
+                            </div>
+                            <button
+                              onClick={() => withModerationRefresh(() => unbanGroupUser(selectedGroup.id, ban.user_id), "User unbanned")}
+                              className="rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-foreground hover:bg-secondary"
+                            >
+                              Unban
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </section>
+                </div>
+              </div>
+            ) : null}
           </motion.div>
-        )}
+        ) : null}
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => <div key={i} className="h-40 bg-secondary animate-pulse rounded-xl" />)}
+            {[1, 2, 3].map((index) => <div key={index} className="h-40 bg-secondary animate-pulse rounded-xl" />)}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -193,6 +478,8 @@ const Groups = () => {
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold text-foreground truncate">{group.name}</h3>
                       <Lock size={12} className="text-muted-foreground flex-shrink-0" />
+                      {group.isOwner ? <Crown className="h-4 w-4 text-amber-500" /> : null}
+                      {!group.isOwner && group.isAdmin ? <Shield className="h-4 w-4 text-violet-600" /> : null}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span>{languageFlags[group.language] || "🌐"} {group.language.toUpperCase()}</span>
@@ -202,25 +489,53 @@ const Groups = () => {
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{group.description || "No description"}</p>
-                {user && (
-                  <div className="flex gap-2">
-                    {group.isOwner ? (
-                      <button onClick={() => setManagingGroup(group.id)} className="flex-1 py-2 text-sm font-medium bg-accent text-accent-foreground rounded-lg hover:opacity-90 flex items-center justify-center gap-1">
-                        Manage
-                      </button>
-                    ) : group.memberStatus === "approved" ? (
-                      <span className="flex-1 py-2 text-sm font-medium text-center text-green-600">Member ✓</span>
+                <div className="flex flex-wrap gap-2">
+                  {user ? (
+                    group.isBanned ? (
+                      <span className="inline-flex items-center rounded-full bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-red-700">
+                        Banned
+                      </span>
+                    ) : group.canPost ? (
+                      <>
+                        <Link
+                          to={`/create-post?groupId=${group.id}`}
+                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
+                        >
+                          <PenSquare size={15} />
+                          Create post
+                        </Link>
+                        {group.canManage ? (
+                          <button
+                            onClick={() => setManagingGroup((current) => (current === group.id ? null : group.id))}
+                            className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+                          >
+                            Manage
+                          </button>
+                        ) : (
+                          <span className="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+                            Member
+                          </span>
+                        )}
+                      </>
                     ) : group.memberStatus === "pending" ? (
-                      <span className="flex-1 py-2 text-sm font-medium text-center text-amber-600 flex items-center justify-center gap-1"><Clock size={14} /> Pending</span>
+                      <span className="inline-flex items-center rounded-full bg-amber-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+                        <Clock className="mr-1 h-3.5 w-3.5" />
+                        Pending
+                      </span>
                     ) : group.memberStatus === "rejected" ? (
-                      <span className="flex-1 py-2 text-sm font-medium text-center text-destructive">Rejected</span>
+                      <span className="inline-flex items-center rounded-full bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-red-700">
+                        Request rejected
+                      </span>
                     ) : (
-                      <button onClick={() => requestJoin.mutate(group.id)} className="flex-1 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90">
-                        Request to Join
+                      <button
+                        onClick={() => requestJoin.mutate(group.id)}
+                        className="w-full py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90"
+                      >
+                        Request to join
                       </button>
-                    )}
-                  </div>
-                )}
+                    )
+                  ) : null}
+                </div>
               </motion.div>
             ))}
           </div>

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { supabase } from "@/integrations/supabase/client";
-import { BookOpen, Download, Search } from "lucide-react";
+import { ArrowLeft, BookOpen, Download, Headphones, Search } from "lucide-react";
 
 export default function EbooksLibrary() {
   const [ebooks, setEbooks] = useState<any[]>([]);
@@ -44,6 +45,19 @@ export default function EbooksLibrary() {
       <div className="min-h-screen bg-background text-foreground">
         <section className="border-b border-border bg-secondary">
           <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <Link
+                to="/home"
+                className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:text-blue-800"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to home
+              </Link>
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700/75">
+                Explore all ebooks
+              </span>
+            </div>
+
             <div className="text-center">
               <h1 className="text-5xl tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                 Free Ebooks
@@ -146,6 +160,17 @@ export default function EbooksLibrary() {
                       >
                         <Download className="h-4 w-4" />
                       </a>
+                      {featured.audio_url ? (
+                        <a
+                          href={featured.audio_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-11 items-center rounded-full border border-blue-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/25 dark:text-blue-200 dark:hover:bg-blue-500/10"
+                        >
+                          <Headphones className="mr-2 h-4 w-4" />
+                          Listen
+                        </a>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -195,6 +220,17 @@ export default function EbooksLibrary() {
                             >
                               <Download className="h-4 w-4" />
                             </a>
+                            {ebook.audio_url ? (
+                              <a
+                                href={ebook.audio_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex h-10 items-center rounded-full border border-blue-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/25 dark:text-blue-200 dark:hover:bg-blue-500/10"
+                              >
+                                <Headphones className="mr-2 h-4 w-4" />
+                                Listen
+                              </a>
+                            ) : null}
                           </div>
                         </div>
                       </article>

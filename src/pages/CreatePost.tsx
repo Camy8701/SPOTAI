@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { PenSquare, HelpCircle } from "lucide-react";
+import { PenSquare, HelpCircle, Users, UsersRound, Globe2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,21 +12,104 @@ const CreatePost = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const initialType = searchParams.get("type") || "post";
+  const initialCommunityId = searchParams.get("communityId");
+  const initialGroupId = searchParams.get("groupId");
 
   const [type, setType] = useState<"post" | "question">(initialType as "post" | "question");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [communityOptions, setCommunityOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [groupOptions, setGroupOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [scopeType, setScopeType] = useState<"global" | "community" | "group">(
+    initialGroupId ? "group" : initialCommunityId ? "community" : "global",
+  );
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string>(initialCommunityId || "");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(initialGroupId || "");
 
   if (!user) {
     navigate("/auth");
     return null;
   }
 
+  useEffect(() => {
+    const loadScopes = async () => {
+      if (!user) return;
+
+      const [
+        createdCommunitiesRes,
+        memberCommunitiesRes,
+        createdGroupsRes,
+        memberGroupsRes,
+      ] = await Promise.all([
+        supabase.from("communities").select("id, name").eq("created_by", user.id).order("name"),
+        supabase.from("community_members").select("community_id").eq("user_id", user.id),
+        supabase.from("groups").select("id, name").eq("created_by", user.id).order("name"),
+        supabase.from("group_members").select("group_id").eq("user_id", user.id).eq("status", "approved"),
+      ]);
+
+      const communityIds = Array.from(
+        new Set([
+          ...(createdCommunitiesRes.data || []).map((item) => item.id),
+          ...(memberCommunitiesRes.data || []).map((item) => item.community_id),
+        ]),
+      );
+
+      const groupIds = Array.from(
+        new Set([
+          ...(createdGroupsRes.data || []).map((item) => item.id),
+          ...(memberGroupsRes.data || []).map((item) => item.group_id),
+        ]),
+      );
+
+      const [communityLookupRes, groupLookupRes] = await Promise.all([
+        communityIds.length > 0
+          ? supabase.from("communities").select("id, name").in("id", communityIds).order("name")
+          : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+        groupIds.length > 0
+          ? supabase.from("groups").select("id, name").in("id", groupIds).order("name")
+          : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+      ]);
+
+      setCommunityOptions(communityLookupRes.data || []);
+      setGroupOptions(groupLookupRes.data || []);
+    };
+
+    void loadScopes();
+  }, [user]);
+
+  useEffect(() => {
+    if (scopeType === "community" && !selectedCommunityId && communityOptions[0]) {
+      setSelectedCommunityId(communityOptions[0].id);
+    }
+    if (scopeType === "group" && !selectedGroupId && groupOptions[0]) {
+      setSelectedGroupId(groupOptions[0].id);
+    }
+  }, [scopeType, communityOptions, groupOptions, selectedCommunityId, selectedGroupId]);
+
+  const canPostToCommunity = communityOptions.length > 0;
+  const canPostToGroup = groupOptions.length > 0;
+  const isScopedPost = scopeType !== "global";
+  const submitLabel = useMemo(() => {
+    if (scopeType === "community") return `Publish to community`;
+    if (scopeType === "group") return `Publish to group`;
+    return `Submit ${type === "question" ? "Question" : "Post"}`;
+  }, [scopeType, type]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
       toast({ title: "Error", description: "Title and content are required.", variant: "destructive" });
+      return;
+    }
+
+    if (scopeType === "community" && !selectedCommunityId) {
+      toast({ title: "Error", description: "Choose a community before publishing.", variant: "destructive" });
+      return;
+    }
+
+    if (scopeType === "group" && !selectedGroupId) {
+      toast({ title: "Error", description: "Choose a group before publishing.", variant: "destructive" });
       return;
     }
 
@@ -38,9 +121,11 @@ const CreatePost = () => {
       content,
       slug,
       author_id: user.id,
-      status: "draft",
+      status: isScopedPost ? "published" : "draft",
       category: type === "question" ? "opinion" : "story",
       tags: type === "question" ? ["question"] : [],
+      community_id: scopeType === "community" ? selectedCommunityId : null,
+      group_id: scopeType === "group" ? selectedGroupId : null,
     });
 
     setSubmitting(false);
@@ -48,8 +133,13 @@ const CreatePost = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Success", description: `Your ${type} has been submitted for review.` });
-      navigate("/dashboard");
+      toast({
+        title: "Success",
+        description: isScopedPost
+          ? `Your ${type} is now live in its ${scopeType}.`
+          : `Your ${type} has been submitted for review.`,
+      });
+      navigate(scopeType === "group" ? "/groups" : scopeType === "community" ? "/communities" : "/dashboard");
     }
   };
 
@@ -96,6 +186,93 @@ const CreatePost = () => {
           </motion.div>
         )}
 
+        <div className="mb-6 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2">
+            <Globe2 size={16} className="text-primary" />
+            <h2 className="text-sm font-semibold text-foreground">Where should this post live?</h2>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {[
+              {
+                key: "global" as const,
+                title: "Main library",
+                description: "Draft-based post flow for the wider SpotAI feed.",
+                icon: Globe2,
+                disabled: false,
+              },
+              {
+                key: "community" as const,
+                title: "Community post",
+                description: canPostToCommunity ? "Publish directly inside one of your communities." : "Join a community first to publish there.",
+                icon: Users,
+                disabled: !canPostToCommunity,
+              },
+              {
+                key: "group" as const,
+                title: "Group post",
+                description: canPostToGroup ? "Publish directly inside one of your approved groups." : "Join or create a group first to publish there.",
+                icon: UsersRound,
+                disabled: !canPostToGroup,
+              },
+            ].map((option) => {
+              const selected = scopeType === option.key;
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  disabled={option.disabled}
+                  onClick={() => setScopeType(option.key)}
+                  className={`rounded-2xl border p-4 text-left transition-colors ${
+                    selected
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-background hover:border-primary/30"
+                  } ${option.disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                >
+                  <option.icon size={18} className={selected ? "text-primary" : "text-muted-foreground"} />
+                  <p className="mt-3 font-medium text-foreground">{option.title}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{option.description}</p>
+                </button>
+              );
+            })}
+          </div>
+
+          {scopeType === "community" && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-foreground mb-2">Choose community</label>
+              <select
+                value={selectedCommunityId}
+                onChange={(e) => setSelectedCommunityId(e.target.value)}
+                className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground"
+              >
+                <option value="">Select a community</option>
+                {communityOptions.map((community) => (
+                  <option key={community.id} value={community.id}>
+                    {community.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {scopeType === "group" && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-foreground mb-2">Choose group</label>
+              <select
+                value={selectedGroupId}
+                onChange={(e) => setSelectedGroupId(e.target.value)}
+                className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground"
+              >
+                <option value="">Select a group</option>
+                {groupOptions.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Title</label>
@@ -126,7 +303,7 @@ const CreatePost = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            {submitting ? "Submitting..." : `Submit ${type === "question" ? "Question" : "Post"}`}
+            {submitting ? "Submitting..." : submitLabel}
           </motion.button>
         </form>
       </div>

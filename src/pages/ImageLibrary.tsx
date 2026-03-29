@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import { Search, Flame, Compass, Clock3 } from "lucide-react";
+import { ArrowLeft, Search, Flame, Compass, Clock3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type SortMode = "popular" | "explore" | "recent";
@@ -68,6 +69,19 @@ export default function ImageLibrary() {
         <section className="border-b border-border bg-secondary">
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <div className="rounded-2xl border border-sky-200 bg-[linear-gradient(180deg,#f1f8ff_0%,#e8f4ff_100%)] p-4 text-slate-900 shadow-[0_22px_40px_rgba(14,116,144,0.12)] sm:p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <Link
+                  to="/home"
+                  className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-sky-700 transition hover:border-sky-300 hover:text-sky-800"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to home
+                </Link>
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700/75">
+                  Explore all images
+                </span>
+              </div>
+
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-sky-500" />

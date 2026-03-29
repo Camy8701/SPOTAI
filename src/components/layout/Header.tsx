@@ -1,6 +1,34 @@
-import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Calculator, Type, Upload, X, Moon, Sun, LogOut, LayoutDashboard, Shield, Menu, UserCog } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Bell,
+  BookOpen,
+  Calculator,
+  Gamepad2,
+  Headphones,
+  Home,
+  Images,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  MessageCircle,
+  Moon,
+  Newspaper,
+  PenSquare,
+  Shield,
+  ShoppingBag,
+  Sparkles,
+  Stamp,
+  Sun,
+  TrendingUp,
+  Type,
+  Upload,
+  UserCog,
+  Users,
+  UsersRound,
+  Wrench,
+  X,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
@@ -62,7 +90,59 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
   // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
+
+  const mobilePrimaryActions = [
+    { label: "Home", path: "/home", icon: Home, color: "from-blue-500 to-blue-600" },
+    { label: "Messages", path: "/messages", icon: MessageCircle, color: "from-cyan-500 to-blue-500" },
+    { label: "Create Post", path: "/create-post", icon: PenSquare, color: "from-amber-500 to-orange-500" },
+    { label: "Notifications", path: "/notifications", icon: Bell, color: "from-violet-500 to-purple-600" },
+  ];
+
+  const mobileMenuSections = [
+    {
+      title: "Explore",
+      items: [
+        { label: "Marketplace", path: "/marketplace", icon: ShoppingBag, accent: "text-emerald-500" },
+        { label: "Popular", path: "/popular", icon: TrendingUp, accent: "text-orange-500" },
+        { label: "News & Articles", path: "/library?section=news_articles", icon: Newspaper, accent: "text-amber-500" },
+        { label: "Games", path: "/quiz", icon: Gamepad2, accent: "text-indigo-500" },
+      ],
+    },
+    {
+      title: "Community",
+      items: [
+        { label: "Communities", path: "/communities", icon: Users, accent: "text-violet-500" },
+        { label: "Groups", path: "/groups", icon: UsersRound, accent: "text-pink-500" },
+        { label: "Create Post", path: "/create-post", icon: PenSquare, accent: "text-yellow-500" },
+        { label: "Messages", path: "/messages", icon: MessageCircle, accent: "text-cyan-500" },
+      ],
+    },
+    {
+      title: "Libraries",
+      items: [
+        { label: "Image Library", path: "/image-library", icon: Images, accent: "text-sky-500" },
+        { label: "Prompt Library", path: "/prompt-library", icon: Sparkles, accent: "text-violet-500" },
+        { label: "Ebooks Library", path: "/freebies/ebooks", icon: BookOpen, accent: "text-teal-500" },
+        { label: "Podcast Library", path: "/freebies/podcasts", icon: Headphones, accent: "text-rose-500" },
+      ],
+    },
+    {
+      title: "Tools",
+      items: [
+        { label: "Tools Hub", path: "/tools", icon: Wrench, accent: "text-cyan-500" },
+        { label: "Tip Calculator", path: "/tip-calculator", icon: Calculator, accent: "text-sky-500" },
+        { label: "Character Counter", path: "/character-counter", icon: Type, accent: "text-violet-500" },
+        { label: "File Converter", path: "/file-converter", icon: Upload, accent: "text-orange-500" },
+        { label: "PDF Brander", path: "/pdf-brander", icon: Stamp, accent: "text-rose-500" },
+      ],
+    },
+  ];
+
+  const isPathActive = (path: string) => {
+    const basePath = path.split("?")[0];
+    return location.pathname === basePath || (basePath !== "/" && location.pathname.startsWith(basePath));
+  };
 
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50">
@@ -210,7 +290,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed top-0 left-0 bottom-0 w-72 bg-background border-r border-border z-50 lg:hidden overflow-y-auto"
+              className="fixed top-0 left-0 bottom-0 z-50 w-[22rem] max-w-[88vw] overflow-y-auto border-r border-border bg-background lg:hidden"
             >
               <div className="p-4 border-b border-border flex items-center justify-between">
                 <span className="spotai-wordmark text-lg font-extrabold">SpotAI</span>
@@ -219,30 +299,61 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
                 </button>
               </div>
 
-              <div className="p-4 space-y-2">
+              <div className="p-4 space-y-5">
                 {/* Auth section for mobile */}
                 {user ? (
-                  <div className="pb-4 mb-4 border-b border-border space-y-2">
-                    <div className="text-sm font-medium text-foreground truncate px-3">
-                      {profile?.display_name || user.email?.split("@")[0]}
+                  <div className="space-y-3 border-b border-border pb-5">
+                    <div className="px-1">
+                      <div className="text-sm font-medium text-foreground truncate">
+                        {profile?.display_name || user.email?.split("@")[0]}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground truncate">
+                        {user.email}
+                      </div>
                     </div>
-                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
-                      <LayoutDashboard className="h-4 w-4" /> My Dashboard
-                    </Link>
-                    <Link to="/profile-settings" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
-                      <UserCog className="h-4 w-4" /> Profile Settings
-                    </Link>
-                    {isAdmin && (
-                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
-                        <Shield className="h-4 w-4" /> Admin Dashboard
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {mobilePrimaryActions.map((item) => (
+                        <Link
+                          key={item.label}
+                          to={item.path}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`rounded-2xl border p-3 transition-colors ${
+                            isPathActive(item.path)
+                              ? "border-primary/25 bg-accent"
+                              : "border-border bg-card hover:bg-secondary"
+                          }`}
+                        >
+                          <div className={`mb-2 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${item.color} text-white shadow-sm`}>
+                            <item.icon className="h-4 w-4" />
+                          </div>
+                          <div className="text-sm font-medium text-foreground">{item.label}</div>
+                        </Link>
+                      ))}
+                    </div>
+
+                    <div className="space-y-1">
+                      <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isPathActive("/dashboard") ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-secondary"}`}>
+                        <LayoutDashboard className="h-4 w-4" /> My Dashboard
                       </Link>
-                    )}
-                    <button
-                      onClick={async () => { await signOut(); navigate("/"); setMobileMenuOpen(false); }}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground w-full"
-                    >
-                      <LogOut className="h-4 w-4" /> Sign Out
-                    </button>
+                      <Link to="/profile-settings" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isPathActive("/profile-settings") ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-secondary"}`}>
+                        <UserCog className="h-4 w-4" /> Profile Settings
+                      </Link>
+                      <Link to="/notifications" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isPathActive("/notifications") ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-secondary"}`}>
+                        <Bell className="h-4 w-4" /> Notifications
+                      </Link>
+                      {isAdmin && (
+                        <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isPathActive("/admin") ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-secondary"}`}>
+                          <Shield className="h-4 w-4" /> Admin Dashboard
+                        </Link>
+                      )}
+                      <button
+                        onClick={async () => { await signOut(); navigate("/"); setMobileMenuOpen(false); }}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground w-full"
+                      >
+                        <LogOut className="h-4 w-4" /> Sign Out
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="pb-4 mb-4 border-b border-border">
@@ -252,28 +363,43 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
                   </div>
                 )}
 
-                {/* External links */}
-                <a href="https://www.youtube.com/channel/UC6D5mUGNBRB80j_5A-QkazA" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
-                  YouTube
-                </a>
-                <a href="https://ko-fi.com/spotai" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z" /></svg>
-                  Support Us
-                </a>
+                <div className="space-y-5">
+                  {mobileMenuSections.map((section) => (
+                    <div key={section.title} className="space-y-2">
+                      <div className="px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        {section.title}
+                      </div>
+                      <div className="space-y-1">
+                        {section.items.map((item) => (
+                          <Link
+                            key={item.label}
+                            to={item.path}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+                              isPathActive(item.path)
+                                ? "bg-accent text-accent-foreground font-medium"
+                                : "text-foreground hover:bg-secondary"
+                            }`}
+                          >
+                            <item.icon className={`h-4 w-4 ${item.accent}`} />
+                            <span>{item.label}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
-                {/* Utility tools */}
-                <div className="pt-4 mt-4 border-t border-border space-y-2">
-                  <div className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Tools</div>
-                  <Link to="/tip-calculator" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
-                    <Calculator className="h-4 w-4 text-sky-500" /> Tip Calculator
-                  </Link>
-                  <Link to="/character-counter" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
-                    <Type className="h-4 w-4 text-violet-500" /> Character Counter
-                  </Link>
-                  <Link to="/file-converter" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
-                    <Upload className="h-4 w-4 text-orange-500" /> File Converter
-                  </Link>
+                {/* External links */}
+                <div className="border-t border-border pt-4 space-y-1">
+                  <a href="https://www.youtube.com/channel/UC6D5mUGNBRB80j_5A-QkazA" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
+                    YouTube
+                  </a>
+                  <a href="https://ko-fi.com/spotai" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-foreground">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z" /></svg>
+                    Support Us
+                  </a>
                 </div>
               </div>
             </motion.div>

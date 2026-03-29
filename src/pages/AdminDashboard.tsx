@@ -31,6 +31,9 @@ import {
   Plus,
   Globe,
   Crown,
+  Ban,
+  ShieldAlert,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
@@ -62,7 +65,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import {
+  ADMIN_PERMISSION_LABELS,
+  defaultAdminPermissions,
+  fullAdminPermissions,
+  type AdminPermissionKey,
+  type AdminPermissions,
+} from "@/lib/admin-permissions";
+import {
+  ADMIN_POST_KIND_CONFIG,
+  deriveExcerpt,
+  getPlacementOptions,
+  getResolvedPlacementLabel,
+  inferPostKind,
+  normalizeHomepagePlacement,
+  resolvePlacementChoice,
+  sanitizeSlug,
+  type AdminPostKind,
+  type HomepagePlacementChoice,
+} from "@/lib/publishing";
 
 type Tab = "analytics" | "posts" | "users" | "quiz" | "social" | "freebies" | "images" | "prompts";
 
@@ -224,7 +247,7 @@ function AnalyticsOverviewTab() {
     });
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [canManageAdmins]);
 
   const hasAlerts = stats.drafts > 3 || stats.pendingMembers > 0;
 
@@ -586,7 +609,17 @@ function PostsTab() {
   const [posts, setPosts] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<any>(null);
-  const [form, setForm] = useState({ title: "", slug: "", content: "", category: "story" as string, status: "draft" as string, excerpt: "", featured_image: "", audio_url: "", homepage_section: "none" });
+  const [form, setForm] = useState({
+    title: "",
+    slug: "",
+    content: "",
+    post_kind: "ai_story" as AdminPostKind,
+    status: "draft" as string,
+    excerpt: "",
+    featured_image: "",
+    audio_url: "",
+    placement_choice: "auto" as HomepagePlacementChoice,
+  });
 
   const load = () => {
     supabase.from("blog_posts").select("*").order("created_at", { ascending: false }).then(({ data }) => {
@@ -598,26 +631,82 @@ function PostsTab() {
 
   const openCreate = () => {
     setEditingPost(null);
-    setForm({ title: "", slug: "", content: "", category: "story", status: "draft", excerpt: "", featured_image: "", audio_url: "", homepage_section: "none" });
+    setForm({
+      title: "",
+      slug: "",
+      content: "",
+      post_kind: "ai_story",
+      status: "draft",
+      excerpt: "",
+      featured_image: "",
+      audio_url: "",
+      placement_choice: "auto",
+    });
     setDialogOpen(true);
   };
 
   const openEdit = (post: any) => {
     setEditingPost(post);
-    setForm({ title: post.title, slug: post.slug, content: post.content, category: post.category, status: post.status, excerpt: post.excerpt || "", featured_image: post.featured_image || "", audio_url: post.audio_url || "", homepage_section: post.homepage_section || "none" });
+    setForm({
+      title: post.title,
+      slug: post.slug,
+      content: post.content,
+      post_kind: inferPostKind(post),
+      status: post.status,
+      excerpt: post.excerpt || "",
+      featured_image: post.featured_image || "",
+      audio_url: post.audio_url || "",
+      placement_choice: resolvePlacementChoice(post),
+    });
     setDialogOpen(true);
   };
 
-  const save = async () => {
-    if (!form.title || !form.slug) {
-      toast({ title: "Title and slug are required", variant: "destructive" });
+  const uploadMedia = async (file: File, folder: string, onDone: (url: string) => void) => {
+    const path = `${folder}/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("media").upload(path, file);
+    if (error) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
       return;
     }
+    const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
+    onDone(pub.publicUrl);
+    toast({ title: "Upload complete" });
+  };
+
+  const save = async () => {
+    if (!form.title.trim()) {
+      toast({ title: "Title is required", variant: "destructive" });
+      return;
+    }
+    if (!form.content.trim()) {
+      toast({ title: "Content is required", variant: "destructive" });
+      return;
+    }
+
+    const resolvedSection = normalizeHomepagePlacement(form.post_kind, form.placement_choice);
+    const kindConfig = ADMIN_POST_KIND_CONFIG[form.post_kind];
+    const payload = {
+      title: form.title.trim(),
+      slug: sanitizeSlug(form.slug || form.title),
+      content: form.content.trim(),
+      category: kindConfig.category as any,
+      post_kind: form.post_kind,
+      status: form.status as any,
+      excerpt: form.excerpt.trim() || deriveExcerpt(form.content),
+      featured_image: form.featured_image.trim() || null,
+      audio_url: kindConfig.supportsAudio ? form.audio_url.trim() || null : null,
+      homepage_section: resolvedSection,
+      published_at:
+        form.status === "published"
+          ? editingPost?.published_at || new Date().toISOString()
+          : null,
+    };
+
     if (editingPost) {
-      const { error } = await supabase.from("blog_posts").update({ ...form, category: form.category as any, status: form.status as any }).eq("id", editingPost.id);
+      const { error } = await supabase.from("blog_posts").update(payload).eq("id", editingPost.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     } else {
-      const { error } = await supabase.from("blog_posts").insert({ ...form, category: form.category as any, status: form.status as any, author_id: user?.id });
+      const { error } = await supabase.from("blog_posts").insert({ ...payload, author_id: user?.id });
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     }
     toast({ title: editingPost ? "Post updated" : "Post created" });
@@ -630,6 +719,10 @@ function PostsTab() {
     toast({ title: "Post deleted" });
     load();
   };
+
+  const resolvedHomepageSection = normalizeHomepagePlacement(form.post_kind, form.placement_choice);
+  const kindConfig = ADMIN_POST_KIND_CONFIG[form.post_kind];
+  const placementOptions = getPlacementOptions(form.post_kind);
 
   return (
     <div className="space-y-4">
@@ -644,8 +737,75 @@ function PostsTab() {
             <DialogTitle>{editingPost ? "Edit Post" : "Create Post"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-            <Input placeholder="Slug (url-friendly)" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
+            <div className="grid gap-4 md:grid-cols-[1.05fr_0.95fr]">
+              <div className="rounded-xl border border-border bg-muted/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Post type</p>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  {(Object.entries(ADMIN_POST_KIND_CONFIG) as Array<[AdminPostKind, (typeof ADMIN_POST_KIND_CONFIG)[AdminPostKind]]>).map(([key, option]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setForm((current) => ({ ...current, post_kind: key, placement_choice: current.placement_choice === "hero" || current.placement_choice === "dedicated_only" ? current.placement_choice : "auto", audio_url: option.supportsAudio ? current.audio_url : "" }))}
+                      className={`cursor-pointer rounded-xl border p-4 text-left transition-colors ${
+                        form.post_kind === key
+                          ? "border-primary bg-primary/5"
+                          : "border-border bg-background hover:border-primary/25"
+                      }`}
+                    >
+                      <p className="font-semibold text-foreground">{option.label}</p>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{option.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border bg-muted/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Publishing result</p>
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Will appear in</p>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      {getResolvedPlacementLabel(resolvedHomepageSection, form.post_kind)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Homepage logic</p>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      If the selected placement does not fit the post type, SpotAI automatically routes it to the correct section.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Audio support</p>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      {kindConfig.supportsAudio
+                        ? "This content type can include narration or companion audio."
+                        : "This content type publishes as text/image only in the main post flow."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Input
+              placeholder="Title"
+              value={form.title}
+              onChange={(e) =>
+                setForm((current) => {
+                  const nextTitle = e.target.value;
+                  const shouldRefreshSlug =
+                    !editingPost ||
+                    !current.slug ||
+                    current.slug === sanitizeSlug(current.title);
+
+                  return {
+                    ...current,
+                    title: nextTitle,
+                    slug: shouldRefreshSlug ? sanitizeSlug(nextTitle) : current.slug,
+                  };
+                })
+              }
+            />
+            <Input placeholder="Slug (url-friendly)" value={form.slug} onChange={(e) => setForm({ ...form, slug: sanitizeSlug(e.target.value) })} />
             <Input placeholder="Excerpt" value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} />
             <div>
               <label className="text-sm font-medium mb-1 block">Featured Image</label>
@@ -655,47 +815,29 @@ function PostsTab() {
                   <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    const path = `posts/${Date.now()}-${file.name}`;
-                    const { error } = await supabase.storage.from("media").upload(path, file);
-                    if (error) { toast({ title: "Upload failed", description: error.message, variant: "destructive" }); return; }
-                    const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
-                    setForm((f) => ({ ...f, featured_image: pub.publicUrl }));
-                    toast({ title: "Image uploaded" });
+                    await uploadMedia(file, "posts", (url) => setForm((f) => ({ ...f, featured_image: url })));
                   }} />
                   <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors">Upload</span>
                 </label>
               </div>
             </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Audio File (optional)</label>
-              <div className="flex gap-2">
-                <Input placeholder="Audio URL" value={form.audio_url} onChange={(e) => setForm({ ...form, audio_url: e.target.value })} className="flex-1" />
-                <label className="cursor-pointer">
-                  <input type="file" accept="audio/*" className="hidden" onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const path = `audio/${Date.now()}-${file.name}`;
-                    const { error } = await supabase.storage.from("media").upload(path, file);
-                    if (error) { toast({ title: "Upload failed", description: error.message, variant: "destructive" }); return; }
-                    const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
-                    setForm((f) => ({ ...f, audio_url: pub.publicUrl }));
-                    toast({ title: "Audio uploaded" });
-                  }} />
-                  <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors">Upload</span>
-                </label>
+            {kindConfig.supportsAudio ? (
+              <div>
+                <label className="text-sm font-medium mb-1 block">Audio File (optional)</label>
+                <div className="flex gap-2">
+                  <Input placeholder="Audio URL" value={form.audio_url} onChange={(e) => setForm({ ...form, audio_url: e.target.value })} className="flex-1" />
+                  <label className="cursor-pointer">
+                    <input type="file" accept="audio/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      await uploadMedia(file, "audio", (url) => setForm((f) => ({ ...f, audio_url: url })));
+                    }} />
+                    <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors">Upload</span>
+                  </label>
+                </div>
               </div>
-            </div>
+            ) : null}
             <div className="flex gap-4">
-              <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="story">Story</SelectItem>
-                  <SelectItem value="news">News</SelectItem>
-                  <SelectItem value="tutorial">Tutorial</SelectItem>
-                  <SelectItem value="review">Review</SelectItem>
-                  <SelectItem value="opinion">Opinion</SelectItem>
-                </SelectContent>
-              </Select>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -703,20 +845,26 @@ function PostsTab() {
                   <SelectItem value="published">Published</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="flex-1 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
+                <p className="font-medium text-foreground">Category</p>
+                <p className="text-muted-foreground">{kindConfig.category}</p>
+              </div>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Homepage Section</label>
-              <Select value={form.homepage_section} onValueChange={(v) => setForm({ ...form, homepage_section: v })}>
+              <label className="text-sm font-medium mb-1 block">Homepage Placement</label>
+              <Select value={form.placement_choice} onValueChange={(v) => setForm({ ...form, placement_choice: v as HomepagePlacementChoice })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="hero">Hero (main banner)</SelectItem>
-                  <SelectItem value="featured_stories">Featured AI Fictions</SelectItem>
-                  <SelectItem value="featured_collections">Featured Collections</SelectItem>
-                  <SelectItem value="best_ai_tools">Best AI Tools</SelectItem>
-                  <SelectItem value="news_articles">News & Articles</SelectItem>
+                  {placementOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                {placementOptions.find((option) => option.value === form.placement_choice)?.description}
+              </p>
             </div>
             <Textarea placeholder="Content (markdown)" rows={10} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} />
             <Button onClick={save} className="w-full">{editingPost ? "Update" : "Create"}</Button>
@@ -729,6 +877,7 @@ function PostsTab() {
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Section</TableHead>
@@ -740,13 +889,16 @@ function PostsTab() {
             {posts.map((post) => (
               <TableRow key={post.id}>
                 <TableCell className="font-medium max-w-[200px] truncate">{post.title}</TableCell>
+                <TableCell>
+                  <Badge variant="outline">{ADMIN_POST_KIND_CONFIG[inferPostKind(post)].label}</Badge>
+                </TableCell>
                 <TableCell><Badge variant="secondary">{post.category}</Badge></TableCell>
                 <TableCell>
                   <Badge className={post.status === "published" ? "bg-[hsl(150,76%,78%)] text-foreground hover:bg-[hsl(150,76%,70%)]" : ""} variant={post.status === "published" ? "default" : "outline"}>
                     {post.status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-muted-foreground text-xs">{post.homepage_section || "—"}</TableCell>
+                <TableCell className="text-muted-foreground text-xs">{getResolvedPlacementLabel(post.homepage_section, inferPostKind(post))}</TableCell>
                 <TableCell className="text-muted-foreground">{new Date(post.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right space-x-2">
                   <Button size="sm" variant="outline" onClick={() => openEdit(post)}>Edit</Button>
@@ -756,7 +908,7 @@ function PostsTab() {
             ))}
             {posts.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No posts yet</TableCell>
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">No posts yet</TableCell>
               </TableRow>
             )}
           </TableBody>
@@ -767,25 +919,141 @@ function PostsTab() {
 }
 
 // ─── Users Tab ───
-function UsersTab() {
+function UsersTab({
+  canManageAdmins,
+  canManageUsers,
+}: {
+  canManageAdmins: boolean;
+  canManageUsers: boolean;
+}) {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [users, setUsers] = useState<any[]>([]);
+  const [editingAdmin, setEditingAdmin] = useState<any | null>(null);
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [adminForm, setAdminForm] = useState<AdminPermissions>(fullAdminPermissions);
+  const [fullAccess, setFullAccess] = useState(true);
 
-  const load = () => {
-    supabase.from("profiles").select("*, user_roles(role)").order("created_at", { ascending: false }).then(({ data }) => {
-      if (data) setUsers(data);
-    });
+  const load = async () => {
+    const profilesRes = await supabase
+      .from("profiles")
+      .select(canManageAdmins ? "*, user_roles(role)" : "*")
+      .order("created_at", { ascending: false });
+
+    const permissionsRes = canManageAdmins
+      ? await supabase.from("admin_permissions").select("*")
+      : { data: [] as any[] };
+
+    if (!profilesRes.data) return;
+
+    const permissionMap = new Map((permissionsRes.data || []).map((item) => [item.user_id, item]));
+    setUsers(
+      profilesRes.data.map((profile) => ({
+        ...profile,
+        admin_permissions: permissionMap.get(profile.user_id) || null,
+      })),
+    );
   };
 
   useEffect(() => { load(); }, []);
 
-  const toggleAdmin = async (userId: string, currentlyAdmin: boolean) => {
-    if (currentlyAdmin) {
-      await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin");
+  const openAdminDialog = (userRecord: any) => {
+    const currentlyAdmin = userRecord.user_roles?.some((role: any) => role.role === "admin");
+    const permissionRow = userRecord.admin_permissions;
+
+    setEditingAdmin(userRecord);
+    if (!currentlyAdmin || !permissionRow || permissionRow.is_super_admin) {
+      setFullAccess(true);
+      setAdminForm(fullAdminPermissions);
     } else {
-      await supabase.from("user_roles").insert({ user_id: userId, role: "admin" as any });
+      setFullAccess(false);
+      setAdminForm({
+        manage_admins: Boolean(permissionRow.can_manage_admins),
+        manage_users: Boolean(permissionRow.can_manage_users),
+        manage_posts: Boolean(permissionRow.can_manage_posts),
+        manage_social: Boolean(permissionRow.can_manage_social),
+        manage_quiz: Boolean(permissionRow.can_manage_quiz),
+        manage_media: Boolean(permissionRow.can_manage_media),
+        manage_tools: Boolean(permissionRow.can_manage_tools),
+      });
     }
-    toast({ title: currentlyAdmin ? "Admin role removed" : "Admin role granted" });
+    setAdminDialogOpen(true);
+  };
+
+  const saveAdminAccess = async () => {
+    if (!editingAdmin) return;
+
+    const userId = editingAdmin.user_id;
+    const isCurrentlyAdmin = editingAdmin.user_roles?.some((role: any) => role.role === "admin");
+
+    if (!isCurrentlyAdmin) {
+      const { error: roleError } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin" as any });
+      if (roleError) {
+        toast({ title: "Failed to grant admin", description: roleError.message, variant: "destructive" });
+        return;
+      }
+    }
+
+    const payload = {
+      user_id: userId,
+      is_super_admin: fullAccess,
+      can_manage_admins: fullAccess ? true : adminForm.manage_admins,
+      can_manage_users: fullAccess ? true : adminForm.manage_users,
+      can_manage_posts: fullAccess ? true : adminForm.manage_posts,
+      can_manage_social: fullAccess ? true : adminForm.manage_social,
+      can_manage_quiz: fullAccess ? true : adminForm.manage_quiz,
+      can_manage_media: fullAccess ? true : adminForm.manage_media,
+      can_manage_tools: fullAccess ? true : adminForm.manage_tools,
+    };
+
+    const { error } = await supabase.from("admin_permissions").upsert(payload, { onConflict: "user_id" });
+    if (error) {
+      toast({ title: "Failed to save admin access", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    toast({ title: fullAccess ? "Full admin granted" : "Limited admin updated" });
+    setAdminDialogOpen(false);
+    setEditingAdmin(null);
+    load();
+  };
+
+  const removeAdmin = async (userId: string) => {
+    const [permissionRes, roleRes] = await Promise.all([
+      supabase.from("admin_permissions").delete().eq("user_id", userId),
+      supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin"),
+    ]);
+
+    if (permissionRes.error || roleRes.error) {
+      toast({
+        title: "Failed to remove admin",
+        description: permissionRes.error?.message || roleRes.error?.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({ title: "Admin role removed" });
+    load();
+  };
+
+  const togglePlatformBan = async (userId: string, currentlyBanned: boolean) => {
+    const payload = currentlyBanned
+      ? { is_platform_banned: false, platform_ban_reason: null, platform_banned_at: null, platform_banned_by: null }
+      : {
+          is_platform_banned: true,
+          platform_ban_reason: "Restricted by platform administration",
+          platform_banned_at: new Date().toISOString(),
+          platform_banned_by: user?.id || null,
+        };
+
+    const { error } = await supabase.from("profiles").update(payload).eq("user_id", userId);
+    if (error) {
+      toast({ title: "Failed to update ban", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    toast({ title: currentlyBanned ? "User unbanned" : "User banned" });
     load();
   };
 
@@ -818,19 +1086,63 @@ function UsersTab() {
               <TableBody>
                 {users.map((u) => {
                   const isAdmin = u.user_roles?.some((r: any) => r.role === "admin");
+                  const isBanned = Boolean(u.is_platform_banned);
+                  const permissionRow = u.admin_permissions;
+                  const isFullAdmin = isAdmin && (!permissionRow || permissionRow.is_super_admin);
                   return (
                     <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.display_name || "Unnamed"}</TableCell>
+                      <TableCell className="font-medium">
+                        <div>
+                          <p>{u.display_name || "Unnamed"}</p>
+                          <p className="text-xs text-muted-foreground">{u.user_id}</p>
+                        </div>
+                      </TableCell>
                       <TableCell>
-                        <Badge className={isAdmin ? "bg-[hsl(150,76%,78%)] text-foreground hover:bg-[hsl(150,76%,70%)]" : ""} variant={isAdmin ? "default" : "secondary"}>
-                          {isAdmin ? "Admin" : "User"}
-                        </Badge>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge className={isAdmin ? "bg-[hsl(150,76%,78%)] text-foreground hover:bg-[hsl(150,76%,70%)]" : ""} variant={isAdmin ? "default" : "secondary"}>
+                            {isAdmin ? (isFullAdmin ? "Full Admin" : "Limited Admin") : "User"}
+                          </Badge>
+                          {isBanned ? (
+                            <Badge variant="destructive">Banned</Badge>
+                          ) : null}
+                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => toggleAdmin(u.user_id, isAdmin)}>
-                          {isAdmin ? "Remove Admin" : "Make Admin"}
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          {canManageUsers ? (
+                            <Button size="sm" variant={isBanned ? "outline" : "destructive"} onClick={() => togglePlatformBan(u.user_id, isBanned)}>
+                              {isBanned ? (
+                                <>
+                                  <ShieldAlert className="mr-1 h-3.5 w-3.5" />
+                                  Unban
+                                </>
+                              ) : (
+                                <>
+                                  <Ban className="mr-1 h-3.5 w-3.5" />
+                                  Ban
+                                </>
+                              )}
+                            </Button>
+                          ) : null}
+                          {canManageAdmins ? (
+                            isAdmin ? (
+                              <>
+                                <Button size="sm" variant="outline" onClick={() => openAdminDialog(u)}>
+                                  <SlidersHorizontal className="mr-1 h-3.5 w-3.5" />
+                                  Permissions
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => removeAdmin(u.user_id)}>
+                                  Remove Admin
+                                </Button>
+                              </>
+                            ) : (
+                              <Button size="sm" variant="outline" onClick={() => openAdminDialog(u)}>
+                                Make Admin
+                              </Button>
+                            )
+                          ) : null}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -840,6 +1152,58 @@ function UsersTab() {
           </div>
         )}
       </div>
+
+      <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingAdmin?.display_name || "User"} admin access
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="rounded-2xl border border-border bg-secondary/40 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-medium text-foreground">Full platform access</p>
+                  <p className="text-sm text-muted-foreground">
+                    Super admins can manage the whole platform, including other admins.
+                  </p>
+                </div>
+                <Switch checked={fullAccess} onCheckedChange={setFullAccess} />
+              </div>
+            </div>
+
+            {!fullAccess ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(Object.keys(ADMIN_PERMISSION_LABELS) as AdminPermissionKey[]).map((key) => (
+                  <div key={key} className="rounded-2xl border border-border p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-foreground">{ADMIN_PERMISSION_LABELS[key].label}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{ADMIN_PERMISSION_LABELS[key].description}</p>
+                      </div>
+                      <Switch
+                        checked={adminForm[key]}
+                        onCheckedChange={(checked) => setAdminForm((current) => ({ ...current, [key]: checked }))}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setAdminDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={saveAdminAccess}>
+                Save access
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1531,7 +1895,7 @@ function FreebiesTab() {
   const [items, setItems] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
-  const [form, setForm] = useState({ title: "", description: "", type: "ebook", category: "general", file_url: "", cover_image: "" });
+  const [form, setForm] = useState({ title: "", description: "", type: "ebook", category: "general", file_url: "", cover_image: "", audio_url: "" });
 
   const load = () => {
     supabase.from("freebies").select("*").order("created_at", { ascending: false }).then(({ data }) => {
@@ -1543,13 +1907,13 @@ function FreebiesTab() {
 
   const openCreate = () => {
     setEditingItem(null);
-    setForm({ title: "", description: "", type: "ebook", category: "general", file_url: "", cover_image: "" });
+    setForm({ title: "", description: "", type: "ebook", category: "general", file_url: "", cover_image: "", audio_url: "" });
     setDialogOpen(true);
   };
 
   const openEdit = (item: any) => {
     setEditingItem(item);
-    setForm({ title: item.title, description: item.description || "", type: item.type, category: item.category, file_url: item.file_url, cover_image: item.cover_image || "" });
+    setForm({ title: item.title, description: item.description || "", type: item.type, category: item.category, file_url: item.file_url, cover_image: item.cover_image || "", audio_url: item.audio_url || "" });
     setDialogOpen(true);
   };
 
@@ -1598,6 +1962,9 @@ function FreebiesTab() {
             <DialogTitle>{editingItem ? "Edit Freebie" : "Add Freebie"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-muted/20 p-4 text-sm leading-6 text-muted-foreground">
+              Ebooks publish as text/file entries and can also carry an optional companion audio track. Podcasts publish as audio-first items.
+            </div>
             <Input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             <Textarea placeholder="Description" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             <div className="flex gap-4">
@@ -1625,6 +1992,23 @@ function FreebiesTab() {
                 </label>
               </div>
             </div>
+            {form.type === "ebook" ? (
+              <div>
+                <label className="text-sm font-medium mb-1 block">Companion Audio (optional)</label>
+                <div className="flex gap-2">
+                  <Input placeholder="Audio URL" value={form.audio_url} onChange={(e) => setForm({ ...form, audio_url: e.target.value })} className="flex-1" />
+                  <label className="cursor-pointer">
+                    <input type="file" className="hidden" accept="audio/*" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadFile(file, "ebook-audio", (url) => setForm((f) => ({ ...f, audio_url: url })));
+                    }} />
+                    <span className="inline-flex items-center px-3 py-2 bg-secondary rounded-md text-sm font-medium hover:bg-muted transition-colors">
+                      <Upload className="h-4 w-4 mr-1" /> Upload
+                    </span>
+                  </label>
+                </div>
+              </div>
+            ) : null}
             <div>
               <label className="text-sm font-medium mb-1 block">Cover Image</label>
               <div className="flex gap-2">
@@ -1652,6 +2036,7 @@ function FreebiesTab() {
               <TableHead>Title</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Audio</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -1667,6 +2052,9 @@ function FreebiesTab() {
                   </Badge>
                 </TableCell>
                 <TableCell className="capitalize">{item.category}</TableCell>
+                <TableCell className="text-muted-foreground text-xs">
+                  {item.type === "podcast" ? "Primary audio" : item.audio_url ? "Companion audio" : "—"}
+                </TableCell>
                 <TableCell className="text-muted-foreground">{new Date(item.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right space-x-2">
                   <Button size="sm" variant="outline" onClick={() => openEdit(item)}>Edit</Button>
@@ -1676,7 +2064,7 @@ function FreebiesTab() {
             ))}
             {items.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">No freebies yet. Add your first ebook or podcast!</TableCell>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No freebies yet. Add your first ebook or podcast!</TableCell>
               </TableRow>
             )}
           </TableBody>
@@ -2237,7 +2625,7 @@ function PromptsTab() {
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { user, profile, loading: authLoading, signOut } = useAuth();
-  const { isAdmin, loading: roleLoading } = useRole();
+  const { isAdmin, isSuperAdmin, permissions, loading: roleLoading } = useRole();
   const [tab, setTab] = useState<Tab>("analytics");
 
   if (authLoading || roleLoading) {
@@ -2253,21 +2641,24 @@ export default function AdminDashboard() {
     );
   }
 
-  const tabs: { label: string; key: Tab; icon: any; count?: number }[] = [
-    { label: "Analytics", key: "analytics", icon: BarChart3 },
-    { label: "Posts", key: "posts", icon: FileText },
-    { label: "Users", key: "users", icon: Users },
-    { label: "Quiz", key: "quiz", icon: HelpCircle },
-    { label: "Social", key: "social", icon: UsersRound },
-    { label: "Freebies", key: "freebies", icon: Gift },
-    { label: "Images", key: "images", icon: Images },
-    { label: "Prompts", key: "prompts", icon: Sparkles },
+  const tabs: { label: string; key: Tab; icon: any; visible: boolean }[] = [
+    { label: "Analytics", key: "analytics", icon: BarChart3, visible: true },
+    { label: "Posts", key: "posts", icon: FileText, visible: permissions.manage_posts },
+    { label: "Users", key: "users", icon: Users, visible: permissions.manage_users || permissions.manage_admins },
+    { label: "Quiz", key: "quiz", icon: HelpCircle, visible: permissions.manage_quiz },
+    { label: "Social", key: "social", icon: UsersRound, visible: permissions.manage_social },
+    { label: "Freebies", key: "freebies", icon: Gift, visible: permissions.manage_media || permissions.manage_tools },
+    { label: "Images", key: "images", icon: Images, visible: permissions.manage_media },
+    { label: "Prompts", key: "prompts", icon: Sparkles, visible: permissions.manage_media },
   ];
+
+  const visibleTabs = tabs.filter((item) => item.visible);
+  const activeTab = visibleTabs.some((item) => item.key === tab) ? tab : (visibleTabs[0]?.key || "analytics");
 
   const tabContent: Record<Tab, JSX.Element> = {
     analytics: <AnalyticsOverviewTab />,
     posts: <PostsTab />,
-    users: <UsersTab />,
+    users: <UsersTab canManageAdmins={permissions.manage_admins} canManageUsers={permissions.manage_users} />,
     quiz: <QuizTab />,
     social: <SocialTab />,
     freebies: <FreebiesTab />,
@@ -2289,7 +2680,9 @@ export default function AdminDashboard() {
             <span className="text-sm text-muted-foreground hidden sm:inline">
               {profile?.display_name || user.email}
             </span>
-            <Badge className="bg-[hsl(150,76%,78%)] text-foreground hover:bg-[hsl(150,76%,70%)] rounded-full font-bold text-xs px-3">ADMIN</Badge>
+            <Badge className="bg-[hsl(150,76%,78%)] text-foreground hover:bg-[hsl(150,76%,70%)] rounded-full font-bold text-xs px-3">
+              {isSuperAdmin ? "SUPER ADMIN" : "ADMIN"}
+            </Badge>
             <button
               onClick={async () => { await signOut(); navigate("/"); }}
               className="p-2 rounded-md hover:bg-secondary transition-colors"
@@ -2314,12 +2707,12 @@ export default function AdminDashboard() {
 
         {/* Horizontal Tab Navigation */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {tabs.map((t) => (
+          {visibleTabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold uppercase tracking-wide border-2 transition-all ${
-                tab === t.key
+                activeTab === t.key
                   ? "bg-[hsl(150,76%,78%)] border-[hsl(150,76%,78%)] text-foreground"
                   : "border-border bg-background text-foreground hover:bg-secondary"
               }`}
@@ -2331,7 +2724,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tab Content */}
-        {tabContent[tab]}
+        {tabContent[activeTab]}
       </div>
     </div>
   );
