@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Calculator, Type, Upload, X, Moon, Sun, LogOut, LayoutDashboard, Shield, Menu, UserCog } from "lucide-react";
+import { Calculator, Type, Upload, X, Moon, Sun, LogOut, LayoutDashboard, Shield, Menu, UserCog } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
+import NotificationBell from "@/components/NotificationBell";
+import UserSearch from "@/components/layout/UserSearch";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
@@ -117,29 +122,9 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
           </nav>
         </div>
 
-        {/* Center - Search Bar */}
-        <div className="hidden md:block flex-1 mx-8">
-          <div className="relative w-full max-w-7xl mx-auto">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search AI tools, stories, news... (⌘K)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-10 pr-12 py-2 border border-border rounded-md leading-5 bg-secondary placeholder-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm h-10 transition-all duration-200"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center hover:bg-secondary rounded-r-md transition-colors"
-              >
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
-            )}
-          </div>
+        {/* Center - User Search */}
+        <div className="hidden md:block flex-1 mx-8 max-w-md">
+          <UserSearch />
         </div>
 
         {/* Right - Theme Toggle + Auth + Utility Tools */}
@@ -209,23 +194,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
       {/* Mobile Search */}
       <div className="md:hidden border-t border-border bg-secondary">
         <div className="px-4 py-2">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-9 pr-10 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
-            )}
-          </div>
+          <UserSearch />
         </div>
       </div>
 
