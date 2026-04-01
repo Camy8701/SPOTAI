@@ -44,6 +44,51 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_permissions: {
+        Row: {
+          can_manage_admins: boolean
+          can_manage_media: boolean
+          can_manage_posts: boolean
+          can_manage_quiz: boolean
+          can_manage_social: boolean
+          can_manage_tools: boolean
+          can_manage_users: boolean
+          created_at: string
+          id: string
+          is_super_admin: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_manage_admins?: boolean
+          can_manage_media?: boolean
+          can_manage_posts?: boolean
+          can_manage_quiz?: boolean
+          can_manage_social?: boolean
+          can_manage_tools?: boolean
+          can_manage_users?: boolean
+          created_at?: string
+          id?: string
+          is_super_admin?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_manage_admins?: boolean
+          can_manage_media?: boolean
+          can_manage_posts?: boolean
+          can_manage_quiz?: boolean
+          can_manage_social?: boolean
+          can_manage_tools?: boolean
+          can_manage_users?: boolean
+          created_at?: string
+          id?: string
+          is_super_admin?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           audio_url: string | null
@@ -188,6 +233,67 @@ export type Database = {
         }
         Relationships: []
       }
+      community_admins: {
+        Row: {
+          community_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          community_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          community_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_admins_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_bans: {
+        Row: {
+          community_id: string
+          created_at: string
+          id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          community_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          community_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_bans_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_members: {
         Row: {
           community_id: string
@@ -282,6 +388,67 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      group_admins: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_admins_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_bans: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_bans_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       group_members: {
         Row: {
@@ -558,8 +725,10 @@ export type Database = {
           google_auth_enabled: boolean
           headline: string | null
           id: string
+          is_platform_banned: boolean
           last_name: string | null
           onboarding_completed: boolean
+          platform_ban_reason: string | null
           updated_at: string
           user_id: string
         }
@@ -572,8 +741,10 @@ export type Database = {
           google_auth_enabled?: boolean
           headline?: string | null
           id?: string
+          is_platform_banned?: boolean
           last_name?: string | null
           onboarding_completed?: boolean
+          platform_ban_reason?: string | null
           updated_at?: string
           user_id: string
         }
@@ -586,8 +757,10 @@ export type Database = {
           google_auth_enabled?: boolean
           headline?: string | null
           id?: string
+          is_platform_banned?: boolean
           last_name?: string | null
           onboarding_completed?: boolean
+          platform_ban_reason?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -917,9 +1090,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      quiz_questions_public: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          difficulty: string | null
+          id: string | null
+          options: Json | null
+          question: string | null
+          quiz_title: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          difficulty?: string | null
+          id?: string | null
+          options?: Json | null
+          question?: string | null
+          quiz_title?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          difficulty?: string | null
+          id?: string | null
+          options?: Json | null
+          question?: string | null
+          quiz_title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      check_quiz_answer: {
+        Args: { _answer_index: number; _question_id: string }
+        Returns: boolean
+      }
       get_popular_posts: {
         Args: never
         Returns: {
