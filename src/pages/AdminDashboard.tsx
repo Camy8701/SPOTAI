@@ -1066,7 +1066,7 @@ function UsersTab({
       .order("created_at", { ascending: false });
 
     const permissionsRes = canManageAdmins
-      ? await supabase.from("admin_permissions").select("*")
+      ? await supabase.from("admin_permissions" as any).select("*")
       : { data: [] as any[] };
 
     if (!profilesRes.data) return;
