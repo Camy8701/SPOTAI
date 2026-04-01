@@ -173,9 +173,9 @@ export const removeGroupMember = async (groupId: string, userId: string) => {
 
 export const banGroupUser = async (groupId: string, userId: string, reason?: string) => {
   const [banRes, memberRes, adminRes] = await Promise.all([
-    supabase.from("group_bans").upsert({ group_id: groupId, user_id: userId, reason: reason || null }, { onConflict: "group_id,user_id" }),
+    supabase.from("group_bans" as any).upsert({ group_id: groupId, user_id: userId, reason: reason || null }, { onConflict: "group_id,user_id" }),
     supabase.from("group_members").delete().eq("group_id", groupId).eq("user_id", userId),
-    supabase.from("group_admins").delete().eq("group_id", groupId).eq("user_id", userId),
+    supabase.from("group_admins" as any).delete().eq("group_id", groupId).eq("user_id", userId),
   ]);
   if (banRes.error) throw banRes.error;
   if (memberRes.error) throw memberRes.error;
