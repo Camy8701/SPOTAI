@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { shouldShowPostInLibrarySection } from "@/lib/publishing";
 import { addNeuralinkLead } from "@/data/fallback/neuralinkStory";
+import { addNoCodeLead } from "@/data/fallback/noCodeAutomationPost";
 
 const SECTION_LABELS: Record<string, string> = {
   all: "All Posts",
@@ -51,6 +52,38 @@ const SECTION_ACCENTS: Record<string, { tint: string; active: string; hover: str
   },
 };
 
+const FILTER_OPTIONS = {
+  team: [
+    { label: "All teams", value: "all" },
+    { label: "Product", value: "product" },
+    { label: "Engineering", value: "engineering" },
+    { label: "Marketing", value: "marketing" },
+  ],
+  industry: [
+    { label: "All industries", value: "all" },
+    { label: "SaaS", value: "saas" },
+    { label: "Finance", value: "finance" },
+    { label: "Healthcare", value: "healthcare" },
+  ],
+  area: [
+    { label: "All product areas", value: "all" },
+    { label: "Automation", value: "automation" },
+    { label: "AI Agents", value: "ai-agents" },
+    { label: "Integrations", value: "integrations" },
+    { label: "Security", value: "security" },
+  ],
+  topic: [
+    { label: "All topics", value: "all" },
+    { label: "AI Assistant", value: "ai-assistant" },
+    { label: "AI Agents", value: "ai-agents" },
+    { label: "Enterprise Search", value: "enterprise-search" },
+    { label: "Security", value: "security" },
+    { label: "Integrations", value: "integrations" },
+    { label: "Data", value: "data" },
+    { label: "APIs", value: "apis" },
+  ],
+};
+
 const Library = () => {
   const [params] = useSearchParams();
   const section = params.get("section") || "all";
@@ -59,6 +92,10 @@ const Library = () => {
   const [loading, setLoading] = useState(true);
   const [audio, setAudio] = useState<{ src: string; title: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [teamFilter, setTeamFilter] = useState("all");
+  const [industryFilter, setIndustryFilter] = useState("all");
+  const [areaFilter, setAreaFilter] = useState("all");
+  const [topicFilter, setTopicFilter] = useState("all");
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -72,7 +109,7 @@ const Library = () => {
         .order("created_at", { ascending: false });
 
       const { data } = await q;
-      setPosts(addNeuralinkLead(data || []));
+      setPosts(addNoCodeLead(addNeuralinkLead(data || [])));
       setLoading(false);
     };
     fetchPosts();
@@ -83,15 +120,36 @@ const Library = () => {
   const accent = SECTION_ACCENTS[section] || SECTION_ACCENTS[category] || SECTION_ACCENTS.featured_collections;
   const newsBackClassName =
     "border-orange-200 bg-white px-4 py-2 text-sm font-semibold text-orange-700 hover:border-orange-300 hover:text-orange-800";
+  const resetNewsFilters = () => {
+    setTeamFilter("all");
+    setIndustryFilter("all");
+    setAreaFilter("all");
+    setTopicFilter("all");
+    setSearchTerm("");
+  };
 
   const visiblePosts = useMemo(() => {
     return posts.filter((post) => {
       const text = `${post.title} ${post.excerpt || ""} ${post.category || ""} ${post.post_kind || ""}`.toLowerCase();
       const matchesSearch = text.includes(searchTerm.toLowerCase());
       const matchesSection = shouldShowPostInLibrarySection(post, section, category);
-      return matchesSearch && matchesSection;
+      const tags = Array.isArray(post.tags)
+        ? post.tags.map((tag: string) => tag.toLowerCase())
+        : [];
+
+      const matchFilter = (scope: "team" | "industry" | "area" | "topic", value: string) => {
+        if (value === "all") return true;
+        return tags.includes(`${scope}:${value}`) || tags.includes(value);
+      };
+
+      const matchesTeam = matchFilter("team", teamFilter);
+      const matchesIndustry = matchFilter("industry", industryFilter);
+      const matchesArea = matchFilter("area", areaFilter);
+      const matchesTopic = matchFilter("topic", topicFilter);
+
+      return matchesSearch && matchesSection && matchesTeam && matchesIndustry && matchesArea && matchesTopic;
     });
-  }, [posts, searchTerm, section, category]);
+  }, [posts, searchTerm, section, category, teamFilter, industryFilter, areaFilter, topicFilter]);
 
   const featuredNews = isNewsView ? visiblePosts[0] : null;
   const secondaryNews = isNewsView ? visiblePosts.slice(1) : [];
@@ -144,6 +202,60 @@ const Library = () => {
                 })}
               </div>
             </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <select
+                value={teamFilter}
+                onChange={(event) => setTeamFilter(event.target.value)}
+                className="h-10 rounded-full border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-orange-400"
+              >
+                {FILTER_OPTIONS.team.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={industryFilter}
+                onChange={(event) => setIndustryFilter(event.target.value)}
+                className="h-10 rounded-full border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-orange-400"
+              >
+                {FILTER_OPTIONS.industry.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={areaFilter}
+                onChange={(event) => setAreaFilter(event.target.value)}
+                className="h-10 rounded-full border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-orange-400"
+              >
+                {FILTER_OPTIONS.area.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={topicFilter}
+                onChange={(event) => setTopicFilter(event.target.value)}
+                className="h-10 rounded-full border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-orange-400"
+              >
+                {FILTER_OPTIONS.topic.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={resetNewsFilters}
+                className="inline-flex h-10 items-center rounded-full border border-orange-300 px-4 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-50"
+              >
+                Reset Filters
+              </button>
+            </div>
           </CatalogHeroHeader>
 
           <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
@@ -157,96 +269,53 @@ const Library = () => {
                 <p className="mt-2 text-muted-foreground">Try another category or keyword.</p>
               </div>
             ) : (
-              <>
-                {featuredNews ? (
-                  <div className="grid overflow-hidden rounded-[2rem] border border-[#ffe0cf] bg-card dark:border-orange-500/15 lg:grid-cols-2">
-                    <div className="min-h-[420px] bg-[#fff3ec] dark:bg-[#101826]">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {visiblePosts.map((post) => (
+                  <article
+                    key={post.id}
+                    className="overflow-hidden rounded-[1.7rem] border border-[#ffe0cf] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.05)] dark:border-orange-500/15 dark:bg-[#0f1728]"
+                  >
+                    <div className="h-56 overflow-hidden">
                       <img
-                        src={featuredNews.featured_image || "/placeholder.svg"}
-                        alt={featuredNews.title}
+                        src={post.featured_image || "/placeholder.svg"}
+                        alt={post.title}
                         className="h-full w-full object-cover"
                         loading="lazy"
                       />
                     </div>
-                    <div className="flex flex-col items-center justify-center px-8 py-10 text-center">
-                      <span className="rounded-full border border-orange-200 bg-orange-100 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-orange-700 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-200">
-                        {featuredNews.category || "News"}
+                    <div className="p-5">
+                      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 dark:bg-slate-700/40 dark:text-slate-300">
+                        {new Date(post.published_at || post.created_at).toLocaleDateString()}
                       </span>
-                      <h2 className="mt-5 text-4xl leading-tight tracking-tight text-foreground" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                        {featuredNews.title}
-                      </h2>
-                      <p className="mt-4 max-w-md text-muted-foreground">
-                        {featuredNews.excerpt || "Featured story from the SPOTAI editorial team."}
+                      <h4
+                        className="mt-3 text-2xl leading-tight text-foreground"
+                        style={{ fontFamily: '"Singo Sans", Georgia, serif' }}
+                      >
+                        {post.title}
+                      </h4>
+                      <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
+                        {post.excerpt || "Latest news and editorial insights from SPOTAI."}
                       </p>
-                      <div className="mt-7 flex items-center gap-3">
+                      <div className="mt-5 flex items-center gap-3">
                         <Link
-                          to={`/post/${featuredNews.slug}`}
-                          className="inline-flex h-11 items-center rounded-full border border-orange-500 bg-orange-500 px-6 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-orange-600"
+                          to={`/post/${post.slug}`}
+                          className="inline-flex h-10 items-center rounded-full border border-orange-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition-colors hover:bg-orange-100 dark:border-orange-500/25 dark:text-orange-200 dark:hover:bg-orange-500/10"
                         >
                           Read
                         </Link>
-                        {featuredNews.audio_url ? (
+                        {post.audio_url ? (
                           <button
-                            onClick={() => setAudio({ src: featuredNews.audio_url, title: featuredNews.title })}
-                            className="inline-flex h-11 items-center rounded-full border border-orange-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition-colors hover:bg-orange-100 dark:border-orange-500/25 dark:text-orange-200 dark:hover:bg-orange-500/10"
+                            onClick={() => setAudio({ src: post.audio_url, title: post.title })}
+                            className="inline-flex h-10 items-center rounded-full border border-orange-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition-colors hover:bg-orange-100 dark:border-orange-500/25 dark:text-orange-200 dark:hover:bg-orange-500/10"
                           >
                             Listen
                           </button>
                         ) : null}
                       </div>
                     </div>
-                  </div>
-                ) : null}
-
-                {secondaryNews.length > 0 ? (
-                  <div className="mt-12">
-                    <h3 className="text-4xl leading-none tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                      Featured Articles
-                    </h3>
-                    <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                      {secondaryNews.map((post) => (
-                        <article key={post.id} className="overflow-hidden rounded-[1.7rem] border border-[#ffe0cf] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.05)] dark:border-orange-500/15 dark:bg-[#0f1728]">
-                          <div className="h-56 overflow-hidden">
-                            <img
-                              src={post.featured_image || "/placeholder.svg"}
-                              alt={post.title}
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                            />
-                          </div>
-                          <div className="p-5">
-                            <span className="inline-flex rounded-full bg-orange-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-700 dark:bg-orange-500/10 dark:text-orange-200">
-                              {post.category || "News"}
-                            </span>
-                            <h4 className="mt-3 text-2xl leading-tight text-foreground" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                              {post.title}
-                            </h4>
-                            <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                              {post.excerpt || "Latest news and editorial insights from SPOTAI."}
-                            </p>
-                            <div className="mt-5 flex items-center gap-3">
-                              <Link
-                                to={`/post/${post.slug}`}
-                                className="inline-flex h-10 items-center rounded-full border border-orange-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition-colors hover:bg-orange-100 dark:border-orange-500/25 dark:text-orange-200 dark:hover:bg-orange-500/10"
-                              >
-                                Read
-                              </Link>
-                              {post.audio_url ? (
-                                <button
-                                  onClick={() => setAudio({ src: post.audio_url, title: post.title })}
-                                  className="inline-flex h-10 items-center rounded-full border border-orange-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition-colors hover:bg-orange-100 dark:border-orange-500/25 dark:text-orange-200 dark:hover:bg-orange-500/10"
-                                >
-                                  Listen
-                                </button>
-                              ) : null}
-                            </div>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </>
+                  </article>
+                ))}
+              </div>
             )}
           </section>
         </div>

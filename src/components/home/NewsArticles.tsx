@@ -42,15 +42,9 @@ const NewsArticles = ({ posts, loading, onListen }: Props) => (
   <section className="py-12 sm:py-16 bg-secondary" id="news-articles">
     <AnimateInView>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 sm:mb-12 gap-2">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">News & Articles</h2>
-            <p className="text-muted-foreground text-sm sm:text-base">Latest insights and updates from the AI world</p>
-          </div>
-          <Link to="/library?section=news_articles" className="text-sm font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 transition-colors relative group">
-            View all news
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-600 dark:bg-purple-400 transition-all duration-300 group-hover:w-full" />
-          </Link>
+        <div className="mb-8 text-center sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">News & Articles</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">Latest insights and updates from the AI world</p>
         </div>
 
         {loading ? (

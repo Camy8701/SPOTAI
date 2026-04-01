@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
-import { Heart, MessageCircle, Bookmark, Share2, ArrowLeft, Send, Trash2, Reply, ThumbsUp, Users } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, ArrowLeft, Send, Trash2, Reply, ThumbsUp, Users, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Layout from "@/components/layout/Layout";
 import AudioPlayer from "@/components/AudioPlayer";
@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { NEURALINK_STORY } from "@/data/fallback/neuralinkStory";
+import { NO_CODE_AUTOMATION_POST } from "@/data/fallback/noCodeAutomationPost";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +52,143 @@ interface LikerProfile {
   display_name: string | null;
   avatar_url: string | null;
 }
+
+type EditorialSection = {
+  id: string;
+  title: string;
+  blocks: string[];
+};
+
+const slugifySection = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+
+const isHeadingCandidate = (block: string) => {
+  if (block.includes("\n")) return false;
+
+  const text = block.trim();
+  if (!text || text.length < 4 || text.length > 120) return false;
+  if (/^[-*•]/.test(text)) return false;
+  if (/^\|/.test(text)) return false;
+  if (/^website:/i.test(text)) return false;
+  if (/^https?:\/\//i.test(text)) return false;
+
+  if (/^\d+\.\s+/.test(text)) return true;
+  if (/[?:]$/.test(text)) return true;
+  if (!/[.!]$/.test(text)) return true;
+
+  const words = text.split(/\s+/).length;
+  return words <= 12;
+};
+
+const buildEditorialSections = (content: string): EditorialSection[] => {
+  const blocks = content
+    .split(/\n{2,}/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  const sections: EditorialSection[] = [];
+  const usedIds = new Set<string>();
+  let current: EditorialSection | null = null;
+
+  blocks.forEach((block, index) => {
+    if (isHeadingCandidate(block)) {
+      let idBase = slugifySection(block) || `section-${index + 1}`;
+      while (usedIds.has(idBase)) {
+        idBase = `${idBase}-${index + 1}`;
+      }
+      usedIds.add(idBase);
+      current = { id: idBase, title: block, blocks: [] };
+      sections.push(current);
+      return;
+    }
+
+    if (!current) {
+      current = { id: "overview", title: "Overview", blocks: [] };
+      if (!usedIds.has(current.id)) {
+        usedIds.add(current.id);
+        sections.push(current);
+      }
+    }
+
+    current.blocks.push(block);
+  });
+
+  return sections.filter((section) => section.blocks.length > 0 || section.title === "Overview");
+};
+
+const buildNoCodeAutomationSections = (content: string): EditorialSection[] => {
+  const sections: EditorialSection[] = [];
+  const usedIds = new Set<string>();
+  const majorHeadings = new Set([
+    "which one should you choose",
+    "strong conclusion",
+    "seo version",
+    "founder-style opinionated take",
+    "comparison table (pricing, best for, pros, cons)",
+    "final recommendation framework",
+  ]);
+
+  const makeSection = (title: string, idHint: string) => {
+    let idBase = slugifySection(idHint) || slugifySection(title) || "section";
+    while (usedIds.has(idBase)) {
+      idBase = `${idBase}-${usedIds.size + 1}`;
+    }
+    usedIds.add(idBase);
+    return { id: idBase, title, blocks: [] as string[] };
+  };
+
+  let current = makeSection("Introduction", "introduction");
+  sections.push(current);
+
+  const lines = content.split("\n");
+  let buffer: string[] = [];
+
+  const flushBuffer = () => {
+    const text = buffer.join("\n").trim();
+    if (text) current.blocks.push(text);
+    buffer = [];
+  };
+
+  lines.forEach((rawLine) => {
+    const line = rawLine.trim();
+
+    if (!line) {
+      flushBuffer();
+      return;
+    }
+
+    const toolMatch = line.match(/^([1-9]|10)\.\s+(.+)$/);
+    if (toolMatch && !line.endsWith(".")) {
+      flushBuffer();
+      current = makeSection(line, `tool-${toolMatch[1]}-${toolMatch[2]}`);
+      sections.push(current);
+      return;
+    }
+
+    if (majorHeadings.has(line.toLowerCase())) {
+      flushBuffer();
+      current = makeSection(line, line);
+      sections.push(current);
+      return;
+    }
+
+    buffer.push(line);
+  });
+
+  flushBuffer();
+
+  return sections.filter(
+    (section) =>
+      section.blocks.length > 0 ||
+      section.title === "Introduction" ||
+      /^([1-9]|10)\.\s+/.test(section.title),
+  );
+};
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -100,6 +238,14 @@ const BlogPost = () => {
     if (slug === NEURALINK_STORY.slug) {
       setPost(NEURALINK_STORY as BlogPostData);
       setAuthorName("Elena Vasquez");
+      setRelatedPosts([]);
+      setLoading(false);
+      return;
+    }
+
+    if (slug === NO_CODE_AUTOMATION_POST.slug) {
+      setPost(NO_CODE_AUTOMATION_POST as unknown as BlogPostData);
+      setAuthorName(NO_CODE_AUTOMATION_POST.author_name);
       setRelatedPosts([]);
       setLoading(false);
       return;
@@ -453,16 +599,119 @@ const BlogPost = () => {
   }
 
   const flatCommentCount = comments.reduce((sum, c) => sum + 1 + c.replies.length, 0);
-  const isFallbackPost = post.id === NEURALINK_STORY.id;
+  const isStaticFallbackPost =
+    post.id === NEURALINK_STORY.id || post.id === NO_CODE_AUTOMATION_POST.id;
+  const isEditorialNewsPost =
+    post.id === NO_CODE_AUTOMATION_POST.id || post.category?.toLowerCase() === "news";
+
+  const summaryPoints = (() => {
+    if (post.id === NO_CODE_AUTOMATION_POST.id) {
+      return [
+        "Traditional no-code tools are strongest for repetitive execution workflows and system handoffs.",
+        "Context-aware AI agent layers add reasoning and planning where plain trigger-action automation hits limits.",
+        "The practical strategy is layered: automate repeatable work first, then add AI context where judgment is required.",
+      ];
+    }
+
+    const points: string[] = [];
+    if (post.excerpt) points.push(post.excerpt);
+    if (Array.isArray(post.tags) && post.tags.length > 0) {
+      points.push(`Topics: ${post.tags.slice(0, 4).join(", ")}`);
+    }
+    if (post.reading_time_minutes) {
+      points.push(`${post.reading_time_minutes} minute read with practical implementation notes.`);
+    }
+    return points.slice(0, 3);
+  })();
+  const shareUrl = encodeURIComponent(
+    typeof window !== "undefined" ? window.location.href : `/post/${post.slug}`,
+  );
+  const shareText = encodeURIComponent(post.title);
+  const editorialSections = isEditorialNewsPost
+    ? post.id === NO_CODE_AUTOMATION_POST.id
+      ? buildNoCodeAutomationSections(post.content)
+      : buildEditorialSections(post.content)
+    : [];
+  const tocSections =
+    post.id === NO_CODE_AUTOMATION_POST.id
+      ? editorialSections.filter(
+          (section) =>
+            section.title === "Introduction" || /^([1-9]|10)\.\s+/.test(section.title),
+        )
+      : editorialSections;
+
+  const renderEditorialBlock = (block: string, keyPrefix: string) => {
+    const lines = block
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (lines.length === 0) return null;
+
+    const isBulletList = lines.every((line) => /^[-*]\s+/.test(line));
+    if (isBulletList) {
+      return (
+        <ul key={keyPrefix} className="list-disc space-y-2 pl-5 text-base leading-8 text-foreground/90">
+          {lines.map((line, index) => (
+            <li key={`${keyPrefix}-li-${index}`}>{line.replace(/^[-*]\s+/, "")}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    const isNumberedList = lines.every((line) => /^\d+\.\s+/.test(line));
+    if (isNumberedList) {
+      return (
+        <ol key={keyPrefix} className="list-decimal space-y-2 pl-5 text-base leading-8 text-foreground/90">
+          {lines.map((line, index) => (
+            <li key={`${keyPrefix}-ol-${index}`}>{line.replace(/^\d+\.\s+/, "")}</li>
+          ))}
+        </ol>
+      );
+    }
+
+    const isTableLike = lines.length >= 2 && lines.filter((line) => line.includes("|")).length >= 2;
+    if (isTableLike) {
+      return (
+        <pre
+          key={keyPrefix}
+          className="overflow-x-auto rounded-2xl border border-border bg-card p-4 text-sm leading-7 text-foreground/85"
+        >
+          {lines.join("\n")}
+        </pre>
+      );
+    }
+
+    return (
+      <div key={keyPrefix} className="space-y-4">
+        {lines.map((line, index) => (
+          <p key={`${keyPrefix}-p-${index}`} className="text-lg leading-8 text-foreground/90">
+            {line}
+          </p>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <Layout>
-      <article className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
-        <Link to="/home" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8">
-          <ArrowLeft size={16} /> Back to home
-        </Link>
+      <article className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+        <div className="mb-8 flex flex-wrap items-center gap-3">
+          <Link
+            to="/library?section=news_articles"
+            className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white px-4 py-2 text-sm font-semibold text-orange-700 transition-colors hover:border-orange-300 hover:text-orange-800"
+          >
+            <ArrowLeft size={16} /> Back to articles
+          </Link>
+          <Link
+            to="/home"
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft size={16} /> Back to home
+          </Link>
+        </div>
 
-        <header className="mb-8">
+        <header className="mb-8 max-w-4xl">
           <div className="flex items-center gap-3 mb-4">
             <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold uppercase">{post.category}</span>
             {post.tags?.map((tag) => (
@@ -498,16 +747,162 @@ const BlogPost = () => {
         </header>
 
         {post.featured_image && (
-          <div className="relative aspect-video rounded-xl overflow-hidden mb-10">
+          <div className="relative mb-10 max-w-5xl overflow-hidden rounded-2xl border border-border">
             <img src={post.featured_image} alt={post.title} className="w-full h-full object-cover" />
           </div>
         )}
 
-        <div className="prose prose-lg dark:prose-invert max-w-none mb-12 text-foreground leading-relaxed" style={{ whiteSpace: "pre-wrap" }}>
-          {post.content}
+        <div className={isEditorialNewsPost ? "grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]" : ""}>
+          {isEditorialNewsPost ? (
+            <aside className="space-y-5 lg:sticky lg:top-24 self-start">
+              <div className="rounded-3xl border border-blue-600/40 bg-[#2f35ea] p-6 text-white">
+                <h3 className="text-3xl font-black leading-tight">
+                  Want to learn more?
+                  <br />
+                  Click here.
+                </h3>
+                <a
+                  href="mailto:hello@spotai.ai?subject=SpotAI%20Free%20Trial%20Request"
+                  className="mt-5 inline-flex items-center justify-center rounded-full bg-red-500 px-6 py-2 text-base font-semibold text-white transition-colors hover:bg-red-600"
+                >
+                  Free Trial
+                </a>
+              </div>
+
+              {tocSections.length > 0 ? (
+                <div className="rounded-2xl border-2 border-indigo-300 bg-[#eef1ff] p-4 dark:border-indigo-500/40 dark:bg-indigo-500/15">
+                  <p className="text-xl font-black tracking-tight text-[#2f35ea] dark:text-indigo-100">
+                    Table of contents
+                  </p>
+                  <div className="mt-3 border-l-2 border-indigo-300 pl-3 dark:border-indigo-400/60">
+                    <ul className="space-y-2">
+                      {tocSections.map((section) => (
+                        <li key={`toc-${section.id}`}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const element = document.getElementById(section.id);
+                              if (element) {
+                                element.scrollIntoView({ behavior: "smooth", block: "start" });
+                              }
+                            }}
+                            className={`text-left leading-7 transition-colors ${
+                              /^\d+\.\s+/.test(section.title)
+                                ? "text-base font-extrabold text-[#2f35ea] hover:text-[#1f25c9] dark:text-indigo-200 dark:hover:text-indigo-100"
+                                : "text-[15px] font-semibold text-slate-700 hover:text-indigo-700 dark:text-slate-200 dark:hover:text-indigo-300"
+                            }`}
+                          >
+                            {section.title}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-sm font-semibold text-foreground">Share</p>
+                <div className="mt-3 flex items-center gap-3">
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-9 items-center justify-center rounded-full border border-border px-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+                  >
+                    X
+                  </a>
+                  <a
+                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-9 items-center justify-center rounded-full border border-border px-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+                  >
+                    in
+                  </a>
+                  <a
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-9 items-center justify-center rounded-full border border-border px-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+                  >
+                    f
+                  </a>
+                  <a
+                    href={`https://www.instagram.com/?url=${shareUrl}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-9 items-center justify-center rounded-full border border-border px-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+                  >
+                    ig
+                  </a>
+                </div>
+              </div>
+            </aside>
+          ) : null}
+
+          <div>
+            {isEditorialNewsPost && summaryPoints.length > 0 ? (
+              <section className="mb-8 rounded-3xl border border-emerald-200 bg-[linear-gradient(90deg,#f3f7ff_0%,#edf8ef_100%)] p-6">
+                <p className="text-sm font-semibold text-indigo-700">AI Summary by SpotAI</p>
+                <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-foreground/90">
+                  {summaryPoints.map((point, index) => (
+                    <li key={`${point}-${index}`}>{point}</li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+
+            {isEditorialNewsPost && editorialSections.length > 0 ? (
+              <div className="mb-12 space-y-10">
+                {editorialSections.map((section) => (
+                  <section key={section.id} id={section.id} className="scroll-mt-24">
+                    <h2
+                      className={`leading-tight tracking-tight text-foreground ${
+                        /^\d+\.\s+/.test(section.title)
+                          ? "text-5xl font-black"
+                          : "text-4xl font-semibold"
+                      }`}
+                      style={{ fontFamily: '"Singo Sans", Georgia, serif' }}
+                    >
+                      {section.title}
+                    </h2>
+                    <div className="mt-5 space-y-5">
+                      {section.blocks.map((block, index) =>
+                        renderEditorialBlock(block, `${section.id}-${index}`),
+                      )}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <div
+                className="prose prose-lg dark:prose-invert max-w-none mb-12 text-foreground leading-relaxed"
+                style={{ whiteSpace: "pre-wrap" }}
+              >
+                {post.content}
+              </div>
+            )}
+
+            {isEditorialNewsPost ? (
+              <section className="mb-12 overflow-hidden rounded-3xl bg-[linear-gradient(120deg,#2f35ea_0%,#3341ff_52%,#4a5bff_100%)] px-8 py-14 text-center text-white">
+                <h3 className="text-4xl font-semibold tracking-tight">Work AI that works.</h3>
+                <p className="mx-auto mt-3 max-w-2xl text-white/85">
+                  Build practical automation layers your team actually adopts with a free trial start.
+                </p>
+                <a
+                  href="mailto:hello@spotai.ai?subject=SpotAI%20Free%20Trial%20Request"
+                  className="mt-7 inline-flex items-center gap-2 rounded-full bg-red-500 px-7 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-600"
+                >
+                  Free Trial
+                  <ExternalLink size={15} />
+                </a>
+              </section>
+            ) : null}
+          </div>
         </div>
 
-        {!isFallbackPost && (
+        {!isStaticFallbackPost && (
           <>
             {/* Action Bar */}
             <div className="sticky bottom-6 z-10 flex justify-center mb-12">

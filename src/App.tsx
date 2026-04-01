@@ -18,6 +18,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Quiz from "./pages/Quiz";
 import Games from "./pages/Games";
+import QuizLevels from "./pages/QuizLevels";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserDashboard from "./pages/UserDashboard";
 import NotFound from "./pages/NotFound";
@@ -112,6 +113,7 @@ const App = () => (
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/quiz" element={<ProtectedRoute><Games /></ProtectedRoute>} />
               <Route path="/games" element={<ProtectedRoute><Games /></ProtectedRoute>} />
+              <Route path="/quiz/levels" element={<ProtectedRoute><QuizLevels /></ProtectedRoute>} />
               <Route path="/quiz/arena" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
               <Route path="/tip-calculator" element={<ProtectedRoute><TipCalculator /></ProtectedRoute>} />
               <Route path="/character-counter" element={<ProtectedRoute><CharacterCounter /></ProtectedRoute>} />

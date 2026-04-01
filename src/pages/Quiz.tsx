@@ -411,7 +411,6 @@ const Quiz = () => {
 
     hasAutoStartedRef.current = true;
     startGame(nextDifficulty, nextCount);
-    setAutoStartPending(false);
   }, [
     activeSession,
     autoStartRequested,
@@ -422,6 +421,12 @@ const Quiz = () => {
     selectedDifficulty,
     selectedQuestionCount,
   ]);
+
+  useEffect(() => {
+    if (activeSession && autoStartPending) {
+      setAutoStartPending(false);
+    }
+  }, [activeSession, autoStartPending]);
 
   const handleAnswerLocked = (answerIndex: number | null) => {
     if (!currentQuestion || revealState || !activeSession) return;
