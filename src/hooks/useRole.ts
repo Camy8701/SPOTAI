@@ -29,7 +29,7 @@ export function useRole() {
         .select("role")
         .eq("user_id", user.id),
       supabase
-        .from("admin_permissions")
+        .from("admin_permissions" as any)
         .select("is_super_admin, can_manage_admins, can_manage_users, can_manage_posts, can_manage_social, can_manage_quiz, can_manage_media, can_manage_tools")
         .eq("user_id", user.id)
         .maybeSingle(),
@@ -44,25 +44,26 @@ export function useRole() {
         return;
       }
 
-      if (!permissionsRes.data) {
+      const permData = permissionsRes.data as any;
+      if (!permData) {
         setIsSuperAdmin(true);
         setPermissions(fullAdminPermissions);
         setLoading(false);
         return;
       }
 
-      setIsSuperAdmin(Boolean(permissionsRes.data.is_super_admin));
+      setIsSuperAdmin(Boolean(permData.is_super_admin));
       setPermissions(
-        permissionsRes.data.is_super_admin
+        permData.is_super_admin
           ? fullAdminPermissions
           : {
-              manage_admins: Boolean(permissionsRes.data.can_manage_admins),
-              manage_users: Boolean(permissionsRes.data.can_manage_users),
-              manage_posts: Boolean(permissionsRes.data.can_manage_posts),
-              manage_social: Boolean(permissionsRes.data.can_manage_social),
-              manage_quiz: Boolean(permissionsRes.data.can_manage_quiz),
-              manage_media: Boolean(permissionsRes.data.can_manage_media),
-              manage_tools: Boolean(permissionsRes.data.can_manage_tools),
+              manage_admins: Boolean(permData.can_manage_admins),
+              manage_users: Boolean(permData.can_manage_users),
+              manage_posts: Boolean(permData.can_manage_posts),
+              manage_social: Boolean(permData.can_manage_social),
+              manage_quiz: Boolean(permData.can_manage_quiz),
+              manage_media: Boolean(permData.can_manage_media),
+              manage_tools: Boolean(permData.can_manage_tools),
             },
       );
       setLoading(false);

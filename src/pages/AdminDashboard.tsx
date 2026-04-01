@@ -210,7 +210,7 @@ function AnalyticsOverviewTab() {
       supabase.from("image_library_items").select("id", { count: "exact", head: true }),
       supabase.from("prompt_library_items").select("id", { count: "exact", head: true }),
       supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "featured_stories"),
-      supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("post_kind", "ai_story").not("audio_url", "is", "null"),
+      supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "featured_stories").not("audio_url", "is", "null"),
       supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "hero"),
       supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "featured_collections"),
       supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "news_articles"),
@@ -853,7 +853,7 @@ function PostsTab() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-black tracking-tight uppercase">Manage Posts ({posts.length})</h2>
-        <Button onClick={openCreate} className="rounded-full">+ Create Post</Button>
+        <Button onClick={() => openCreate()} className="rounded-full">+ Create Post</Button>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -1066,14 +1066,14 @@ function UsersTab({
       .order("created_at", { ascending: false });
 
     const permissionsRes = canManageAdmins
-      ? await supabase.from("admin_permissions").select("*")
+      ? await supabase.from("admin_permissions" as any).select("*")
       : { data: [] as any[] };
 
     if (!profilesRes.data) return;
 
-    const permissionMap = new Map((permissionsRes.data || []).map((item) => [item.user_id, item]));
+    const permissionMap = new Map((permissionsRes.data || []).map((item: any) => [item.user_id, item]));
     setUsers(
-      profilesRes.data.map((profile) => ({
+      (profilesRes.data as any[]).map((profile: any) => ({
         ...profile,
         admin_permissions: permissionMap.get(profile.user_id) || null,
       })),

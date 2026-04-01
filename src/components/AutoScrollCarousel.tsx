@@ -293,6 +293,7 @@ export default function AutoScrollCarousel({
 
     const placeholderPool: Array<Omit<Extract<StorySlide, { type: "placeholder" }>, "id">> = [
       {
+        type: "placeholder" as const,
         title: "Featured story",
         subtitle: "A new fiction drop can live here.",
         eyebrow: "Homepage picks",
@@ -303,6 +304,7 @@ export default function AutoScrollCarousel({
         listenable: true,
       },
       {
+        type: "placeholder" as const,
         title: "Audio story",
         subtitle: "Use this slot for a text and voice release.",
         eyebrow: "Voice enabled",
@@ -313,6 +315,7 @@ export default function AutoScrollCarousel({
         listenable: true,
       },
       {
+        type: "placeholder" as const,
         title: "New release",
         subtitle: "Pin your next carousel story here.",
         eyebrow: "Editor choice",
@@ -323,6 +326,7 @@ export default function AutoScrollCarousel({
         listenable: false,
       },
       {
+        type: "placeholder" as const,
         title: "Story preview",
         subtitle: "Keep this slot warm for the next publish.",
         eyebrow: "SpotAI fiction",

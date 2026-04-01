@@ -54,7 +54,6 @@ export type Database = {
           can_manage_tools: boolean
           can_manage_users: boolean
           created_at: string
-          created_by: string | null
           id: string
           is_super_admin: boolean
           updated_at: string
@@ -69,7 +68,6 @@ export type Database = {
           can_manage_tools?: boolean
           can_manage_users?: boolean
           created_at?: string
-          created_by?: string | null
           id?: string
           is_super_admin?: boolean
           updated_at?: string
@@ -84,7 +82,6 @@ export type Database = {
           can_manage_tools?: boolean
           can_manage_users?: boolean
           created_at?: string
-          created_by?: string | null
           id?: string
           is_super_admin?: boolean
           updated_at?: string
@@ -97,16 +94,13 @@ export type Database = {
           audio_url: string | null
           author_id: string | null
           category: Database["public"]["Enums"]["post_category"]
-          community_id: string | null
           content: string
           created_at: string
           excerpt: string | null
           featured_image: string | null
-          group_id: string | null
           homepage_section: string | null
           id: string
           is_featured: boolean
-          post_kind: string
           published_at: string | null
           reading_time_minutes: number | null
           slug: string
@@ -119,16 +113,13 @@ export type Database = {
           audio_url?: string | null
           author_id?: string | null
           category?: Database["public"]["Enums"]["post_category"]
-          community_id?: string | null
           content?: string
           created_at?: string
           excerpt?: string | null
           featured_image?: string | null
-          group_id?: string | null
           homepage_section?: string | null
           id?: string
           is_featured?: boolean
-          post_kind?: string
           published_at?: string | null
           reading_time_minutes?: number | null
           slug: string
@@ -141,16 +132,13 @@ export type Database = {
           audio_url?: string | null
           author_id?: string | null
           category?: Database["public"]["Enums"]["post_category"]
-          community_id?: string | null
           content?: string
           created_at?: string
           excerpt?: string | null
           featured_image?: string | null
-          group_id?: string | null
           homepage_section?: string | null
           id?: string
           is_featured?: boolean
-          post_kind?: string
           published_at?: string | null
           reading_time_minutes?: number | null
           slug?: string
@@ -159,22 +147,7 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "blog_posts_community_id_fkey"
-            columns: ["community_id"]
-            isOneToOne: false
-            referencedRelation: "communities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "blog_posts_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       comments: {
         Row: {
@@ -264,21 +237,18 @@ export type Database = {
         Row: {
           community_id: string
           created_at: string
-          granted_by: string | null
           id: string
           user_id: string
         }
         Insert: {
           community_id: string
           created_at?: string
-          granted_by?: string | null
           id?: string
           user_id: string
         }
         Update: {
           community_id?: string
           created_at?: string
-          granted_by?: string | null
           id?: string
           user_id?: string
         }
@@ -294,7 +264,6 @@ export type Database = {
       }
       community_bans: {
         Row: {
-          banned_by: string | null
           community_id: string
           created_at: string
           id: string
@@ -302,7 +271,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          banned_by?: string | null
           community_id: string
           created_at?: string
           id?: string
@@ -310,7 +278,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          banned_by?: string | null
           community_id?: string
           created_at?: string
           id?: string
@@ -382,7 +349,6 @@ export type Database = {
       }
       freebies: {
         Row: {
-          audio_url: string | null
           category: string
           cover_image: string | null
           created_at: string
@@ -396,7 +362,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          audio_url?: string | null
           category?: string
           cover_image?: string | null
           created_at?: string
@@ -410,7 +375,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          audio_url?: string | null
           category?: string
           cover_image?: string | null
           created_at?: string
@@ -428,21 +392,18 @@ export type Database = {
       group_admins: {
         Row: {
           created_at: string
-          granted_by: string | null
           group_id: string
           id: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          granted_by?: string | null
           group_id: string
           id?: string
           user_id: string
         }
         Update: {
           created_at?: string
-          granted_by?: string | null
           group_id?: string
           id?: string
           user_id?: string
@@ -459,7 +420,6 @@ export type Database = {
       }
       group_bans: {
         Row: {
-          banned_by: string | null
           created_at: string
           group_id: string
           id: string
@@ -467,7 +427,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          banned_by?: string | null
           created_at?: string
           group_id: string
           id?: string
@@ -475,7 +434,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          banned_by?: string | null
           created_at?: string
           group_id?: string
           id?: string
@@ -771,8 +729,6 @@ export type Database = {
           last_name: string | null
           onboarding_completed: boolean
           platform_ban_reason: string | null
-          platform_banned_at: string | null
-          platform_banned_by: string | null
           updated_at: string
           user_id: string
         }
@@ -789,8 +745,6 @@ export type Database = {
           last_name?: string | null
           onboarding_completed?: boolean
           platform_ban_reason?: string | null
-          platform_banned_at?: string | null
-          platform_banned_by?: string | null
           updated_at?: string
           user_id: string
         }
@@ -807,8 +761,6 @@ export type Database = {
           last_name?: string | null
           onboarding_completed?: boolean
           platform_ban_reason?: string | null
-          platform_banned_at?: string | null
-          platform_banned_by?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1138,9 +1090,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      quiz_questions_public: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          difficulty: string | null
+          id: string | null
+          options: Json | null
+          question: string | null
+          quiz_title: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          difficulty?: string | null
+          id?: string | null
+          options?: Json | null
+          question?: string | null
+          quiz_title?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          difficulty?: string | null
+          id?: string | null
+          options?: Json | null
+          question?: string | null
+          quiz_title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      check_quiz_answer: {
+        Args: { _answer_index: number; _question_id: string }
+        Returns: boolean
+      }
       get_popular_posts: {
         Args: never
         Returns: {
@@ -1160,25 +1145,6 @@ export type Database = {
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      has_admin_permission: {
-        Args: {
-          _permission: string
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      is_platform_banned: {
-        Args: {
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      is_platform_super_admin: {
-        Args: {
           _user_id: string
         }
         Returns: boolean
