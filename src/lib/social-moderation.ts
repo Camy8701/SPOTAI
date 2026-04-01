@@ -118,7 +118,7 @@ export const fetchGroupManagementData = async (groupId: string, ownerId?: string
 };
 
 export const addCommunityAdmin = async (communityId: string, userId: string) => {
-  const { error } = await supabase.from("community_admins").upsert({ community_id: communityId, user_id: userId }, { onConflict: "community_id,user_id" });
+  const { error } = await supabase.from("community_admins" as any).upsert({ community_id: communityId, user_id: userId }, { onConflict: "community_id,user_id" });
   if (error) throw error;
 };
 
