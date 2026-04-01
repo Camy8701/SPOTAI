@@ -44,7 +44,7 @@ export const fetchCommunityManagementData = async (communityId: string, ownerId?
     ownerId || "",
   ]);
 
-  const adminSet = new Set((adminsRes.data || []).map((admin) => admin.user_id));
+  const adminSet = new Set((adminsRes.data || []).map((admin: any) => admin.user_id));
 
   return {
     members: (membersRes.data || []).map((member) => ({
