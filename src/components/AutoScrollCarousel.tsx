@@ -304,6 +304,7 @@ export default function AutoScrollCarousel({
         listenable: true,
       },
       {
+        type: "placeholder" as const,
         title: "Audio story",
         subtitle: "Use this slot for a text and voice release.",
         eyebrow: "Voice enabled",
