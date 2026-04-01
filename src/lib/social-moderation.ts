@@ -53,11 +53,11 @@ export const fetchCommunityManagementData = async (communityId: string, ownerId?
       isOwner: ownerId === member.user_id,
       isAdmin: ownerId === member.user_id || adminSet.has(member.user_id),
     })),
-    admins: (adminsRes.data || []).map((admin) => ({
+    admins: (adminsRes.data || []).map((admin: any) => ({
       ...admin,
       profile: profileMap.get(admin.user_id),
     })),
-    bans: (bansRes.data || []).map((ban) => ({
+    bans: (bansRes.data || []).map((ban: any) => ({
       ...ban,
       profile: profileMap.get(ban.user_id),
     })),

@@ -326,6 +326,7 @@ export default function AutoScrollCarousel({
         listenable: false,
       },
       {
+        type: "placeholder" as const,
         title: "Story preview",
         subtitle: "Keep this slot warm for the next publish.",
         eyebrow: "SpotAI fiction",

@@ -11,7 +11,7 @@ export type QuizQuestion = {
   explanation: string;
 };
 
-export type QuizModeId = "progressive";
+export type QuizModeId = "progressive" | "daily";
 
 export type QuizModeConfig = {
   id: QuizModeId;

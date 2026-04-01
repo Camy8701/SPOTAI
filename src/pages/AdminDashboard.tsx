@@ -1071,9 +1071,9 @@ function UsersTab({
 
     if (!profilesRes.data) return;
 
-    const permissionMap = new Map((permissionsRes.data || []).map((item) => [item.user_id, item]));
+    const permissionMap = new Map((permissionsRes.data || []).map((item: any) => [item.user_id, item]));
     setUsers(
-      profilesRes.data.map((profile) => ({
+      (profilesRes.data as any[]).map((profile: any) => ({
         ...profile,
         admin_permissions: permissionMap.get(profile.user_id) || null,
       })),
