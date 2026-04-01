@@ -138,9 +138,9 @@ export const removeCommunityMember = async (communityId: string, userId: string)
 
 export const banCommunityUser = async (communityId: string, userId: string, reason?: string) => {
   const [banRes, memberRes, adminRes] = await Promise.all([
-    supabase.from("community_bans").upsert({ community_id: communityId, user_id: userId, reason: reason || null }, { onConflict: "community_id,user_id" }),
+    supabase.from("community_bans" as any).upsert({ community_id: communityId, user_id: userId, reason: reason || null }, { onConflict: "community_id,user_id" }),
     supabase.from("community_members").delete().eq("community_id", communityId).eq("user_id", userId),
-    supabase.from("community_admins").delete().eq("community_id", communityId).eq("user_id", userId),
+    supabase.from("community_admins" as any).delete().eq("community_id", communityId).eq("user_id", userId),
   ]);
   if (banRes.error) throw banRes.error;
   if (memberRes.error) throw memberRes.error;
