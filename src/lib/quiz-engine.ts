@@ -61,6 +61,16 @@ export const QUIZ_MODE_CONFIG: Record<QuizModeId, QuizModeConfig> = {
     accentClassName: "from-sky-400 via-indigo-400 to-fuchsia-500",
     surfaceClassName: "border-sky-200 bg-sky-50/70",
   },
+  daily: {
+    id: "daily",
+    title: "Daily Challenge",
+    subtitle: "A fresh set of questions every day",
+    description: "Test your knowledge with a daily quiz challenge.",
+    questionCount: 5,
+    lives: null,
+    accentClassName: "from-amber-400 via-orange-400 to-red-500",
+    surfaceClassName: "border-amber-200 bg-amber-50/70",
+  },
 };
 
 export const QUIZ_DIFFICULTY_CONFIG: Record<QuizDifficulty, QuizDifficultyConfig> = {
