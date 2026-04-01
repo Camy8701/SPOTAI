@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -129,6 +129,8 @@ const Quiz = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [secondsLeft, setSecondsLeft] = useState(TIME_PER_QUESTION);
+  const autoStartRequested = searchParams.get("autostart") === "1";
+  const hasAutoStartedRef = useRef(false);
 
   useEffect(() => {
     const difficultyParam = searchParams.get("difficulty");
@@ -381,6 +383,32 @@ const Quiz = () => {
     setActiveSession(nextSession);
     setSessionNonce((value) => value + 1);
   };
+
+  useEffect(() => {
+    if (!autoStartRequested || hasAutoStartedRef.current) return;
+    if (questionsLoading || activeSession) return;
+
+    const difficultyParam = searchParams.get("difficulty");
+    const nextDifficulty: QuizDifficulty =
+      difficultyParam === "easy" || difficultyParam === "medium" || difficultyParam === "hard"
+        ? difficultyParam
+        : selectedDifficulty;
+
+    const countParam = Number(searchParams.get("count"));
+    const nextCount = QUESTION_COUNT_OPTIONS.includes(countParam)
+      ? countParam
+      : selectedQuestionCount;
+
+    hasAutoStartedRef.current = true;
+    startGame(nextDifficulty, nextCount);
+  }, [
+    activeSession,
+    autoStartRequested,
+    questionsLoading,
+    searchParams,
+    selectedDifficulty,
+    selectedQuestionCount,
+  ]);
 
   const handleAnswerLocked = (answerIndex: number | null) => {
     if (!currentQuestion || revealState || !activeSession) return;
