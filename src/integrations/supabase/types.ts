@@ -44,69 +44,18 @@ export type Database = {
         }
         Relationships: []
       }
-      admin_permissions: {
-        Row: {
-          can_manage_admins: boolean
-          can_manage_media: boolean
-          can_manage_posts: boolean
-          can_manage_quiz: boolean
-          can_manage_social: boolean
-          can_manage_tools: boolean
-          can_manage_users: boolean
-          created_at: string
-          created_by: string | null
-          id: string
-          is_super_admin: boolean
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          can_manage_admins?: boolean
-          can_manage_media?: boolean
-          can_manage_posts?: boolean
-          can_manage_quiz?: boolean
-          can_manage_social?: boolean
-          can_manage_tools?: boolean
-          can_manage_users?: boolean
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_super_admin?: boolean
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          can_manage_admins?: boolean
-          can_manage_media?: boolean
-          can_manage_posts?: boolean
-          can_manage_quiz?: boolean
-          can_manage_social?: boolean
-          can_manage_tools?: boolean
-          can_manage_users?: boolean
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_super_admin?: boolean
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       blog_posts: {
         Row: {
           audio_url: string | null
           author_id: string | null
           category: Database["public"]["Enums"]["post_category"]
-          community_id: string | null
           content: string
           created_at: string
           excerpt: string | null
           featured_image: string | null
-          group_id: string | null
           homepage_section: string | null
           id: string
           is_featured: boolean
-          post_kind: string
           published_at: string | null
           reading_time_minutes: number | null
           slug: string
@@ -119,16 +68,13 @@ export type Database = {
           audio_url?: string | null
           author_id?: string | null
           category?: Database["public"]["Enums"]["post_category"]
-          community_id?: string | null
           content?: string
           created_at?: string
           excerpt?: string | null
           featured_image?: string | null
-          group_id?: string | null
           homepage_section?: string | null
           id?: string
           is_featured?: boolean
-          post_kind?: string
           published_at?: string | null
           reading_time_minutes?: number | null
           slug: string
@@ -141,16 +87,13 @@ export type Database = {
           audio_url?: string | null
           author_id?: string | null
           category?: Database["public"]["Enums"]["post_category"]
-          community_id?: string | null
           content?: string
           created_at?: string
           excerpt?: string | null
           featured_image?: string | null
-          group_id?: string | null
           homepage_section?: string | null
           id?: string
           is_featured?: boolean
-          post_kind?: string
           published_at?: string | null
           reading_time_minutes?: number | null
           slug?: string
@@ -159,22 +102,7 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "blog_posts_community_id_fkey"
-            columns: ["community_id"]
-            isOneToOne: false
-            referencedRelation: "communities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "blog_posts_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       comments: {
         Row: {
@@ -260,73 +188,6 @@ export type Database = {
         }
         Relationships: []
       }
-      community_admins: {
-        Row: {
-          community_id: string
-          created_at: string
-          granted_by: string | null
-          id: string
-          user_id: string
-        }
-        Insert: {
-          community_id: string
-          created_at?: string
-          granted_by?: string | null
-          id?: string
-          user_id: string
-        }
-        Update: {
-          community_id?: string
-          created_at?: string
-          granted_by?: string | null
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "community_admins_community_id_fkey"
-            columns: ["community_id"]
-            isOneToOne: false
-            referencedRelation: "communities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      community_bans: {
-        Row: {
-          banned_by: string | null
-          community_id: string
-          created_at: string
-          id: string
-          reason: string | null
-          user_id: string
-        }
-        Insert: {
-          banned_by?: string | null
-          community_id: string
-          created_at?: string
-          id?: string
-          reason?: string | null
-          user_id: string
-        }
-        Update: {
-          banned_by?: string | null
-          community_id?: string
-          created_at?: string
-          id?: string
-          reason?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "community_bans_community_id_fkey"
-            columns: ["community_id"]
-            isOneToOne: false
-            referencedRelation: "communities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       community_members: {
         Row: {
           community_id: string
@@ -382,7 +243,6 @@ export type Database = {
       }
       freebies: {
         Row: {
-          audio_url: string | null
           category: string
           cover_image: string | null
           created_at: string
@@ -396,7 +256,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          audio_url?: string | null
           category?: string
           cover_image?: string | null
           created_at?: string
@@ -410,7 +269,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          audio_url?: string | null
           category?: string
           cover_image?: string | null
           created_at?: string
@@ -424,73 +282,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      group_admins: {
-        Row: {
-          created_at: string
-          granted_by: string | null
-          group_id: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          granted_by?: string | null
-          group_id: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          granted_by?: string | null
-          group_id?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "group_admins_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      group_bans: {
-        Row: {
-          banned_by: string | null
-          created_at: string
-          group_id: string
-          id: string
-          reason: string | null
-          user_id: string
-        }
-        Insert: {
-          banned_by?: string | null
-          created_at?: string
-          group_id: string
-          id?: string
-          reason?: string | null
-          user_id: string
-        }
-        Update: {
-          banned_by?: string | null
-          created_at?: string
-          group_id?: string
-          id?: string
-          reason?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "group_bans_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       group_members: {
         Row: {
@@ -767,12 +558,8 @@ export type Database = {
           google_auth_enabled: boolean
           headline: string | null
           id: string
-          is_platform_banned: boolean
           last_name: string | null
           onboarding_completed: boolean
-          platform_ban_reason: string | null
-          platform_banned_at: string | null
-          platform_banned_by: string | null
           updated_at: string
           user_id: string
         }
@@ -785,12 +572,8 @@ export type Database = {
           google_auth_enabled?: boolean
           headline?: string | null
           id?: string
-          is_platform_banned?: boolean
           last_name?: string | null
           onboarding_completed?: boolean
-          platform_ban_reason?: string | null
-          platform_banned_at?: string | null
-          platform_banned_by?: string | null
           updated_at?: string
           user_id: string
         }
@@ -803,12 +586,8 @@ export type Database = {
           google_auth_enabled?: boolean
           headline?: string | null
           id?: string
-          is_platform_banned?: boolean
           last_name?: string | null
           onboarding_completed?: boolean
-          platform_ban_reason?: string | null
-          platform_banned_at?: string | null
-          platform_banned_by?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1160,25 +939,6 @@ export type Database = {
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      has_admin_permission: {
-        Args: {
-          _permission: string
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      is_platform_banned: {
-        Args: {
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      is_platform_super_admin: {
-        Args: {
           _user_id: string
         }
         Returns: boolean
