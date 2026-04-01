@@ -29,7 +29,7 @@ export function useRole() {
         .select("role")
         .eq("user_id", user.id),
       supabase
-        .from("admin_permissions")
+        .from("admin_permissions" as any)
         .select("is_super_admin, can_manage_admins, can_manage_users, can_manage_posts, can_manage_social, can_manage_quiz, can_manage_media, can_manage_tools")
         .eq("user_id", user.id)
         .maybeSingle(),
