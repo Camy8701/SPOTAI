@@ -853,7 +853,7 @@ function PostsTab() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-black tracking-tight uppercase">Manage Posts ({posts.length})</h2>
-        <Button onClick={openCreate} className="rounded-full">+ Create Post</Button>
+        <Button onClick={() => openCreate()} className="rounded-full">+ Create Post</Button>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
