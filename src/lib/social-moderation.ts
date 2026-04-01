@@ -153,7 +153,7 @@ export const unbanCommunityUser = async (communityId: string, userId: string) =>
 };
 
 export const addGroupAdmin = async (groupId: string, userId: string) => {
-  const { error } = await supabase.from("group_admins").upsert({ group_id: groupId, user_id: userId }, { onConflict: "group_id,user_id" });
+  const { error } = await supabase.from("group_admins" as any).upsert({ group_id: groupId, user_id: userId }, { onConflict: "group_id,user_id" });
   if (error) throw error;
 };
 
