@@ -210,7 +210,7 @@ function AnalyticsOverviewTab() {
       supabase.from("image_library_items").select("id", { count: "exact", head: true }),
       supabase.from("prompt_library_items").select("id", { count: "exact", head: true }),
       supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "featured_stories"),
-      supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("post_kind", "ai_story").not("audio_url", "is", "null"),
+      supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "featured_stories").not("audio_url", "is", "null"),
       supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "hero"),
       supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "featured_collections"),
       supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "news_articles"),
