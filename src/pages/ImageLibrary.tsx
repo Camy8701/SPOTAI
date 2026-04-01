@@ -22,6 +22,27 @@ type ImageLibraryItem = {
   created_at?: string | null;
 };
 
+const normalizeAssetKey = (raw: string) => {
+  const cleaned = raw.split("?")[0]?.split("#")[0]?.trim().toLowerCase() || "";
+  if (!cleaned) return "";
+
+  const lastSlash = cleaned.lastIndexOf("/");
+  if (lastSlash === -1) return cleaned;
+
+  const directory = cleaned.slice(0, lastSlash + 1);
+  const filename = cleaned.slice(lastSlash + 1);
+  const dotIndex = filename.lastIndexOf(".");
+  if (dotIndex <= 0) return cleaned;
+
+  const base = filename.slice(0, dotIndex);
+  const ext = filename.slice(dotIndex).toLowerCase();
+  const normalizedBase = base
+    .replace(/(?:-copy| copy)$/i, "")
+    .replace(/-2$/i, "");
+
+  return `${directory}${normalizedBase}${ext}`;
+};
+
 const headerBackClassName =
   "border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-sky-700 hover:border-sky-300 hover:text-sky-800";
 
@@ -91,16 +112,31 @@ export default function ImageLibrary() {
     return () => window.removeEventListener("keydown", onEscape);
   }, [selectedItem]);
 
+  const uniqueItems = useMemo(() => {
+    const seen = new Set<string>();
+    const deduped: ImageLibraryItem[] = [];
+
+    for (const item of items) {
+      const primarySource = item.image_url || item.thumbnail_url || item.id;
+      const dedupeKey = normalizeAssetKey(primarySource || item.id);
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+      deduped.push(item);
+    }
+
+    return deduped;
+  }, [items]);
+
   const categories = useMemo(() => {
     const all = new Set<string>();
-    items.forEach((item) => {
+    uniqueItems.forEach((item) => {
       if (item.category) all.add(item.category.toLowerCase());
     });
     return ["all", ...Array.from(all)];
-  }, [items]);
+  }, [uniqueItems]);
 
   const visibleItems = useMemo(() => {
-    const filtered = items.filter((item) => {
+    const filtered = uniqueItems.filter((item) => {
       const keyword = `${item.title} ${item.description || ""} ${item.category || ""} ${(item.tags || []).join(" ")}`.toLowerCase();
       const matchesSearch = keyword.includes(search.toLowerCase());
       const category = (item.category || "").toLowerCase();
@@ -119,7 +155,7 @@ export default function ImageLibrary() {
     }
 
     return filtered.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-  }, [activeCategory, activeOrientation, items, search, sortMode]);
+  }, [activeCategory, activeOrientation, uniqueItems, search, sortMode]);
 
   const viewerTags = useMemo(() => {
     if (!selectedItem) return [];
@@ -160,7 +196,7 @@ export default function ImageLibrary() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder={`Search ${items.length} assets...`}
+                  placeholder={`Search ${uniqueItems.length} assets...`}
                   className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-sky-500"
                 />
               </div>
