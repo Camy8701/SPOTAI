@@ -315,6 +315,7 @@ export default function AutoScrollCarousel({
         listenable: true,
       },
       {
+        type: "placeholder" as const,
         title: "New release",
         subtitle: "Pin your next carousel story here.",
         eyebrow: "Editor choice",
