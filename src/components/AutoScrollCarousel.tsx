@@ -293,6 +293,7 @@ export default function AutoScrollCarousel({
 
     const placeholderPool: Array<Omit<Extract<StorySlide, { type: "placeholder" }>, "id">> = [
       {
+        type: "placeholder" as const,
         title: "Featured story",
         subtitle: "A new fiction drop can live here.",
         eyebrow: "Homepage picks",
