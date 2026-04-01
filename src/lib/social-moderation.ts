@@ -183,7 +183,7 @@ export const banGroupUser = async (groupId: string, userId: string, reason?: str
 };
 
 export const unbanGroupUser = async (groupId: string, userId: string) => {
-  const { error } = await supabase.from("group_bans").delete().eq("group_id", groupId).eq("user_id", userId);
+  const { error } = await supabase.from("group_bans" as any).delete().eq("group_id", groupId).eq("user_id", userId);
   if (error) throw error;
 };
 
