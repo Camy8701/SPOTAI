@@ -158,7 +158,7 @@ export const addGroupAdmin = async (groupId: string, userId: string) => {
 };
 
 export const removeGroupAdmin = async (groupId: string, userId: string) => {
-  const { error } = await supabase.from("group_admins").delete().eq("group_id", groupId).eq("user_id", userId);
+  const { error } = await supabase.from("group_admins" as any).delete().eq("group_id", groupId).eq("user_id", userId);
   if (error) throw error;
 };
 
