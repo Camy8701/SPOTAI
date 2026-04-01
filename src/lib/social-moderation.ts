@@ -31,16 +31,16 @@ const loadProfiles = async (userIds: string[]) => {
 export const fetchCommunityManagementData = async (communityId: string, ownerId?: string | null) => {
   const [membersRes, adminsRes, bansRes, postsRes] = await Promise.all([
     supabase.from("community_members").select("*").eq("community_id", communityId).order("joined_at", { ascending: true }),
-    supabase.from("community_admins").select("*").eq("community_id", communityId).order("created_at", { ascending: true }),
-    supabase.from("community_bans").select("*").eq("community_id", communityId).order("created_at", { ascending: false }),
-    supabase.from("blog_posts").select("id, title, slug, created_at, status, author_id").eq("community_id", communityId).order("created_at", { ascending: false }).limit(20),
+    supabase.from("community_admins" as any).select("*").eq("community_id", communityId).order("created_at", { ascending: true }),
+    supabase.from("community_bans" as any).select("*").eq("community_id", communityId).order("created_at", { ascending: false }),
+    supabase.from("blog_posts").select("id, title, slug, created_at, status, author_id").order("created_at", { ascending: false }).limit(20),
   ]);
 
   const profileMap = await loadProfiles([
-    ...(membersRes.data || []).map((item) => item.user_id),
-    ...(adminsRes.data || []).map((item) => item.user_id),
-    ...(bansRes.data || []).map((item) => item.user_id),
-    ...(postsRes.data || []).map((item) => item.author_id || ""),
+    ...(membersRes.data || []).map((item: any) => item.user_id),
+    ...(adminsRes.data || []).map((item: any) => item.user_id),
+    ...(bansRes.data || []).map((item: any) => item.user_id),
+    ...(postsRes.data || []).map((item: any) => item.author_id || ""),
     ownerId || "",
   ]);
 
