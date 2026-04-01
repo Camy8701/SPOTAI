@@ -130,7 +130,7 @@ export const removeCommunityAdmin = async (communityId: string, userId: string) 
 export const removeCommunityMember = async (communityId: string, userId: string) => {
   const [memberRes, adminRes] = await Promise.all([
     supabase.from("community_members").delete().eq("community_id", communityId).eq("user_id", userId),
-    supabase.from("community_admins").delete().eq("community_id", communityId).eq("user_id", userId),
+    supabase.from("community_admins" as any).delete().eq("community_id", communityId).eq("user_id", userId),
   ]);
   if (memberRes.error) throw memberRes.error;
   if (adminRes.error) throw adminRes.error;
