@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -105,6 +105,7 @@ const Quiz = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [questionPool, setQuestionPool] = useState<QuizQuestion[]>(fallbackQuizQuestions);
   const [questionsLoading, setQuestionsLoading] = useState(true);
@@ -128,6 +129,18 @@ const Quiz = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [secondsLeft, setSecondsLeft] = useState(TIME_PER_QUESTION);
+
+  useEffect(() => {
+    const difficultyParam = searchParams.get("difficulty");
+    if (difficultyParam === "easy" || difficultyParam === "medium" || difficultyParam === "hard") {
+      setSelectedDifficulty(difficultyParam);
+    }
+
+    const countParam = Number(searchParams.get("count"));
+    if (QUESTION_COUNT_OPTIONS.includes(countParam)) {
+      setSelectedQuestionCount(countParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     let mounted = true;
