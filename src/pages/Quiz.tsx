@@ -106,6 +106,9 @@ const Quiz = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const difficultyParam = searchParams.get("difficulty");
+  const countParam = Number(searchParams.get("count"));
+  const autoStartRequested = searchParams.get("autostart") === "1";
 
   const [questionPool, setQuestionPool] = useState<QuizQuestion[]>(fallbackQuizQuestions);
   const [questionsLoading, setQuestionsLoading] = useState(true);
@@ -129,20 +132,23 @@ const Quiz = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [secondsLeft, setSecondsLeft] = useState(TIME_PER_QUESTION);
-  const autoStartRequested = searchParams.get("autostart") === "1";
   const hasAutoStartedRef = useRef(false);
+  const [autoStartPending, setAutoStartPending] = useState(autoStartRequested);
 
   useEffect(() => {
-    const difficultyParam = searchParams.get("difficulty");
+    setAutoStartPending(autoStartRequested);
+    hasAutoStartedRef.current = false;
+  }, [autoStartRequested, difficultyParam, countParam]);
+
+  useEffect(() => {
     if (difficultyParam === "easy" || difficultyParam === "medium" || difficultyParam === "hard") {
       setSelectedDifficulty(difficultyParam);
     }
 
-    const countParam = Number(searchParams.get("count"));
     if (QUESTION_COUNT_OPTIONS.includes(countParam)) {
       setSelectedQuestionCount(countParam);
     }
-  }, [searchParams]);
+  }, [difficultyParam, countParam]);
 
   useEffect(() => {
     let mounted = true;
@@ -388,24 +394,31 @@ const Quiz = () => {
     if (!autoStartRequested || hasAutoStartedRef.current) return;
     if (questionsLoading || activeSession) return;
 
-    const difficultyParam = searchParams.get("difficulty");
     const nextDifficulty: QuizDifficulty =
       difficultyParam === "easy" || difficultyParam === "medium" || difficultyParam === "hard"
         ? difficultyParam
         : selectedDifficulty;
 
-    const countParam = Number(searchParams.get("count"));
     const nextCount = QUESTION_COUNT_OPTIONS.includes(countParam)
       ? countParam
       : selectedQuestionCount;
 
+    if (questionPool.length < 2) {
+      hasAutoStartedRef.current = true;
+      setAutoStartPending(false);
+      return;
+    }
+
     hasAutoStartedRef.current = true;
     startGame(nextDifficulty, nextCount);
+    setAutoStartPending(false);
   }, [
     activeSession,
     autoStartRequested,
+    countParam,
+    difficultyParam,
     questionsLoading,
-    searchParams,
+    questionPool.length,
     selectedDifficulty,
     selectedQuestionCount,
   ]);
@@ -647,6 +660,54 @@ const Quiz = () => {
         <section className="border-b border-border bg-[linear-gradient(180deg,#f5f8ff_0%,#eef4fb_100%)]">
           <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
             {!activeSession ? (
+              autoStartPending ? (
+                <div className="space-y-8">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate("/quiz")}
+                      className="h-11 rounded-full border-border bg-background px-5 text-foreground hover:bg-accent"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to games
+                    </Button>
+
+                    <Link to="/quiz" className="inline-flex">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 rounded-full border-border bg-background px-5 text-foreground hover:bg-accent"
+                      >
+                        View all games
+                      </Button>
+                    </Link>
+                  </div>
+
+                  <div className="mx-auto max-w-3xl rounded-[2rem] border border-slate-200 bg-white p-8 text-center shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-10">
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-border bg-slate-50 px-4 py-1 text-[11px] uppercase tracking-[0.24em] text-muted-foreground"
+                    >
+                      Launching arena
+                    </Badge>
+                    <h1
+                      className="mt-4 text-4xl tracking-tight sm:text-5xl"
+                      style={{ fontFamily: '"Singo Sans", Georgia, serif' }}
+                    >
+                      Starting your quiz run...
+                    </h1>
+                    <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
+                      Preparing {selectedQuestionCount} questions in the{" "}
+                      {QUIZ_DIFFICULTY_CONFIG[selectedDifficulty].label.toLowerCase()} lane.
+                    </p>
+                    <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Building session
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <div className="space-y-8">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <Button
@@ -913,6 +974,7 @@ const Quiz = () => {
                   </div>
                 </div>
               </div>
+              )
             ) : (
               <div className="space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">

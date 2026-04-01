@@ -111,6 +111,7 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/quiz" element={<ProtectedRoute><Games /></ProtectedRoute>} />
+              <Route path="/games" element={<ProtectedRoute><Games /></ProtectedRoute>} />
               <Route path="/quiz/arena" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
               <Route path="/tip-calculator" element={<ProtectedRoute><TipCalculator /></ProtectedRoute>} />
               <Route path="/character-counter" element={<ProtectedRoute><CharacterCounter /></ProtectedRoute>} />
