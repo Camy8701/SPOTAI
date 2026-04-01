@@ -32,7 +32,7 @@ export default function EbooksLibrary() {
       const matchSearch =
         ebook.title.toLowerCase().includes(search.toLowerCase()) ||
         (ebook.description || "").toLowerCase().includes(search.toLowerCase());
-      const matchCat = category === "all" || ebook.category === category;
+      const matchCat = category === "all" || category === "free" || ebook.category === category;
       return matchSearch && matchCat;
     });
   }, [ebooks, search, category]);
@@ -60,7 +60,7 @@ export default function EbooksLibrary() {
 
             <div className="text-center">
               <h1 className="text-5xl tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                Free Ebooks
+                Ebooks Library
               </h1>
               <p className="mt-2 text-sm uppercase tracking-[0.22em] text-muted-foreground">
                 Curated reading library
@@ -87,6 +87,16 @@ export default function EbooksLibrary() {
                   }`}
                 >
                   All
+                </button>
+                <button
+                  onClick={() => setCategory("free")}
+                  className={`h-10 rounded-full border px-6 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                    category === "free"
+                      ? "border-blue-500 bg-blue-500 text-white"
+                      : "border-input text-muted-foreground hover:border-blue-400 hover:text-blue-600"
+                  }`}
+                >
+                  Free
                 </button>
                 {categories.slice(0, 4).map((cat) => (
                   <button

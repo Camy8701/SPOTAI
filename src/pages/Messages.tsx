@@ -2,10 +2,14 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/layout/Layout";
+import CatalogHeroHeader from "@/components/ui/catalog-hero-header";
 import { useAuth } from "@/contexts/AuthContext";
 import { MessageCircle, Send, Search, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+
+const headerBackClassName =
+  "border-cyan-200 bg-white px-4 py-2 text-sm font-semibold text-cyan-700 hover:border-cyan-300 hover:text-cyan-800";
 
 const Messages = () => {
   const { user } = useAuth();
@@ -18,10 +22,19 @@ const Messages = () => {
   if (!user) {
     return (
       <Layout>
-        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <MessageCircle className="mx-auto mb-4 text-muted-foreground" size={48} />
-          <h2 className="text-2xl font-bold mb-2 text-foreground">Sign in to view messages</h2>
-          <Link to="/auth" className="text-primary hover:underline">Sign in</Link>
+        <div className="min-h-screen bg-background text-foreground">
+          <CatalogHeroHeader
+            title="Messages"
+            subtitle="Private conversations and live replies"
+            topLabel="Direct conversations"
+            backLinkClassName={headerBackClassName}
+            topLabelClassName="text-cyan-700/75"
+          />
+          <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+            <MessageCircle className="mx-auto mb-4 text-muted-foreground" size={48} />
+            <h2 className="mb-2 text-2xl font-bold text-foreground">Sign in to view messages</h2>
+            <Link to="/auth" className="text-primary hover:underline">Sign in</Link>
+          </div>
         </div>
       </Layout>
     );
@@ -136,18 +149,27 @@ const Messages = () => {
 
   return (
     <Layout>
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
-            <MessageCircle className="text-white" size={20} />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">Messages</h1>
-        </div>
+      <div className="min-h-screen bg-background text-foreground">
+        <CatalogHeroHeader
+          title="Messages"
+          subtitle="Private conversations and live replies"
+          topLabel="Direct conversations"
+          backLinkClassName={headerBackClassName}
+          topLabelClassName="text-cyan-700/75"
+        />
 
-        <div className="flex border border-border rounded-xl overflow-hidden bg-card h-[calc(100vh-14rem)]">
+        <div className="mx-auto max-w-5xl px-4 py-8">
+          <div className="mb-6 flex items-center gap-3 text-muted-foreground">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500">
+              <MessageCircle className="text-white" size={20} />
+            </div>
+            <p className="text-sm font-medium">Messages update in real time when the realtime backend channel is available.</p>
+          </div>
+
+          <div className="flex h-[calc(100vh-17rem)] overflow-hidden rounded-xl border border-border bg-card">
           {/* Conversation list */}
-          <div className={`w-full md:w-80 border-r border-border flex flex-col ${selectedConversation ? "hidden md:flex" : "flex"}`}>
-            <div className="p-3 border-b border-border">
+            <div className={`w-full border-r border-border md:w-80 ${selectedConversation ? "hidden md:flex" : "flex"} flex-col`}>
+              <div className="border-b border-border p-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                 <input
@@ -172,80 +194,81 @@ const Messages = () => {
                 </div>
               )}
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {(conversations || []).length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground text-sm">
-                  No conversations yet. Search for a user to start chatting!
-                </div>
-              ) : (
-                conversations!.map((conv) => (
-                  <button
-                    key={conv.id}
-                    onClick={() => setSelectedConversation(conv.id)}
-                    className={`w-full text-left px-4 py-3 border-b border-border hover:bg-accent transition-colors ${
-                      selectedConversation === conv.id ? "bg-accent" : ""
-                    }`}
-                  >
-                    <p className="font-medium text-foreground text-sm">{(conv as any).otherProfile?.display_name || "User"}</p>
-                    <p className="text-xs text-muted-foreground truncate">Click to view conversation</p>
-                  </button>
-                ))
-              )}
+              <div className="flex-1 overflow-y-auto">
+                {(conversations || []).length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No conversations yet. Search for a user to start chatting!
+                  </div>
+                ) : (
+                  conversations!.map((conv) => (
+                    <button
+                      key={conv.id}
+                      onClick={() => setSelectedConversation(conv.id)}
+                      className={`w-full border-b border-border px-4 py-3 text-left transition-colors hover:bg-accent ${
+                        selectedConversation === conv.id ? "bg-accent" : ""
+                      }`}
+                    >
+                      <p className="text-sm font-medium text-foreground">{(conv as any).otherProfile?.display_name || "User"}</p>
+                      <p className="truncate text-xs text-muted-foreground">Click to view conversation</p>
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
-          </div>
 
           {/* Messages area */}
-          <div className={`flex-1 flex flex-col ${!selectedConversation ? "hidden md:flex" : "flex"}`}>
-            {selectedConversation ? (
-              <>
-                <div className="p-3 border-b border-border flex items-center gap-2">
-                  <button onClick={() => setSelectedConversation(null)} className="md:hidden p-1">
-                    <ArrowLeft size={20} />
-                  </button>
-                  <span className="font-medium text-foreground text-sm">
-                    {conversations?.find((c) => c.id === selectedConversation)?.otherProfile?.display_name || "Conversation"}
-                  </span>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {(messages || []).map((msg) => (
-                    <motion.div
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`flex ${msg.sender_id === user.id ? "justify-end" : "justify-start"}`}
+            <div className={`flex-1 flex-col ${!selectedConversation ? "hidden md:flex" : "flex"}`}>
+              {selectedConversation ? (
+                <>
+                  <div className="flex items-center gap-2 border-b border-border p-3">
+                    <button onClick={() => setSelectedConversation(null)} className="p-1 md:hidden">
+                      <ArrowLeft size={20} />
+                    </button>
+                    <span className="text-sm font-medium text-foreground">
+                      {conversations?.find((c) => c.id === selectedConversation)?.otherProfile?.display_name || "Conversation"}
+                    </span>
+                  </div>
+                  <div className="flex-1 space-y-3 overflow-y-auto p-4">
+                    {(messages || []).map((msg) => (
+                      <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`flex ${msg.sender_id === user.id ? "justify-end" : "justify-start"}`}
+                      >
+                        <div className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm ${
+                          msg.sender_id === user.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary text-foreground"
+                        }`}>
+                          {msg.content}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 border-t border-border p-3">
+                    <input
+                      type="text"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && newMessage.trim() && sendMessage.mutate()}
+                      placeholder="Type a message..."
+                      className="flex-1 rounded-full border border-border bg-secondary px-4 py-2 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <button
+                      onClick={() => newMessage.trim() && sendMessage.mutate()}
+                      className="rounded-full bg-primary p-2 text-primary-foreground transition-opacity hover:opacity-90"
                     >
-                      <div className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm ${
-                        msg.sender_id === user.id
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-secondary text-foreground"
-                      }`}>
-                        {msg.content}
-                      </div>
-                    </motion.div>
-                  ))}
+                      <Send size={18} />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-1 items-center justify-center text-muted-foreground">
+                  <p>Select a conversation or search for a user</p>
                 </div>
-                <div className="p-3 border-t border-border flex gap-2">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && newMessage.trim() && sendMessage.mutate()}
-                    placeholder="Type a message..."
-                    className="flex-1 px-4 py-2 text-sm border border-border rounded-full bg-secondary text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                  <button
-                    onClick={() => newMessage.trim() && sendMessage.mutate()}
-                    className="p-2 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                  >
-                    <Send size={18} />
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                <p>Select a conversation or search for a user</p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

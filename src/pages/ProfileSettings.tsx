@@ -75,7 +75,16 @@ const ProfileSettings = () => {
 
     const fullName = [nextFirstName, lastName.trim()].filter(Boolean).join(" ");
     await supabase.auth.updateUser({
-      data: { full_name: fullName, avatar_url: getAvatarDataUrl(selectedAvatar) },
+      data: {
+        full_name: fullName,
+        avatar_url: getAvatarDataUrl(selectedAvatar),
+        first_name: nextFirstName,
+        last_name: lastName.trim() || null,
+        display_name: nextDisplayName,
+        headline: headline.trim() || null,
+        bio: bio.trim() || null,
+        onboarding_completed: true,
+      },
     });
 
     await refreshProfile();

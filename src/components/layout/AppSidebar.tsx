@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Home, ShoppingBag, TrendingUp, MessageCircle, Users, UsersRound, Newspaper, Gamepad2, Gift, BookOpen, Headphones, ChevronDown, Images, Sparkles, Wrench } from "lucide-react";
+import { Home, ShoppingBag, TrendingUp, MessageCircle, Users, UsersRound, Newspaper, Gamepad2, BookOpen, GraduationCap, Headphones, Images, Sparkles, Wrench } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -12,14 +11,12 @@ const sidebarItems = [
   { name: "Groups", icon: UsersRound, path: "/groups", color: "from-pink-500 to-rose-600" },
   { name: "News & Articles", icon: Newspaper, path: "/library?section=news_articles", color: "from-amber-500 to-orange-600" },
   { name: "Games", icon: Gamepad2, path: "/quiz", color: "from-indigo-500 to-purple-600" },
+  { name: "Learn AI", icon: GraduationCap, path: "/learn-ai", color: "from-rose-500 to-orange-600" },
   { name: "Image Library", icon: Images, path: "/image-library", color: "from-sky-500 to-cyan-600" },
   { name: "Prompt Library", icon: Sparkles, path: "/prompt-library", color: "from-violet-500 to-purple-600" },
-  { name: "Tools", icon: Wrench, path: "/tools", color: "from-teal-500 to-cyan-600" },
-];
-
-const freebiesSubItems = [
   { name: "Ebooks Library", icon: BookOpen, path: "/freebies/ebooks", color: "from-teal-500 to-emerald-600" },
   { name: "Podcast Library", icon: Headphones, path: "/freebies/podcasts", color: "from-rose-500 to-pink-600" },
+  { name: "Tools", icon: Wrench, path: "/tools", color: "from-teal-500 to-cyan-600" },
 ];
 
 interface AppSidebarProps {
@@ -28,9 +25,6 @@ interface AppSidebarProps {
 
 const AppSidebar = ({ isOpen }: AppSidebarProps) => {
   const location = useLocation();
-  const [freebiesOpen, setFreebiesOpen] = useState(
-    location.pathname.startsWith("/freebies")
-  );
 
   const renderItem = (item: typeof sidebarItems[0]) => {
     const isActive = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path.split("?")[0]));
@@ -54,8 +48,6 @@ const AppSidebar = ({ isOpen }: AppSidebarProps) => {
     );
   };
 
-  const isFreebiesActive = location.pathname.startsWith("/freebies");
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -68,43 +60,6 @@ const AppSidebar = ({ isOpen }: AppSidebarProps) => {
         >
           <nav className="flex flex-col gap-1">
             {sidebarItems.map(renderItem)}
-
-            {/* Freebies expandable */}
-            <motion.div
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer ${
-                isFreebiesActive
-                  ? "bg-accent text-accent-foreground font-semibold"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent"
-              }`}
-              whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setFreebiesOpen(!freebiesOpen)}
-            >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center flex-shrink-0">
-                <Gift size={16} className="text-white" />
-              </div>
-              <span className="text-sm whitespace-nowrap flex-1">Freebies</span>
-              <motion.div
-                animate={{ rotate: freebiesOpen ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronDown size={14} />
-              </motion.div>
-            </motion.div>
-
-            <AnimatePresence>
-              {freebiesOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden pl-4"
-                >
-                  {freebiesSubItems.map(renderItem)}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </nav>
         </motion.aside>
       )}

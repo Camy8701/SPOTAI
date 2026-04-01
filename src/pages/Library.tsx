@@ -5,14 +5,16 @@ import { motion } from "framer-motion";
 import Layout from "@/components/layout/Layout";
 import AnimateInView from "@/components/AnimateInView";
 import AudioPlayer from "@/components/AudioPlayer";
+import CatalogHeroHeader from "@/components/ui/catalog-hero-header";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { shouldShowPostInLibrarySection } from "@/lib/publishing";
+import { addNeuralinkLead } from "@/data/fallback/neuralinkStory";
 
 const SECTION_LABELS: Record<string, string> = {
   all: "All Posts",
   featured_stories: "Featured AI Fictions",
-  featured_collections: "Featured Collections",
+  featured_collections: "AI Stories",
   best_ai_tools: "Best AI Tools",
   news_articles: "News & Articles",
   story: "Stories",
@@ -70,7 +72,7 @@ const Library = () => {
         .order("created_at", { ascending: false });
 
       const { data } = await q;
-      setPosts(data || []);
+      setPosts(addNeuralinkLead(data || []));
       setLoading(false);
     };
     fetchPosts();
@@ -79,6 +81,8 @@ const Library = () => {
   const title = SECTION_LABELS[section] || SECTION_LABELS[category] || "Library";
   const isNewsView = section === "news_articles" || category === "news";
   const accent = SECTION_ACCENTS[section] || SECTION_ACCENTS[category] || SECTION_ACCENTS.featured_collections;
+  const newsBackClassName =
+    "border-orange-200 bg-white px-4 py-2 text-sm font-semibold text-orange-700 hover:border-orange-300 hover:text-orange-800";
 
   const visiblePosts = useMemo(() => {
     return posts.filter((post) => {
@@ -96,62 +100,53 @@ const Library = () => {
     <Layout>
       {isNewsView ? (
         <div className="min-h-screen bg-background text-foreground">
-          <section className="border-b border-border bg-secondary">
-            <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-              <div className="text-center">
-                <h1 className="text-5xl tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                  News & Articles
-                </h1>
-                <p className="mt-2 text-sm uppercase tracking-[0.22em] text-muted-foreground">
-                  SPOTAI editorial stream
-                </p>
+          <CatalogHeroHeader
+            title="News & Articles"
+            subtitle="SPOTAI editorial stream"
+            topLabel="Explore all posts"
+            backLinkClassName={newsBackClassName}
+            topLabelClassName="text-orange-700/75"
+          >
+            <div className="flex flex-col gap-4 md:flex-row">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search articles"
+                  className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-orange-500"
+                />
               </div>
+              <div className="flex flex-wrap items-center gap-3">
+                {[
+                  { label: "All", to: "/library?section=news_articles" },
+                  { label: "News", to: "/library?section=news_articles&category=news" },
+                  { label: "Opinion", to: "/library?section=news_articles&category=opinion" },
+                  { label: "Review", to: "/library?section=news_articles&category=review" },
+                ].map((tab) => {
+                  const isActive =
+                    (tab.label === "All" && !category) ||
+                    category.toLowerCase() === tab.label.toLowerCase();
 
-              <div className="mt-8 flex flex-col gap-4 md:flex-row">
-                <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search articles"
-                    className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-orange-500"
-                  />
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  {[
-                    { label: "All", to: "/library?section=news_articles" },
-                    { label: "News", to: "/library?section=news_articles&category=news" },
-                    { label: "Opinion", to: "/library?section=news_articles&category=opinion" },
-                    { label: "Review", to: "/library?section=news_articles&category=review" },
-                  ].map((tab) => {
-                    const isActive =
-                      (tab.label === "All" && !category) ||
-                      category.toLowerCase() === tab.label.toLowerCase();
-
-                    return (
-                      <Link
-                        key={tab.label}
-                        to={tab.to}
-                        className={`inline-flex h-10 items-center rounded-full border px-6 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
-                          isActive
-                            ? "border-orange-500 bg-orange-500 text-white"
-                            : "border-input text-muted-foreground hover:border-orange-400 hover:text-orange-600"
-                        }`}
-                      >
-                        {tab.label}
-                      </Link>
-                    );
-                  })}
-                </div>
+                  return (
+                    <Link
+                      key={tab.label}
+                      to={tab.to}
+                      className={`inline-flex h-10 items-center rounded-full border px-6 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                        isActive
+                          ? "border-orange-500 bg-orange-500 text-white"
+                          : "border-input text-muted-foreground hover:border-orange-400 hover:text-orange-600"
+                      }`}
+                    >
+                      {tab.label}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
-          </section>
+          </CatalogHeroHeader>
 
           <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-            <Link to="/home" className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-              <ArrowLeft size={16} /> Back to home
-            </Link>
-
             {loading ? (
               <div className="rounded-[2rem] border border-border bg-card px-8 py-16 text-center text-lg">
                 Loading articles...

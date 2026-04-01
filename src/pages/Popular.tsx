@@ -5,6 +5,7 @@ import { TrendingUp, Heart, MessageCircle, Flame } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import CatalogHeroHeader from "@/components/ui/catalog-hero-header";
 
 const topicColors: Record<string, string> = {
   story: "from-blue-500 to-cyan-500",
@@ -23,6 +24,8 @@ const getTimeDecayBonus = (publishedAt: string | null, createdAt: string) => {
   if (hoursAgo < 168) return 3;
   return 0;
 };
+const headerBackClassName =
+  "border-orange-200 bg-white px-4 py-2 text-sm font-semibold text-orange-700 hover:border-orange-300 hover:text-orange-800";
 
 const Popular = () => {
   const { data: posts, isLoading } = useQuery({
@@ -52,66 +55,73 @@ const Popular = () => {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-            <TrendingUp className="text-white" size={24} />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Popular</h1>
-            <p className="text-muted-foreground">Trending content organized by topic</p>
-          </div>
-        </div>
+      <div className="min-h-screen bg-background text-foreground">
+        <CatalogHeroHeader
+          title="Popular"
+          subtitle="Trending content organized by topic"
+          topLabel="Trending right now"
+          backLinkClassName={headerBackClassName}
+          topLabelClassName="text-orange-700/75"
+        />
 
-        {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 bg-secondary animate-pulse rounded-xl" />
-            ))}
-          </div>
-        ) : Object.keys(grouped).length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
-            <TrendingUp className="mx-auto mb-4 opacity-40" size={48} />
-            <p>No popular content yet. Be the first to create!</p>
-          </div>
-        ) : (
-          Object.entries(grouped).map(([category, categoryPosts]) => (
-            <div key={category} className="mb-10">
-              <div className="flex items-center gap-2 mb-4">
-                <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${topicColors[category] || "from-gray-400 to-gray-500"}`} />
-                <h2 className="text-xl font-bold text-foreground capitalize">{category}</h2>
-                <span className="text-sm text-muted-foreground">({categoryPosts!.length})</span>
-              </div>
-              <div className="space-y-3">
-                {categoryPosts!.slice(0, 5).map((post, idx) => (
-                  <Link to={`/post/${post.slug}`} key={post.id}>
-                    <motion.div
-                      whileHover={{ x: 4 }}
-                      className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors"
-                    >
-                      <span className="text-2xl font-black text-muted-foreground/40 w-8">#{idx + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-foreground truncate">{post.title}</h3>
-                          {post.isTrending && (
-                            <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 gap-1 shrink-0">
-                              <Flame size={12} /> Trending
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground truncate">{post.excerpt}</p>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground flex-shrink-0">
-                        <span className="flex items-center gap-1"><Heart size={14} /> {post.likeCount}</span>
-                        <span className="flex items-center gap-1"><MessageCircle size={14} /> {post.commentCount}</span>
-                      </div>
-                    </motion.div>
-                  </Link>
-                ))}
-              </div>
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mb-8 flex items-center gap-3 text-muted-foreground">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-500">
+              <TrendingUp className="text-white" size={24} />
             </div>
-          ))
-        )}
+            <p className="text-sm font-medium">Freshly ranked using likes, comments, and recency.</p>
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-32 animate-pulse rounded-xl bg-secondary" />
+              ))}
+            </div>
+          ) : Object.keys(grouped).length === 0 ? (
+            <div className="py-16 text-center text-muted-foreground">
+              <TrendingUp className="mx-auto mb-4 opacity-40" size={48} />
+              <p>No popular content yet. Be the first to create!</p>
+            </div>
+          ) : (
+            Object.entries(grouped).map(([category, categoryPosts]) => (
+              <div key={category} className="mb-10">
+                <div className="mb-4 flex items-center gap-2">
+                  <div className={`h-3 w-3 rounded-full bg-gradient-to-r ${topicColors[category] || "from-gray-400 to-gray-500"}`} />
+                  <h2 className="text-xl font-bold capitalize text-foreground">{category}</h2>
+                  <span className="text-sm text-muted-foreground">({categoryPosts!.length})</span>
+                </div>
+                <div className="space-y-3">
+                  {categoryPosts!.slice(0, 5).map((post, idx) => (
+                    <Link to={`/post/${post.slug}`} key={post.id}>
+                      <motion.div
+                        whileHover={{ x: 4 }}
+                        className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/30"
+                      >
+                        <span className="w-8 text-2xl font-black text-muted-foreground/40">#{idx + 1}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="truncate font-semibold text-foreground">{post.title}</h3>
+                            {post.isTrending && (
+                              <Badge className="shrink-0 gap-1 border-0 bg-gradient-to-r from-orange-500 to-red-500 text-white">
+                                <Flame size={12} /> Trending
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="truncate text-sm text-muted-foreground">{post.excerpt}</p>
+                        </div>
+                        <div className="flex flex-shrink-0 items-center gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1"><Heart size={14} /> {post.likeCount}</span>
+                          <span className="flex items-center gap-1"><MessageCircle size={14} /> {post.commentCount}</span>
+                        </div>
+                      </motion.div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </Layout>
   );

@@ -43,7 +43,7 @@ const FeaturedCollections = ({ posts, loading, onListen }: Props) => (
     <AnimateInView>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 sm:mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Featured Collection</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">AI Stories</h2>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
             Discover captivating AI fictions that push the boundaries of creativity
           </p>

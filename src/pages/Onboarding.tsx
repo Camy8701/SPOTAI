@@ -129,6 +129,12 @@ const Onboarding = () => {
       data: {
         full_name: fullName || nextDisplayName,
         avatar_url: nextAvatarUrl,
+        first_name: nextFirstName,
+        last_name: nextLastName || null,
+        display_name: nextDisplayName,
+        headline: nextHeadline || null,
+        bio: nextBio || null,
+        onboarding_completed: true,
       },
     });
 

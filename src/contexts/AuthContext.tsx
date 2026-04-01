@@ -53,6 +53,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profileLoading, setProfileLoading] = useState(false);
   const [profile, setProfile] = useState<AuthProfile | null>(null);
 
+  const buildFallbackProfile = (nextUser: User): AuthProfile | null => {
+    const metadata = nextUser.user_metadata || {};
+    const fullName = String(metadata.full_name || metadata.name || "").trim();
+    const avatarUrl = typeof metadata.avatar_url === "string" ? metadata.avatar_url : null;
+    const displayName = typeof metadata.display_name === "string" ? metadata.display_name : fullName || null;
+    const firstName = typeof metadata.first_name === "string" ? metadata.first_name : fullName.split(/\s+/)[0] || null;
+    const lastName =
+      typeof metadata.last_name === "string"
+        ? metadata.last_name
+        : fullName.split(/\s+/).slice(1).join(" ") || null;
+
+    const hasIdentity = Boolean(displayName || avatarUrl || fullName);
+    const metadataSaysCompleted = Boolean(metadata.onboarding_completed);
+    const accountAgeMs = Date.now() - new Date(nextUser.created_at).getTime();
+    const isEstablishedAccount = Number.isFinite(accountAgeMs) && accountAgeMs > 10 * 60 * 1000;
+
+    if (!hasIdentity || (!metadataSaysCompleted && !isEstablishedAccount)) {
+      return null;
+    }
+
+    return {
+      avatar_url: avatarUrl,
+      bio: typeof metadata.bio === "string" ? metadata.bio : null,
+      display_name: displayName,
+      first_name: firstName,
+      google_auth_enabled: isGoogleUser(nextUser),
+      headline: typeof metadata.headline === "string" ? metadata.headline : null,
+      is_platform_banned: false,
+      last_name: lastName,
+      onboarding_completed: true,
+      platform_ban_reason: null,
+    };
+  };
+
   const fetchProfileData = async (userId: string) => {
     setProfileLoading(true);
     try {
@@ -131,7 +165,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const nextProfile = await fetchProfileData(nextSession.user.id);
-    const resolved = await resolveGoogleAuthIntent(nextSession, nextProfile);
+    const resolved = await resolveGoogleAuthIntent(
+      nextSession,
+      nextProfile ?? buildFallbackProfile(nextSession.user),
+    );
 
     if (!resolved.session?.user) {
       setSession(null);

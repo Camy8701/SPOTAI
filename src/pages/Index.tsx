@@ -6,7 +6,6 @@ import AnimateInView from "@/components/AnimateInView";
 import AutoScrollCarousel from "@/components/AutoScrollCarousel";
 import AudioPlayer from "@/components/AudioPlayer";
 import { supabase } from "@/integrations/supabase/client";
-import { Skeleton } from "@/components/ui/skeleton";
 import HeroSection from "@/components/home/HeroSection";
 import FeaturedCollections from "@/components/home/FeaturedCollections";
 import DigitalProducts from "@/components/home/DigitalProducts";
@@ -14,6 +13,14 @@ import BestAiTools from "@/components/home/BestAiTools";
 import NewsArticles from "@/components/home/NewsArticles";
 import GamesSection from "@/components/home/GamesSection";
 import ConnectSection from "@/components/home/ConnectSection";
+import { NEURALINK_STORY, addNeuralinkLead } from "@/data/fallback/neuralinkStory";
+
+const getFallbackForSection = (section: string, limit: number) => {
+  if (section === "hero") return [NEURALINK_STORY];
+  if (section === "featured_stories") return addNeuralinkLead([], limit);
+  if (section === "featured_collections") return addNeuralinkLead([], limit);
+  return [];
+};
 
 const fetchPostsBySection = async (section: string, limit: number) => {
   const { data, error } = await supabase
@@ -25,21 +32,24 @@ const fetchPostsBySection = async (section: string, limit: number) => {
     .eq("homepage_section", section)
     .order("created_at", { ascending: false })
     .limit(limit);
-  if (error) throw error;
-  return data ?? [];
-};
 
-const StoryStripSkeleton = () => (
-  <div className="overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-    <div className="flex min-w-max gap-5">
-      {Array.from({ length: 7 }).map((_, index) => (
-        <div key={index} className="w-[320px] shrink-0">
-          <Skeleton className="h-[380px] w-full rounded-[28px]" />
-        </div>
-      ))}
-    </div>
-  </div>
-);
+  if (error) {
+    console.error(`Failed to fetch homepage section "${section}"`, error);
+    return getFallbackForSection(section, limit);
+  }
+
+  const rows = data ?? [];
+
+  if (section === "hero") {
+    return addNeuralinkLead(rows, 1);
+  }
+
+  if (section === "featured_stories" || section === "featured_collections") {
+    return addNeuralinkLead(rows, limit);
+  }
+
+  return rows;
+};
 
 const Index = () => {
   const [audio, setAudio] = useState<{ src: string; title: string } | null>(null);
@@ -50,7 +60,7 @@ const Index = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: featuredStories = [], isLoading: storiesLoading } = useQuery({
+  const { data: featuredStories = [] } = useQuery({
     queryKey: ["homepage", "featured_stories"],
     queryFn: () => fetchPostsBySection("featured_stories", 10),
     staleTime: 5 * 60 * 1000,
@@ -82,14 +92,10 @@ const Index = () => {
       <SectionNavigation />
 
       {/* Story Strip Carousel */}
-      <section className="bg-background py-6 sm:py-8" id="featured-stories">
+      <section className="py-6 sm:py-8" id="featured-stories">
         <AnimateInView>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            {storiesLoading ? (
-              <StoryStripSkeleton />
-            ) : (
-              <AutoScrollCarousel posts={featuredStories} onListen={handleListen} />
-            )}
+            <AutoScrollCarousel posts={featuredStories} onListen={handleListen} />
           </div>
         </AnimateInView>
       </section>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -10,6 +10,7 @@ import {
   Lock,
   PenSquare,
   Plus,
+  Search,
   Shield,
   Trash2,
   UserPlus,
@@ -17,6 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
+import CatalogHeroHeader from "@/components/ui/catalog-hero-header";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -43,6 +45,8 @@ const topicIcons: Record<string, string> = {
 
 const languages = Object.entries(languageFlags).map(([code, flag]) => ({ code, flag }));
 const topics = Object.entries(topicIcons).map(([name, icon]) => ({ name, icon }));
+const headerBackClassName =
+  "border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:border-rose-300 hover:text-rose-800";
 
 const Groups = () => {
   const { user } = useAuth();
@@ -50,6 +54,8 @@ const Groups = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", language: "en", topic: "general" });
   const [managingGroup, setManagingGroup] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilter, setActiveFilter] = useState<"all" | "joined" | "pending" | "managing">("all");
 
   const { data: groups, isLoading } = useQuery({
     queryKey: ["groups", user?.id],
@@ -117,6 +123,12 @@ const Groups = () => {
 
   const selectedGroup = groups?.find((group) => group.id === managingGroup) || null;
 
+  useEffect(() => {
+    if (!user && activeFilter !== "all") {
+      setActiveFilter("all");
+    }
+  }, [activeFilter, user]);
+
   const { data: managementData, isLoading: managementLoading } = useQuery({
     queryKey: ["group-management", managingGroup, selectedGroup?.created_by],
     enabled: Boolean(managingGroup && selectedGroup),
@@ -129,6 +141,31 @@ const Groups = () => {
       queryClient.invalidateQueries({ queryKey: ["group-management", managingGroup] });
     }
   };
+
+  const visibleGroups = useMemo(() => {
+    return (groups || []).filter((group) => {
+      const keyword = `${group.name} ${group.description || ""} ${group.language || ""} ${group.topic || ""}`.toLowerCase();
+      const matchesSearch = keyword.includes(searchTerm.toLowerCase());
+      const matchesFilter =
+        activeFilter === "all" ||
+        (activeFilter === "joined" && group.canPost) ||
+        (activeFilter === "pending" && group.memberStatus === "pending") ||
+        (activeFilter === "managing" && group.canManage);
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [activeFilter, groups, searchTerm]);
+
+  const filterTabs = [
+    { key: "all" as const, label: "All" },
+    ...(user
+      ? [
+          { key: "joined" as const, label: "Joined" },
+          { key: "pending" as const, label: "Pending" },
+          { key: "managing" as const, label: "Managing" },
+        ]
+      : []),
+  ];
 
   const createGroup = useMutation({
     mutationFn: async () => {
@@ -175,78 +212,114 @@ const Groups = () => {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
-              <UsersRound className="text-white" size={24} />
+      <div className="min-h-screen bg-background text-foreground">
+        <CatalogHeroHeader
+          title="Groups"
+          subtitle="Private rooms with approval flow"
+          topLabel="Explore all groups"
+          backLinkClassName={headerBackClassName}
+          topLabelClassName="text-rose-700/75"
+        >
+          <div className="flex flex-col gap-4 md:flex-row">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search groups"
+                className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-rose-500"
+              />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Groups</h1>
-              <p className="text-muted-foreground">Private spaces with approval flow, local admins, and scoped moderation.</p>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {filterTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveFilter(tab.key)}
+                  className={`h-10 rounded-full border px-6 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                    activeFilter === tab.key
+                      ? "border-rose-500 bg-rose-500 text-white"
+                      : "border-input text-muted-foreground hover:border-rose-400 hover:text-rose-600"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </div>
-          {user && (
-            <button
-              onClick={() => setShowCreate((current) => !current)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90"
-            >
-              <Plus size={16} /> Create
-            </button>
-          )}
-        </div>
+        </CatalogHeroHeader>
 
-        {showCreate && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mb-8 p-6 rounded-xl border border-border bg-card">
-            <h3 className="font-bold text-foreground mb-4">Create a private group</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                placeholder="Group name"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              <input
-                placeholder="Description"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              <select
-                value={form.language}
-                onChange={(e) => setForm({ ...form, language: e.target.value })}
-                className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                {languages.map((language) => (
-                  <option key={language.code} value={language.code}>
-                    {language.flag} {language.code.toUpperCase()}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={form.topic}
-                onChange={(e) => setForm({ ...form, topic: e.target.value })}
-                className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                {topics.map((topic) => (
-                  <option key={topic.name} value={topic.name}>
-                    {topic.icon} {topic.name}
-                  </option>
-                ))}
-              </select>
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-rose-600">
+                <UsersRound className="text-white" size={24} />
+              </div>
+              <p className="text-sm font-medium">
+                {(groups || []).length} group{(groups || []).length === 1 ? "" : "s"} available
+              </p>
             </div>
-            <button
-              onClick={() => form.name && createGroup.mutate()}
-              disabled={!form.name}
-              className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 disabled:opacity-50"
-            >
-              Create Group
-            </button>
-          </motion.div>
-        )}
+            {user ? (
+              <button
+                onClick={() => setShowCreate((current) => !current)}
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90"
+              >
+                <Plus size={16} /> Create
+              </button>
+            ) : null}
+          </div>
 
-        {managingGroup && selectedGroup ? (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8 rounded-[1.75rem] border border-border bg-card p-6">
+          {showCreate && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mb-8 rounded-xl border border-border bg-card p-6">
+              <h3 className="mb-4 font-bold text-foreground">Create a private group</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <input
+                  placeholder="Group name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="rounded-lg border border-border bg-secondary px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <input
+                  placeholder="Description"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="rounded-lg border border-border bg-secondary px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <select
+                  value={form.language}
+                  onChange={(e) => setForm({ ...form, language: e.target.value })}
+                  className="rounded-lg border border-border bg-secondary px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {languages.map((language) => (
+                    <option key={language.code} value={language.code}>
+                      {language.flag} {language.code.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={form.topic}
+                  onChange={(e) => setForm({ ...form, topic: e.target.value })}
+                  className="rounded-lg border border-border bg-secondary px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {topics.map((topic) => (
+                    <option key={topic.name} value={topic.name}>
+                      {topic.icon} {topic.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={() => form.name && createGroup.mutate()}
+                disabled={!form.name}
+                className="mt-4 rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                Create Group
+              </button>
+            </motion.div>
+          )}
+
+          {managingGroup && selectedGroup ? (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8 rounded-[1.75rem] border border-border bg-card p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="flex items-center gap-2">
@@ -461,17 +534,27 @@ const Groups = () => {
                 </div>
               </div>
             ) : null}
-          </motion.div>
-        ) : null}
+            </motion.div>
+          ) : null}
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((index) => <div key={index} className="h-40 bg-secondary animate-pulse rounded-xl" />)}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(groups || []).map((group) => (
-              <motion.div key={group.id} whileHover={{ y: -2 }} className="p-5 rounded-xl border border-border bg-card hover:border-primary/30 transition-colors">
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((index) => <div key={index} className="h-40 rounded-xl bg-secondary animate-pulse" />)}
+            </div>
+          ) : (groups || []).length === 0 ? (
+            <div className="py-16 text-center text-muted-foreground">
+              <UsersRound className="mx-auto mb-4 opacity-40" size={48} />
+              <p>No groups yet. Create the first one.</p>
+            </div>
+          ) : visibleGroups.length === 0 ? (
+            <div className="rounded-[2rem] border border-border bg-card px-8 py-16 text-center">
+              <p className="text-lg font-medium text-foreground">No groups match your search.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Try a broader keyword or switch filters.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {visibleGroups.map((group) => (
+                <motion.div key={group.id} whileHover={{ y: -2 }} className="rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-3xl">{topicIcons[group.topic] || "💬"}</span>
                   <div className="flex-1 min-w-0">
@@ -536,10 +619,11 @@ const Groups = () => {
                     )
                   ) : null}
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );

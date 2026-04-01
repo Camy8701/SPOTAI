@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import Layout from "@/components/layout/Layout";
 import ShowcaseCard from "@/components/ui/showcase-card";
 import { Search } from "lucide-react";
+import CatalogHeroHeader from "@/components/ui/catalog-hero-header";
 
 const marketplaceItems = [
   {
@@ -35,6 +36,8 @@ const marketplaceItems = [
 ];
 
 const filterTabs = ["All", "Templates", "Assets", "Courses", "AI Tools"];
+const headerBackClassName =
+  "border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-700 hover:border-amber-300 hover:text-amber-800";
 
 const Marketplace = () => {
   const [search, setSearch] = useState("");
@@ -52,46 +55,41 @@ const Marketplace = () => {
   return (
     <Layout>
       <div className="min-h-screen bg-background text-foreground">
-        <section className="border-b border-border bg-secondary">
-          <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h1 className="text-5xl tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                Marketplace
-              </h1>
-              <p className="mt-2 text-sm uppercase tracking-[0.22em] text-muted-foreground">
-                Curated digital products for builders
-              </p>
+        <CatalogHeroHeader
+          title="Marketplace"
+          subtitle="Curated digital products for builders"
+          topLabel="Explore all products"
+          backLinkClassName={headerBackClassName}
+          topLabelClassName="text-amber-700/75"
+        >
+          <div className="flex flex-col gap-4 md:flex-row">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search marketplace products"
+                className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-amber-500"
+              />
             </div>
 
-            <div className="mt-8 flex flex-col gap-4 md:flex-row">
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search marketplace products"
-                  className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-amber-500"
-                />
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                {filterTabs.map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`h-10 rounded-full border px-6 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
-                      activeTab === tab
-                        ? "border-amber-500 bg-amber-500 text-white"
-                        : "border-input text-muted-foreground hover:border-amber-400 hover:text-amber-600"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
+            <div className="flex flex-wrap items-center gap-3">
+              {filterTabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`h-10 rounded-full border px-6 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                    activeTab === tab
+                      ? "border-amber-500 bg-amber-500 text-white"
+                      : "border-input text-muted-foreground hover:border-amber-400 hover:text-amber-600"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
           </div>
-        </section>
+        </CatalogHeroHeader>
 
         <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
           {filteredItems.length === 0 ? (

@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLearnAI } from "@/contexts/LearnAIContext";
 import { useRole } from "@/hooks/useRole";
 import {
   FileText,
@@ -34,6 +35,8 @@ import {
   Ban,
   ShieldAlert,
   SlidersHorizontal,
+  GraduationCap,
+  Trophy,
 } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
@@ -86,17 +89,21 @@ import {
   type AdminPostKind,
   type HomepagePlacementChoice,
 } from "@/lib/publishing";
+import { learnAiCourses } from "@/data/learn-ai-courses";
+import { getLearnAICourseProgress, getLearnAIMetrics } from "@/lib/learn-ai-metrics";
 
-type Tab = "analytics" | "posts" | "users" | "quiz" | "social" | "freebies" | "images" | "prompts";
+type Tab = "analytics" | "posts" | "users" | "quiz" | "social" | "freebies" | "images" | "prompts" | "learning";
 
 // ─── Analytics / Overview Tab ───
 function AnalyticsOverviewTab() {
+  const { state: learnAIState } = useLearnAI();
   const [stats, setStats] = useState({
     posts: 0, users: 0, comments: 0, likes: 0, saved: 0, quizResults: 0,
     published: 0, drafts: 0, communities: 0, groups: 0, communityMembers: 0,
     groupMembers: 0, conversations: 0, messages: 0, freebies: 0, ebooks: 0,
     podcasts: 0, pendingMembers: 0, mediaFiles: 0, imageItems: 0,
-    promptItems: 0, quizQuestions: 0,
+    promptItems: 0, quizQuestions: 0, carouselStories: 0, audioStories: 0,
+    heroPosts: 0, collectionPosts: 0, newsPosts: 0, toolPosts: 0,
   });
   const [recentLikes, setRecentLikes] = useState<any[]>([]);
   const [recentComments, setRecentComments] = useState<any[]>([]);
@@ -177,6 +184,7 @@ function AnalyticsOverviewTab() {
     "hsl(150, 76%, 48%)", "hsl(270, 67%, 55%)", "hsl(45, 100%, 50%)",
     "hsl(200, 80%, 50%)", "hsl(330, 70%, 55%)", "hsl(20, 90%, 55%)",
   ];
+  const learnMetrics = useMemo(() => getLearnAIMetrics(learnAIState), [learnAIState]);
 
   const load = () => {
     setLoading(true);
@@ -201,6 +209,12 @@ function AnalyticsOverviewTab() {
       supabase.from("freebies").select("id", { count: "exact", head: true }).eq("type", "podcast"),
       supabase.from("image_library_items").select("id", { count: "exact", head: true }),
       supabase.from("prompt_library_items").select("id", { count: "exact", head: true }),
+      supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "featured_stories"),
+      supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("post_kind", "ai_story").not("audio_url", "is", "null"),
+      supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "hero"),
+      supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "featured_collections"),
+      supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "news_articles"),
+      supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("homepage_section", "best_ai_tools"),
       supabase.from("group_members").select("id", { count: "exact", head: true }).eq("status", "pending"),
       supabase.from("media").select("id", { count: "exact", head: true }),
       supabase.from("likes").select("*, blog_posts(title)").order("created_at", { ascending: false }).limit(10),
@@ -217,7 +231,8 @@ function AnalyticsOverviewTab() {
     ]).then(([
       posts, users, comments, likes, saved, quiz, quizQuestions, published, drafts,
       communities, groups, communityMembers, groupMembers, conversations, messages,
-      freebies, ebooks, podcasts, imageItems, promptItems, pendingMembers, mediaFiles,
+      freebies, ebooks, podcasts, imageItems, promptItems, carouselStories, audioStories,
+      heroPosts, collectionPosts, newsPosts, toolPosts, pendingMembers, mediaFiles,
       rLikes, rComments, rUsers, rMessages, rTopPosts, rFreebies,
       chartProfiles, chartPosts, chartComments, chartLikes,
     ]) => {
@@ -231,6 +246,9 @@ function AnalyticsOverviewTab() {
         conversations: conversations.count ?? 0, messages: messages.count ?? 0,
         freebies: freebies.count ?? 0, ebooks: ebooks.count ?? 0, podcasts: podcasts.count ?? 0,
         imageItems: imageItems.count ?? 0, promptItems: promptItems.count ?? 0,
+        carouselStories: carouselStories.count ?? 0, audioStories: audioStories.count ?? 0,
+        heroPosts: heroPosts.count ?? 0, collectionPosts: collectionPosts.count ?? 0,
+        newsPosts: newsPosts.count ?? 0, toolPosts: toolPosts.count ?? 0,
         pendingMembers: pendingMembers.count ?? 0, mediaFiles: mediaFiles.count ?? 0,
       });
       if (rLikes.data) setRecentLikes(rLikes.data);
@@ -247,7 +265,7 @@ function AnalyticsOverviewTab() {
     });
   };
 
-  useEffect(() => { load(); }, [canManageAdmins]);
+  useEffect(() => { load(); }, []);
 
   const hasAlerts = stats.drafts > 3 || stats.pendingMembers > 0;
 
@@ -278,6 +296,10 @@ function AnalyticsOverviewTab() {
             { icon: Gift, value: stats.freebies, label: "Freebies", sub: `${stats.ebooks} ebooks · ${stats.podcasts} pods`, bg: "hsl(20,90%,78%)" },
             { icon: Images, value: stats.imageItems, label: "Image Items", sub: "Library inventory", bg: "hsl(193,90%,84%)" },
             { icon: Sparkles, value: stats.promptItems, label: "Prompt Items", sub: "Prompt library", bg: "hsl(292,72%,86%)" },
+            { icon: BookOpen, value: stats.carouselStories, label: "Carousel Stories", sub: `${stats.audioStories} with audio`, bg: "hsl(214,100%,90%)" },
+            { icon: GraduationCap, value: learnMetrics.courses, label: "Learn AI Courses", sub: `${learnMetrics.lessons} lessons total`, bg: "hsl(354,100%,92%)" },
+            { icon: Trophy, value: learnMetrics.certificates, label: "Certificates", sub: `${learnMetrics.passedAssessments} passed results`, bg: "hsl(37,100%,90%)" },
+            { icon: Bookmark, value: learnMetrics.favorites, label: "Saved Courses", sub: `${learnMetrics.startedCourses} started`, bg: "hsl(165,72%,90%)" },
           ].map((card) => (
             <div key={card.label} className="rounded-xl border-2 border-dashed border-border p-4" style={{ backgroundColor: card.bg }}>
               <card.icon className="h-6 w-6 mb-2 text-foreground/70" />
@@ -307,6 +329,51 @@ function AnalyticsOverviewTab() {
               <div className="text-xs text-foreground/60 mt-0.5">{card.sub}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div>
+          <h3 className="text-lg font-black uppercase tracking-tight mb-4">Homepage Placement Health</h3>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+            {[
+              { label: "Hero", value: stats.heroPosts, sub: "Main feature" },
+              { label: "Carousel", value: stats.carouselStories, sub: "Featured stories" },
+              { label: "Collections", value: stats.collectionPosts, sub: "Editorial cards" },
+              { label: "News", value: stats.newsPosts, sub: "Articles stream" },
+              { label: "AI Tools", value: stats.toolPosts, sub: "Tools shelf" },
+            ].map((item) => (
+              <div key={item.label} className="rounded-xl border-2 border-dashed border-border bg-card p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">{item.label}</p>
+                <p className="mt-3 text-3xl font-black">{item.value}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{item.sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-black uppercase tracking-tight mb-4">Learning Layer Snapshot</h3>
+          <div className="rounded-xl border-2 border-dashed border-border bg-card p-5">
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { label: "Courses", value: learnMetrics.courses },
+                { label: "Lessons", value: learnMetrics.lessons },
+                { label: "Started", value: learnMetrics.startedCourses },
+                { label: "Completed", value: learnMetrics.completedCourses },
+                { label: "Assessments", value: learnMetrics.assessmentAttempts },
+                { label: "Avg score", value: `${learnMetrics.averageScore}%` },
+              ].map((item) => (
+                <div key={item.label} className="rounded-2xl border border-border bg-secondary/50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{item.label}</p>
+                  <p className="mt-3 text-3xl font-semibold">{item.value}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs leading-5 text-muted-foreground">
+              Learn AI progress, favorites, results, and certificates are stored locally on this device until the backend learning layer is connected.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -606,9 +673,38 @@ function AnalyticsOverviewTab() {
 function PostsTab() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [posts, setPosts] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<any>(null);
+  const createRequestHandled = useRef(false);
+
+  const buildPostForm = useCallback(
+    (overrides?: Partial<{
+      title: string;
+      slug: string;
+      content: string;
+      post_kind: AdminPostKind;
+      status: string;
+      excerpt: string;
+      featured_image: string;
+      audio_url: string;
+      placement_choice: HomepagePlacementChoice;
+    }>) => ({
+      title: "",
+      slug: "",
+      content: "",
+      post_kind: "ai_story" as AdminPostKind,
+      status: "draft",
+      excerpt: "",
+      featured_image: "",
+      audio_url: "",
+      placement_choice: "auto" as HomepagePlacementChoice,
+      ...overrides,
+    }),
+    [],
+  );
+
   const [form, setForm] = useState({
     title: "",
     slug: "",
@@ -629,21 +725,50 @@ function PostsTab() {
 
   useEffect(() => { load(); }, []);
 
-  const openCreate = () => {
+  const openCreate = useCallback((overrides?: Partial<typeof form>) => {
     setEditingPost(null);
-    setForm({
-      title: "",
-      slug: "",
-      content: "",
-      post_kind: "ai_story",
-      status: "draft",
-      excerpt: "",
-      featured_image: "",
-      audio_url: "",
-      placement_choice: "auto",
-    });
+    setForm(buildPostForm(overrides));
     setDialogOpen(true);
-  };
+  }, [buildPostForm]);
+
+  useEffect(() => {
+    if (searchParams.get("create") !== "1") {
+      createRequestHandled.current = false;
+      return;
+    }
+
+    if (createRequestHandled.current) return;
+
+    const requestedKind = searchParams.get("kind");
+    const requestedPlacement = searchParams.get("placement");
+    const requestedStatus = searchParams.get("status");
+
+    const validKind = requestedKind && requestedKind in ADMIN_POST_KIND_CONFIG
+      ? (requestedKind as AdminPostKind)
+      : "ai_story";
+
+    const validPlacement =
+      requestedPlacement &&
+      ["auto", "dedicated_only", "hero", "featured_stories", "featured_collections", "best_ai_tools", "news_articles"].includes(requestedPlacement)
+        ? (requestedPlacement as HomepagePlacementChoice)
+        : "featured_stories";
+
+    const validStatus = requestedStatus === "published" ? "published" : "draft";
+
+    createRequestHandled.current = true;
+    openCreate({
+      post_kind: validKind,
+      placement_choice: validPlacement,
+      status: validStatus,
+    });
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("create");
+    nextParams.delete("kind");
+    nextParams.delete("placement");
+    nextParams.delete("status");
+    setSearchParams(nextParams, { replace: true });
+  }, [openCreate, searchParams, setSearchParams]);
 
   const openEdit = (post: any) => {
     setEditingPost(post);
@@ -2621,12 +2746,173 @@ function PromptsTab() {
   );
 }
 
+// ─── Learn AI Tab ───
+function LearningTab() {
+  const navigate = useNavigate();
+  const { state, resetCourse } = useLearnAI();
+  const metrics = useMemo(() => getLearnAIMetrics(state), [state]);
+  const courses = useMemo(
+    () =>
+      learnAiCourses.map((course) => ({
+        course,
+        progress: getLearnAICourseProgress(course, state),
+      })),
+    [state],
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h2 className="text-2xl font-black tracking-tight uppercase">Manage Learn AI</h2>
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+            Track the course inventory, preview progress behavior, and monitor saved courses, results, and certificates.
+          </p>
+        </div>
+        <Badge variant="outline" className="rounded-full px-4 py-2 text-xs uppercase tracking-[0.18em]">
+          Local analytics until backend sync
+        </Badge>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: "Courses", value: metrics.courses, sub: `${metrics.featuredCourses} featured`, icon: GraduationCap, tone: "bg-[hsl(354,100%,92%)]" },
+          { label: "Lessons", value: metrics.lessons, sub: `${metrics.assessments} assessment questions`, icon: BookOpen, tone: "bg-[hsl(214,100%,92%)]" },
+          { label: "Started", value: metrics.startedCourses, sub: `${metrics.completedCourses} completed`, icon: CheckCircle2, tone: "bg-[hsl(150,76%,90%)]" },
+          { label: "Certificates", value: metrics.certificates, sub: `${metrics.averageScore}% average score`, icon: Trophy, tone: "bg-[hsl(37,100%,90%)]" },
+        ].map((card) => (
+          <div key={card.label} className="rounded-xl border-2 border-dashed border-border p-4" style={{ backgroundColor: card.tone }}>
+            <card.icon className="h-6 w-6 text-foreground/70" />
+            <p className="mt-3 text-3xl font-black">{card.value}</p>
+            <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em]">{card.label}</p>
+            <p className="mt-1 text-xs text-foreground/60">{card.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="rounded-xl border-2 border-dashed border-border bg-card p-5">
+          <h3 className="text-lg font-black uppercase tracking-tight">Course Inventory</h3>
+          <div className="mt-5 overflow-hidden rounded-xl border border-border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Course</TableHead>
+                  <TableHead>Access</TableHead>
+                  <TableHead>Lessons</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead>Results</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {courses.map(({ course, progress }) => (
+                  <TableRow key={course.slug}>
+                    <TableCell className="max-w-[280px]">
+                      <div>
+                        <p className="font-semibold">{course.title}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {course.category} · {course.level}
+                          {course.featured ? " · Featured" : ""}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={course.access === "Free" ? "secondary" : "outline"}>{course.access}</Badge>
+                    </TableCell>
+                    <TableCell>{course.lessons.length}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {progress.completedLessons}/{course.lessons.length} ({progress.progressPercent}%)
+                    </TableCell>
+                    <TableCell>
+                      {progress.assessment ? (
+                        <Badge className={progress.assessment.passed ? "bg-emerald-500 hover:bg-emerald-500 text-white" : ""} variant={progress.assessment.passed ? "default" : "outline"}>
+                          {progress.assessment.score}/{progress.assessment.total}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">No result</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => navigate(`/learn-ai/${course.slug}`)}>
+                          Open
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => resetCourse(course.slug)}>
+                          Reset
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="rounded-xl border-2 border-dashed border-border bg-card p-5">
+            <h3 className="text-lg font-black uppercase tracking-tight">Learning Analytics</h3>
+            <div className="mt-5 grid grid-cols-2 gap-4">
+              <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Saved courses</p>
+                <p className="mt-3 text-3xl font-semibold">{metrics.favorites}</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Assessment attempts</p>
+                <p className="mt-3 text-3xl font-semibold">{metrics.assessmentAttempts}</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Passed results</p>
+                <p className="mt-3 text-3xl font-semibold">{metrics.passedAssessments}</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Access mix</p>
+                <p className="mt-3 text-lg font-semibold">{metrics.freeCourses} free · {metrics.proCourses} pro</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border-2 border-dashed border-border bg-card p-5">
+            <h3 className="text-lg font-black uppercase tracking-tight">Operational Notes</h3>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
+              <p>The Learn AI library is fully visible and usable from the product right now.</p>
+              <p>Progress, favorites, results, and certificates are saved locally per browser until the backend learning tables are ready.</p>
+              <p>Publishing logic for homepage stories remains in the Posts tab. Use AI Story + Carousel placement to feed the strip.</p>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Button variant="outline" onClick={() => navigate("/learn-ai")}>
+                Open Learn AI
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/home#featured-stories")}>
+                Review homepage strip
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Admin Dashboard ───
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, profile, loading: authLoading, signOut } = useAuth();
   const { isAdmin, isSuperAdmin, permissions, loading: roleLoading } = useRole();
   const [tab, setTab] = useState<Tab>("analytics");
+
+  useEffect(() => {
+    const requestedTab = searchParams.get("tab");
+
+    if (
+      requestedTab &&
+      ["analytics", "posts", "users", "quiz", "social", "freebies", "images", "prompts", "learning"].includes(requestedTab)
+    ) {
+      setTab(requestedTab as Tab);
+    }
+  }, [searchParams]);
 
   if (authLoading || roleLoading) {
     return <div className="flex items-center justify-center min-h-screen bg-background">Loading…</div>;
@@ -2650,6 +2936,7 @@ export default function AdminDashboard() {
     { label: "Freebies", key: "freebies", icon: Gift, visible: permissions.manage_media || permissions.manage_tools },
     { label: "Images", key: "images", icon: Images, visible: permissions.manage_media },
     { label: "Prompts", key: "prompts", icon: Sparkles, visible: permissions.manage_media },
+    { label: "Learning", key: "learning", icon: GraduationCap, visible: true },
   ];
 
   const visibleTabs = tabs.filter((item) => item.visible);
@@ -2664,6 +2951,7 @@ export default function AdminDashboard() {
     freebies: <FreebiesTab />,
     images: <ImagesTab />,
     prompts: <PromptsTab />,
+    learning: <LearningTab />,
   };
 
   return (
@@ -2701,7 +2989,7 @@ export default function AdminDashboard() {
             Admin Dashboard
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Manage only the features the live product actually uses: posts, social data, quiz content, freebies, and the new media libraries.
+            Manage the live product surface: homepage placements, content libraries, quiz systems, social data, and the new learning layer.
           </p>
         </div>
 

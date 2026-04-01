@@ -3,12 +3,14 @@ import { useParams, Link, Navigate } from "react-router-dom";
 import { Heart, MessageCircle, Bookmark, Share2, ArrowLeft, Send, Trash2, Reply, ThumbsUp, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Layout from "@/components/layout/Layout";
+import AudioPlayer from "@/components/AudioPlayer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { NEURALINK_STORY } from "@/data/fallback/neuralinkStory";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +24,7 @@ interface BlogPostData {
   content: string;
   excerpt: string | null;
   featured_image: string | null;
+  audio_url: string | null;
   category: string;
   tags: string[] | null;
   published_at: string | null;
@@ -73,6 +76,7 @@ const BlogPost = () => {
   const [likersOpen, setLikersOpen] = useState(false);
   const [likers, setLikers] = useState<LikerProfile[]>([]);
   const [likersLoading, setLikersLoading] = useState(false);
+  const [audio, setAudio] = useState<{ src: string; title: string } | null>(null);
 
   useEffect(() => {
     if (slug) fetchPost();
@@ -80,6 +84,9 @@ const BlogPost = () => {
 
   useEffect(() => {
     if (post) {
+      if (post.id === NEURALINK_STORY.id) {
+        return;
+      }
       fetchComments();
       fetchLikes();
       if (user) {
@@ -90,6 +97,14 @@ const BlogPost = () => {
   }, [post, user]);
 
   const fetchPost = async () => {
+    if (slug === NEURALINK_STORY.slug) {
+      setPost(NEURALINK_STORY as BlogPostData);
+      setAuthorName("Elena Vasquez");
+      setRelatedPosts([]);
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase
       .from("blog_posts")
       .select("*")
@@ -438,6 +453,7 @@ const BlogPost = () => {
   }
 
   const flatCommentCount = comments.reduce((sum, c) => sum + 1 + c.replies.length, 0);
+  const isFallbackPost = post.id === NEURALINK_STORY.id;
 
   return (
     <Layout>
@@ -455,6 +471,18 @@ const BlogPost = () => {
           </div>
           <h1 className="text-3xl md:text-5xl font-bold text-foreground leading-tight mb-4">{post.title}</h1>
           {post.excerpt && <p className="text-lg text-muted-foreground mb-4">{post.excerpt}</p>}
+          {post.audio_url && (
+            <div className="mb-5">
+              <motion.button
+                className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg"
+                whileHover={{ scale: 1.03, y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setAudio({ src: post.audio_url!, title: post.title })}
+              >
+                Listen
+              </motion.button>
+            </div>
+          )}
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             {post.author_id ? (
               <Link to={`/user/${post.author_id}`} className="hover:underline">By {authorName}</Link>
@@ -479,123 +507,128 @@ const BlogPost = () => {
           {post.content}
         </div>
 
-        {/* Action Bar */}
-        <div className="sticky bottom-6 z-10 flex justify-center mb-12">
-          <motion.div className="flex items-center gap-1 bg-card border border-border rounded-full px-2 py-2 shadow-lg" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-            <Button variant="ghost" size="sm" onClick={toggleLike} className={`rounded-full gap-2 ${isLiked ? "text-red-500" : ""}`}>
-              <Heart size={18} fill={isLiked ? "currentColor" : "none"} />
-              <span>{likeCount}</span>
-            </Button>
+        {!isFallbackPost && (
+          <>
+            {/* Action Bar */}
+            <div className="sticky bottom-6 z-10 flex justify-center mb-12">
+              <motion.div className="flex items-center gap-1 bg-card border border-border rounded-full px-2 py-2 shadow-lg" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+                <Button variant="ghost" size="sm" onClick={toggleLike} className={`rounded-full gap-2 ${isLiked ? "text-red-500" : ""}`}>
+                  <Heart size={18} fill={isLiked ? "currentColor" : "none"} />
+                  <span>{likeCount}</span>
+                </Button>
 
-            {likeCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={showLikers} className="rounded-full gap-1" title="See who liked this">
-                <Users size={16} />
-              </Button>
-            )}
+                {likeCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={showLikers} className="rounded-full gap-1" title="See who liked this">
+                    <Users size={16} />
+                  </Button>
+                )}
 
-            <Button variant="ghost" size="sm" className="rounded-full gap-2" onClick={() => document.getElementById("comments-section")?.scrollIntoView({ behavior: "smooth" })}>
-              <MessageCircle size={18} />
-              <span>{flatCommentCount}</span>
-            </Button>
+                <Button variant="ghost" size="sm" className="rounded-full gap-2" onClick={() => document.getElementById("comments-section")?.scrollIntoView({ behavior: "smooth" })}>
+                  <MessageCircle size={18} />
+                  <span>{flatCommentCount}</span>
+                </Button>
 
-            <Button variant="ghost" size="sm" onClick={toggleSave} className={`rounded-full ${isSaved ? "text-yellow-500" : ""}`}>
-              <Bookmark size={18} fill={isSaved ? "currentColor" : "none"} />
-            </Button>
+                <Button variant="ghost" size="sm" onClick={toggleSave} className={`rounded-full ${isSaved ? "text-yellow-500" : ""}`}>
+                  <Bookmark size={18} fill={isSaved ? "currentColor" : "none"} />
+                </Button>
 
-            <Button variant="ghost" size="sm" onClick={handleShare} className="rounded-full">
-              <Share2 size={18} />
-            </Button>
-          </motion.div>
-        </div>
-
-        {/* Likers Dialog */}
-        <Dialog open={likersOpen} onOpenChange={setLikersOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Liked by</DialogTitle>
-            </DialogHeader>
-            {likersLoading ? (
-              <div className="py-4 text-center text-muted-foreground text-sm">Loading...</div>
-            ) : likers.length === 0 ? (
-              <div className="py-4 text-center text-muted-foreground text-sm">No likes yet</div>
-            ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {likers.map((liker) => (
-                  <Link
-                    key={liker.user_id}
-                    to={`/user/${liker.user_id}`}
-                    onClick={() => setLikersOpen(false)}
-                    className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-secondary transition-colors"
-                  >
-                    {liker.avatar_url ? (
-                      <img src={liker.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
-                        {(liker.display_name || "U")[0].toUpperCase()}
-                      </div>
-                    )}
-                    <span className="text-sm font-medium text-foreground">{liker.display_name || "Unnamed"}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Comments Section */}
-        <section id="comments-section" className="border-t border-border pt-10">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Comments ({flatCommentCount})</h2>
-
-          <div className="mb-8">
-            <Textarea
-              placeholder={user ? "Write a comment..." : "Sign in to comment"}
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              disabled={!user}
-              className="mb-3 min-h-[100px] bg-secondary"
-            />
-            <Button onClick={() => submitComment()} disabled={submitting || !newComment.trim() || !user} className="gap-2">
-              <Send size={16} /> Post Comment
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            <AnimatePresence>
-              {comments.map((comment) => (
-                <CommentItem key={comment.id} comment={comment} />
-              ))}
-            </AnimatePresence>
-            {comments.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">No comments yet. Be the first to share your thoughts!</p>
-            )}
-          </div>
-        </section>
-
-        {/* Related Posts */}
-        {relatedPosts.length > 0 && (
-          <section className="border-t border-border pt-10 mt-10">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Related Posts</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedPosts.map((rp) => (
-                <Link to={`/post/${rp.slug}`} key={rp.id} className="group">
-                  <div className="bg-secondary rounded-xl overflow-hidden transition-transform duration-300 group-hover:-translate-y-1">
-                    {rp.featured_image && (
-                      <div className="aspect-video overflow-hidden">
-                        <img src={rp.featured_image} alt={rp.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-                      </div>
-                    )}
-                    <div className="p-4">
-                      <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-xs font-semibold uppercase">{rp.category}</span>
-                      <h3 className="font-semibold text-foreground mt-2 line-clamp-2 group-hover:text-primary transition-colors">{rp.title}</h3>
-                      {rp.excerpt && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{rp.excerpt}</p>}
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                <Button variant="ghost" size="sm" onClick={handleShare} className="rounded-full">
+                  <Share2 size={18} />
+                </Button>
+              </motion.div>
             </div>
-          </section>
+
+            {/* Likers Dialog */}
+            <Dialog open={likersOpen} onOpenChange={setLikersOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Liked by</DialogTitle>
+                </DialogHeader>
+                {likersLoading ? (
+                  <div className="py-4 text-center text-muted-foreground text-sm">Loading...</div>
+                ) : likers.length === 0 ? (
+                  <div className="py-4 text-center text-muted-foreground text-sm">No likes yet</div>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {likers.map((liker) => (
+                      <Link
+                        key={liker.user_id}
+                        to={`/user/${liker.user_id}`}
+                        onClick={() => setLikersOpen(false)}
+                        className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-secondary transition-colors"
+                      >
+                        {liker.avatar_url ? (
+                          <img src={liker.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                            {(liker.display_name || "U")[0].toUpperCase()}
+                          </div>
+                        )}
+                        <span className="text-sm font-medium text-foreground">{liker.display_name || "Unnamed"}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            {/* Comments Section */}
+            <section id="comments-section" className="border-t border-border pt-10">
+              <h2 className="text-2xl font-bold text-foreground mb-6">Comments ({flatCommentCount})</h2>
+
+              <div className="mb-8">
+                <Textarea
+                  placeholder={user ? "Write a comment..." : "Sign in to comment"}
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  disabled={!user}
+                  className="mb-3 min-h-[100px] bg-secondary"
+                />
+                <Button onClick={() => submitComment()} disabled={submitting || !newComment.trim() || !user} className="gap-2">
+                  <Send size={16} /> Post Comment
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <AnimatePresence>
+                  {comments.map((comment) => (
+                    <CommentItem key={comment.id} comment={comment} />
+                  ))}
+                </AnimatePresence>
+                {comments.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">No comments yet. Be the first to share your thoughts!</p>
+                )}
+              </div>
+            </section>
+
+            {/* Related Posts */}
+            {relatedPosts.length > 0 && (
+              <section className="border-t border-border pt-10 mt-10">
+                <h2 className="text-2xl font-bold text-foreground mb-6">Related Posts</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {relatedPosts.map((rp) => (
+                    <Link to={`/post/${rp.slug}`} key={rp.id} className="group">
+                      <div className="bg-secondary rounded-xl overflow-hidden transition-transform duration-300 group-hover:-translate-y-1">
+                        {rp.featured_image && (
+                          <div className="aspect-video overflow-hidden">
+                            <img src={rp.featured_image} alt={rp.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                          </div>
+                        )}
+                        <div className="p-4">
+                          <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-xs font-semibold uppercase">{rp.category}</span>
+                          <h3 className="font-semibold text-foreground mt-2 line-clamp-2 group-hover:text-primary transition-colors">{rp.title}</h3>
+                          {rp.excerpt && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{rp.excerpt}</p>}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
       </article>
+      {audio && <AudioPlayer src={audio.src} title={audio.title} onClose={() => setAudio(null)} />}
     </Layout>
   );
 };

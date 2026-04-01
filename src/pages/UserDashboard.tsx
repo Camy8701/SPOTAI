@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLearnAI } from "@/contexts/LearnAIContext";
 import {
   LayoutDashboard,
   Heart,
@@ -20,6 +21,9 @@ import {
   Sparkles,
   CheckCircle2,
   Clock3,
+  GraduationCap,
+  Trophy,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +44,8 @@ import {
   getAvatarSelectionFromDataUrl,
   getDefaultAvatarSelection,
 } from "@/components/auth/ProfileAvatarPicker";
+import { getLearnAiFirstIncompleteLessonId, learnAiCourses } from "@/data/learn-ai-courses";
+import { getLearnAICourseProgress, getLearnAIMetrics } from "@/lib/learn-ai-metrics";
 
 type Tab =
   | "overview"
@@ -47,6 +53,7 @@ type Tab =
   | "liked"
   | "comments"
   | "quiz"
+  | "learning"
   | "communities"
   | "groups"
   | "messages"
@@ -97,6 +104,7 @@ function EmptyState({
 
 function OverviewTab() {
   const { user, profile } = useAuth();
+  const { state: learnAIState } = useLearnAI();
   const [stats, setStats] = useState({
     saved: 0,
     liked: 0,
@@ -115,6 +123,7 @@ function OverviewTab() {
   });
   const [recentComments, setRecentComments] = useState<any[]>([]);
   const [recentQuizResults, setRecentQuizResults] = useState<any[]>([]);
+  const learnMetrics = useMemo(() => getLearnAIMetrics(learnAIState), [learnAIState]);
 
   useEffect(() => {
     if (!user) return;
@@ -189,6 +198,12 @@ function OverviewTab() {
     { label: "Liked posts", value: stats.liked, tone: "bg-[hsl(330,81%,94%)] text-pink-700" },
     { label: "Comments", value: stats.comments, tone: "bg-[hsl(35,100%,93%)] text-amber-700" },
     { label: "Quiz results", value: stats.quizResults, tone: "bg-[hsl(271,81%,94%)] text-violet-700" },
+    {
+      label: "Learning",
+      value: learnMetrics.startedCourses,
+      meta: learnMetrics.certificates > 0 ? `${learnMetrics.certificates} certificates` : "courses started",
+      tone: "bg-[hsl(354,100%,94%)] text-rose-700",
+    },
     { label: "Communities", value: stats.communities, tone: "bg-[hsl(150,76%,92%)] text-emerald-700" },
     {
       label: "Groups",
@@ -204,6 +219,7 @@ function OverviewTab() {
     { label: "Podcasts", value: resources.podcasts, href: "/freebies/podcasts", icon: Headphones, accent: "bg-violet-500" },
     { label: "Images", value: resources.images, href: "/image-library", icon: Images, accent: "bg-cyan-500" },
     { label: "Prompts", value: resources.prompts, href: "/prompt-library", icon: Sparkles, accent: "bg-fuchsia-500" },
+    { label: "Learn AI", value: learnMetrics.courses, href: "/learn-ai", icon: GraduationCap, accent: "bg-rose-500" },
   ];
 
   return (
@@ -220,7 +236,7 @@ function OverviewTab() {
             </h2>
             <p className="mt-4 text-sm leading-7 text-muted-foreground">
               This dashboard only surfaces data the platform actually stores. Social activity, quiz results, saved content,
-              memberships, and profile settings live here. Static browse pages are exposed as catalog links, not fake usage metrics.
+              memberships, profile settings, and your learning progress live here. Static browse pages are exposed as catalog links, not fake usage metrics.
             </p>
           </div>
 
@@ -637,6 +653,125 @@ function QuizResultsTab() {
   );
 }
 
+function LearningTab() {
+  const { state, resetCourse } = useLearnAI();
+  const metrics = useMemo(() => getLearnAIMetrics(state), [state]);
+  const courseProgress = useMemo(
+    () =>
+      learnAiCourses.map((course) => ({
+        course,
+        progress: getLearnAICourseProgress(course, state),
+      })),
+    [state],
+  );
+
+  return (
+    <SpotlightShell title="Learning progress" description="Saved course progress, favorites, assessment results, and certificates from Learn AI.">
+      {metrics.startedCourses === 0 && metrics.favorites === 0 ? (
+        <EmptyState
+          icon={GraduationCap}
+          title="No course activity yet"
+          description="Start a Learn AI course, save one for later, or finish an assessment to build your learning record."
+          cta={<Link to="/learn-ai"><Button className="rounded-full">Open Learn AI</Button></Link>}
+        />
+      ) : (
+        <div className="space-y-8">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: "Courses started", value: metrics.startedCourses, icon: GraduationCap, tone: "bg-[hsl(354,100%,94%)] text-rose-700" },
+              { label: "Saved courses", value: metrics.favorites, icon: Bookmark, tone: "bg-[hsl(45,100%,93%)] text-amber-700" },
+              { label: "Certificates", value: metrics.certificates, icon: Trophy, tone: "bg-[hsl(150,76%,92%)] text-emerald-700" },
+              { label: "Average score", value: `${metrics.averageScore}%`, icon: CheckCircle2, tone: "bg-[hsl(214,100%,94%)] text-blue-700" },
+            ].map((card) => (
+              <div key={card.label} className="rounded-[1.5rem] border border-border bg-secondary/60 p-5">
+                <div className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${card.tone}`}>
+                  <card.icon className="mr-1 h-3.5 w-3.5" />
+                  {card.label}
+                </div>
+                <p className="mt-4 text-4xl font-semibold tracking-tight">{card.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            {courseProgress.map(({ course, progress }) => {
+              const nextLessonId =
+                progress.isCompleted
+                  ? null
+                  : getLearnAiFirstIncompleteLessonId(course, state.courses[course.slug]?.completedLessonIds || []);
+
+              return (
+                <div key={course.slug} className="rounded-[1.6rem] border border-border bg-secondary/60 p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-xl font-semibold">{course.title}</p>
+                        {progress.isFavorite ? <Badge variant="secondary">Saved</Badge> : null}
+                        {progress.hasCertificate ? <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white">Certified</Badge> : null}
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{course.subtitle}</p>
+                    </div>
+                    <div className="rounded-2xl border border-border bg-background px-4 py-3 text-right">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Progress</p>
+                      <p className="mt-2 text-2xl font-semibold">{progress.progressPercent}%</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 h-2 overflow-hidden rounded-full bg-background">
+                    <div className="h-full rounded-full bg-gradient-to-r from-rose-500 to-orange-400" style={{ width: `${progress.progressPercent}%` }} />
+                  </div>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-border bg-background p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Lessons</p>
+                      <p className="mt-2 text-lg font-semibold">{progress.completedLessons}/{course.lessons.length}</p>
+                    </div>
+                    <div className="rounded-2xl border border-border bg-background p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Assessment</p>
+                      <p className="mt-2 text-lg font-semibold">
+                        {progress.assessment ? `${progress.assessment.score}/${progress.assessment.total}` : "Not taken"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-border bg-background p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Certificate</p>
+                      <p className="mt-2 text-lg font-semibold">{progress.hasCertificate ? "Issued" : "Locked"}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <Link
+                      to={
+                        progress.isCompleted
+                          ? `/learn-ai/${course.slug}/results`
+                          : nextLessonId
+                            ? `/learn-ai/${course.slug}/lessons/${nextLessonId}`
+                            : `/learn-ai/${course.slug}`
+                      }
+                    >
+                      <Button className="rounded-full">
+                        {progress.isCompleted ? "View results" : progress.hasStarted ? "Resume course" : "Start course"}
+                      </Button>
+                    </Link>
+                    <Link to={`/learn-ai/${course.slug}`}>
+                      <Button variant="outline" className="rounded-full">Course page</Button>
+                    </Link>
+                    {(progress.hasStarted || progress.isFavorite || progress.assessment) ? (
+                      <Button variant="outline" className="rounded-full" onClick={() => resetCourse(course.slug)}>
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Reset
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </SpotlightShell>
+  );
+}
+
 function CommunitiesTab() {
   const { user } = useAuth();
   const [memberships, setMemberships] = useState<any[]>([]);
@@ -1041,6 +1176,7 @@ export default function UserDashboard() {
     { label: "Liked", key: "liked", icon: Heart },
     { label: "Comments", key: "comments", icon: MessageSquare },
     { label: "Quiz", key: "quiz", icon: HelpCircle },
+    { label: "Learning", key: "learning", icon: GraduationCap },
     { label: "Communities", key: "communities", icon: Users },
     { label: "Groups", key: "groups", icon: UsersRound },
     { label: "Messages", key: "messages", icon: MessagesSquare },
@@ -1053,6 +1189,7 @@ export default function UserDashboard() {
     liked: <LikedTab />,
     comments: <CommentsTab />,
     quiz: <QuizResultsTab />,
+    learning: <LearningTab />,
     communities: <CommunitiesTab />,
     groups: <GroupsTab />,
     messages: <MessagesTab />,

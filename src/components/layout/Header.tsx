@@ -5,6 +5,7 @@ import {
   BookOpen,
   Calculator,
   Gamepad2,
+  GraduationCap,
   Headphones,
   Home,
   Images,
@@ -107,6 +108,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
         { label: "Popular", path: "/popular", icon: TrendingUp, accent: "text-orange-500" },
         { label: "News & Articles", path: "/library?section=news_articles", icon: Newspaper, accent: "text-amber-500" },
         { label: "Games", path: "/quiz", icon: Gamepad2, accent: "text-indigo-500" },
+        { label: "Learn AI", path: "/learn-ai", icon: GraduationCap, accent: "text-rose-500" },
       ],
     },
     {

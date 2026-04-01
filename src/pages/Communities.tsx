@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -8,12 +8,14 @@ import {
   Globe,
   PenSquare,
   Plus,
+  Search,
   Shield,
   Trash2,
   UserPlus,
   Users,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
+import CatalogHeroHeader from "@/components/ui/catalog-hero-header";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -41,6 +43,8 @@ const topicIcons: Record<string, string> = {
 
 const languages = Object.entries(languageFlags).map(([code, flag]) => ({ code, flag }));
 const topics = Object.entries(topicIcons).map(([name, icon]) => ({ name, icon }));
+const headerBackClassName =
+  "border-violet-200 bg-white px-4 py-2 text-sm font-semibold text-violet-700 hover:border-violet-300 hover:text-violet-800";
 
 const Communities = () => {
   const { user } = useAuth();
@@ -48,6 +52,8 @@ const Communities = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", language: "en", topic: "general" });
   const [managingCommunity, setManagingCommunity] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilter, setActiveFilter] = useState<"all" | "joined" | "managing">("all");
 
   const { data: communities, isLoading } = useQuery({
     queryKey: ["communities", user?.id],
@@ -117,6 +123,12 @@ const Communities = () => {
 
   const selectedCommunity = communities?.find((community) => community.id === managingCommunity) || null;
 
+  useEffect(() => {
+    if (!user && activeFilter !== "all") {
+      setActiveFilter("all");
+    }
+  }, [activeFilter, user]);
+
   const { data: managementData, isLoading: managementLoading } = useQuery({
     queryKey: ["community-management", managingCommunity, selectedCommunity?.created_by],
     enabled: Boolean(managingCommunity && selectedCommunity),
@@ -129,6 +141,29 @@ const Communities = () => {
       queryClient.invalidateQueries({ queryKey: ["community-management", managingCommunity] });
     }
   };
+
+  const visibleCommunities = useMemo(() => {
+    return (communities || []).filter((community) => {
+      const keyword = `${community.name} ${community.description || ""} ${community.language || ""} ${community.topic || ""}`.toLowerCase();
+      const matchesSearch = keyword.includes(searchTerm.toLowerCase());
+      const matchesFilter =
+        activeFilter === "all" ||
+        (activeFilter === "joined" && community.isMember) ||
+        (activeFilter === "managing" && community.canManage);
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [activeFilter, communities, searchTerm]);
+
+  const filterTabs = [
+    { key: "all" as const, label: "All" },
+    ...(user
+      ? [
+          { key: "joined" as const, label: "Joined" },
+          { key: "managing" as const, label: "Managing" },
+        ]
+      : []),
+  ];
 
   const createCommunity = useMutation({
     mutationFn: async () => {
@@ -186,86 +221,122 @@ const Communities = () => {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center">
-              <Users className="text-white" size={24} />
+      <div className="min-h-screen bg-background text-foreground">
+        <CatalogHeroHeader
+          title="Communities"
+          subtitle="Public circles with local moderation"
+          topLabel="Explore all communities"
+          backLinkClassName={headerBackClassName}
+          topLabelClassName="text-violet-700/75"
+        >
+          <div className="flex flex-col gap-4 md:flex-row">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search communities"
+                className="h-12 w-full rounded-full border border-input bg-background px-5 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-violet-500"
+              />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Communities</h1>
-              <p className="text-muted-foreground">Public spaces with local admins, moderation, and scoped posts.</p>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {filterTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveFilter(tab.key)}
+                  className={`h-10 rounded-full border px-6 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                    activeFilter === tab.key
+                      ? "border-violet-500 bg-violet-500 text-white"
+                      : "border-input text-muted-foreground hover:border-violet-400 hover:text-violet-600"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </div>
-          {user && (
-            <button
-              onClick={() => setShowCreate((current) => !current)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
-            >
-              <Plus size={16} /> Create
-            </button>
-          )}
-        </div>
+        </CatalogHeroHeader>
 
-        {showCreate && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="mb-8 p-6 rounded-xl border border-border bg-card"
-          >
-            <h3 className="font-bold text-foreground mb-4">Create a community</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                placeholder="Community name"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              <input
-                placeholder="Description"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              <select
-                value={form.language}
-                onChange={(e) => setForm({ ...form, language: e.target.value })}
-                className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                {languages.map((language) => (
-                  <option key={language.code} value={language.code}>
-                    {language.flag} {language.code.toUpperCase()}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={form.topic}
-                onChange={(e) => setForm({ ...form, topic: e.target.value })}
-                className="px-4 py-2 border border-border rounded-lg bg-secondary text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                {topics.map((topic) => (
-                  <option key={topic.name} value={topic.name}>
-                    {topic.icon} {topic.name}
-                  </option>
-                ))}
-              </select>
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-violet-600">
+                <Users className="text-white" size={24} />
+              </div>
+              <p className="text-sm font-medium">
+                {(communities || []).length} communit{(communities || []).length === 1 ? "y" : "ies"} available
+              </p>
             </div>
-            <button
-              onClick={() => form.name && createCommunity.mutate()}
-              disabled={!form.name}
-              className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 disabled:opacity-50"
-            >
-              Create Community
-            </button>
-          </motion.div>
-        )}
+            {user ? (
+              <button
+                onClick={() => setShowCreate((current) => !current)}
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                <Plus size={16} /> Create
+              </button>
+            ) : null}
+          </div>
 
-        {managingCommunity && selectedCommunity ? (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8 rounded-[1.75rem] border border-border bg-card p-6"
-          >
+          {showCreate && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="mb-8 rounded-xl border border-border bg-card p-6"
+            >
+              <h3 className="mb-4 font-bold text-foreground">Create a community</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <input
+                  placeholder="Community name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="rounded-lg border border-border bg-secondary px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <input
+                  placeholder="Description"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="rounded-lg border border-border bg-secondary px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <select
+                  value={form.language}
+                  onChange={(e) => setForm({ ...form, language: e.target.value })}
+                  className="rounded-lg border border-border bg-secondary px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {languages.map((language) => (
+                    <option key={language.code} value={language.code}>
+                      {language.flag} {language.code.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={form.topic}
+                  onChange={(e) => setForm({ ...form, topic: e.target.value })}
+                  className="rounded-lg border border-border bg-secondary px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {topics.map((topic) => (
+                    <option key={topic.name} value={topic.name}>
+                      {topic.icon} {topic.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={() => form.name && createCommunity.mutate()}
+                disabled={!form.name}
+                className="mt-4 rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                Create Community
+              </button>
+            </motion.div>
+          )}
+
+          {managingCommunity && selectedCommunity ? (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 rounded-[1.75rem] border border-border bg-card p-6"
+            >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="flex items-center gap-2">
@@ -455,28 +526,33 @@ const Communities = () => {
                 </div>
               </div>
             ) : null}
-          </motion.div>
-        ) : null}
+            </motion.div>
+          ) : null}
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((index) => (
-              <div key={index} className="h-40 bg-secondary animate-pulse rounded-xl" />
-            ))}
-          </div>
-        ) : (communities || []).length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
-            <Globe className="mx-auto mb-4 opacity-40" size={48} />
-            <p>No communities yet. Create the first one.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {communities!.map((community) => (
-              <motion.div
-                key={community.id}
-                whileHover={{ y: -2 }}
-                className="p-5 rounded-xl border border-border bg-card hover:border-primary/30 transition-colors"
-              >
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((index) => (
+                <div key={index} className="h-40 animate-pulse rounded-xl bg-secondary" />
+              ))}
+            </div>
+          ) : (communities || []).length === 0 ? (
+            <div className="py-16 text-center text-muted-foreground">
+              <Globe className="mx-auto mb-4 opacity-40" size={48} />
+              <p>No communities yet. Create the first one.</p>
+            </div>
+          ) : visibleCommunities.length === 0 ? (
+            <div className="rounded-[2rem] border border-border bg-card px-8 py-16 text-center">
+              <p className="text-lg font-medium text-foreground">No communities match your search.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Try a broader keyword or switch filters.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {visibleCommunities.map((community) => (
+                <motion.div
+                  key={community.id}
+                  whileHover={{ y: -2 }}
+                  className="rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
+                >
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-3xl">{topicIcons[community.topic] || "💬"}</span>
                   <div className="flex-1 min-w-0">
@@ -536,10 +612,11 @@ const Communities = () => {
                     )
                   ) : null}
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );
