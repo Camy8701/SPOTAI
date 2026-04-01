@@ -148,7 +148,7 @@ export const banCommunityUser = async (communityId: string, userId: string, reas
 };
 
 export const unbanCommunityUser = async (communityId: string, userId: string) => {
-  const { error } = await supabase.from("community_bans").delete().eq("community_id", communityId).eq("user_id", userId);
+  const { error } = await supabase.from("community_bans" as any).delete().eq("community_id", communityId).eq("user_id", userId);
   if (error) throw error;
 };
 
