@@ -165,7 +165,7 @@ export const removeGroupAdmin = async (groupId: string, userId: string) => {
 export const removeGroupMember = async (groupId: string, userId: string) => {
   const [memberRes, adminRes] = await Promise.all([
     supabase.from("group_members").delete().eq("group_id", groupId).eq("user_id", userId),
-    supabase.from("group_admins").delete().eq("group_id", groupId).eq("user_id", userId),
+    supabase.from("group_admins" as any).delete().eq("group_id", groupId).eq("user_id", userId),
   ]);
   if (memberRes.error) throw memberRes.error;
   if (adminRes.error) throw adminRes.error;
