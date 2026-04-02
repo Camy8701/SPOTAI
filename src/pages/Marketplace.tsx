@@ -1,56 +1,57 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Layout from "@/components/layout/Layout";
 import ShowcaseCard from "@/components/ui/showcase-card";
 import { Search } from "lucide-react";
 import CatalogHeroHeader from "@/components/ui/catalog-hero-header";
+import { digitalProducts, marketplaceFilterTabs } from "@/data/digital-products";
+import { supabase } from "@/integrations/supabase/client";
+import { getFreebieVisibility, getFreebieVisibilityMap } from "@/lib/freebie-visibility";
 
-const marketplaceItems = [
-  {
-    title: "Prompt Atlas Pro",
-    subtitle: "Prompt packs, templates, workflows",
-    tag: "Templates",
-    image:
-      "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?auto=format&fit=crop&w=1400&q=80",
-  },
-  {
-    title: "Creator Stack Kit",
-    subtitle: "Brand kits, content systems, dashboards",
-    tag: "Assets",
-    image:
-      "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1400&q=80",
-  },
-  {
-    title: "Agent Launch Playbook",
-    subtitle: "Step-by-step growth and launch guides",
-    tag: "Courses",
-    image:
-      "https://images.unsplash.com/photo-1516321165247-4aa89a48be28?auto=format&fit=crop&w=1400&q=80",
-  },
-  {
-    title: "Automation Bundle",
-    subtitle: "No-code flows, scripts, and presets",
-    tag: "AI Tools",
-    image:
-      "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1400&q=80",
-  },
-];
-
-const filterTabs = ["All", "Templates", "Assets", "Courses", "AI Tools"];
 const headerBackClassName =
   "border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-700 hover:border-amber-300 hover:text-amber-800";
 
 const Marketplace = () => {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("All");
+  const [freebies, setFreebies] = useState<any[]>([]);
+  const [visibilityMap, setVisibilityMap] = useState<Record<string, { marketplace: boolean; ebooks: boolean; homepage: boolean }>>({});
+
+  useEffect(() => {
+    setVisibilityMap(getFreebieVisibilityMap());
+    supabase
+      .from("freebies")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data) setFreebies(data);
+      });
+  }, []);
 
   const filteredItems = useMemo(() => {
-    return marketplaceItems.filter((item) => {
+    const mappedFreebies = freebies
+      .filter((item) => getFreebieVisibility(item, visibilityMap).marketplace)
+      .map((item) => {
+        const mappedTag = item.type === "podcast" ? "Assets" : "Courses";
+        return {
+          id: `freebie-${item.id}`,
+          title: item.title,
+          subtitle: item.description || "Digital resource from the freebie library.",
+          tag: mappedTag,
+          coverImage: item.cover_image || "/placeholder.svg",
+          keywords: [item.type, item.category, item.title, item.description].filter(Boolean).join(" ").split(" "),
+          href: item.file_url as string,
+        };
+      });
+
+    const collection = [...digitalProducts, ...mappedFreebies];
+
+    return collection.filter((item) => {
       const matchesTab = activeTab === "All" || item.tag === activeTab;
-      const keyword = `${item.title} ${item.subtitle} ${item.tag}`.toLowerCase();
+      const keyword = `${item.title} ${item.subtitle} ${item.tag} ${item.keywords.join(" ")}`.toLowerCase();
       const matchesSearch = keyword.includes(search.toLowerCase());
       return matchesTab && matchesSearch;
     });
-  }, [activeTab, search]);
+  }, [activeTab, freebies, search, visibilityMap]);
 
   return (
     <Layout>
@@ -74,7 +75,7 @@ const Marketplace = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              {filterTabs.map((tab) => (
+              {marketplaceFilterTabs.map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -100,11 +101,13 @@ const Marketplace = () => {
             <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
               {filteredItems.map((item) => (
                 <ShowcaseCard
-                  key={item.title}
+                  key={item.id}
                   title={item.title}
                   subtitle={item.subtitle}
                   tag={item.tag}
-                  image={item.image}
+                  image={item.coverImage}
+                  to={"slug" in item && item.slug ? `/marketplace/${item.slug}` : undefined}
+                  href={"href" in item ? item.href : undefined}
                   className="min-h-[32rem]"
                   imageClassName="h-[21rem]"
                 />

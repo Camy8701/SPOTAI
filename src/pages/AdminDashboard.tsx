@@ -91,6 +91,7 @@ import {
 } from "@/lib/publishing";
 import { learnAiCourses } from "@/data/learn-ai-courses";
 import { getLearnAICourseProgress, getLearnAIMetrics } from "@/lib/learn-ai-metrics";
+import { getFreebieVisibility, getFreebieVisibilityMap, upsertFreebieVisibility } from "@/lib/freebie-visibility";
 
 type Tab = "analytics" | "posts" | "users" | "quiz" | "social" | "freebies" | "images" | "prompts" | "learning";
 
@@ -2020,7 +2021,19 @@ function FreebiesTab() {
   const [items, setItems] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
-  const [form, setForm] = useState({ title: "", description: "", type: "ebook", category: "general", file_url: "", cover_image: "", audio_url: "" });
+  const [visibilityMap, setVisibilityMap] = useState<Record<string, { marketplace: boolean; ebooks: boolean; homepage: boolean }>>({});
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    type: "ebook",
+    category: "general",
+    file_url: "",
+    cover_image: "",
+    audio_url: "",
+    show_in_marketplace: false,
+    show_in_ebooks: true,
+    show_on_homepage: false,
+  });
 
   const load = () => {
     supabase.from("freebies").select("*").order("created_at", { ascending: false }).then(({ data }) => {
@@ -2028,17 +2041,43 @@ function FreebiesTab() {
     });
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    setVisibilityMap(getFreebieVisibilityMap());
+    load();
+  }, []);
 
   const openCreate = () => {
     setEditingItem(null);
-    setForm({ title: "", description: "", type: "ebook", category: "general", file_url: "", cover_image: "", audio_url: "" });
+    setForm({
+      title: "",
+      description: "",
+      type: "ebook",
+      category: "general",
+      file_url: "",
+      cover_image: "",
+      audio_url: "",
+      show_in_marketplace: false,
+      show_in_ebooks: true,
+      show_on_homepage: false,
+    });
     setDialogOpen(true);
   };
 
   const openEdit = (item: any) => {
+    const visibility = getFreebieVisibility(item, visibilityMap);
     setEditingItem(item);
-    setForm({ title: item.title, description: item.description || "", type: item.type, category: item.category, file_url: item.file_url, cover_image: item.cover_image || "", audio_url: item.audio_url || "" });
+    setForm({
+      title: item.title,
+      description: item.description || "",
+      type: item.type,
+      category: item.category,
+      file_url: item.file_url,
+      cover_image: item.cover_image || "",
+      audio_url: item.audio_url || "",
+      show_in_marketplace: visibility.marketplace,
+      show_in_ebooks: visibility.ebooks,
+      show_on_homepage: visibility.homepage,
+    });
     setDialogOpen(true);
   };
 
@@ -2047,12 +2086,35 @@ function FreebiesTab() {
       toast({ title: "Title and file URL are required", variant: "destructive" });
       return;
     }
+    const payload = {
+      title: form.title,
+      description: form.description,
+      type: form.type,
+      category: form.category,
+      file_url: form.file_url,
+      cover_image: form.cover_image,
+      audio_url: form.audio_url,
+    };
     if (editingItem) {
-      const { error } = await supabase.from("freebies").update(form).eq("id", editingItem.id);
+      const { error } = await supabase.from("freebies").update(payload).eq("id", editingItem.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      upsertFreebieVisibility(editingItem.id, {
+        marketplace: form.show_in_marketplace,
+        ebooks: form.show_in_ebooks,
+        homepage: form.show_on_homepage,
+      });
+      setVisibilityMap(getFreebieVisibilityMap());
     } else {
-      const { error } = await supabase.from("freebies").insert({ ...form, created_by: user?.id });
+      const { data, error } = await supabase.from("freebies").insert({ ...payload, created_by: user?.id }).select("id").single();
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      if (data?.id) {
+        upsertFreebieVisibility(data.id, {
+          marketplace: form.show_in_marketplace,
+          ebooks: form.show_in_ebooks,
+          homepage: form.show_on_homepage,
+        });
+        setVisibilityMap(getFreebieVisibilityMap());
+      }
     }
     toast({ title: editingItem ? "Freebie updated" : "Freebie created" });
     setDialogOpen(false);
@@ -2101,6 +2163,30 @@ function FreebiesTab() {
                 </SelectContent>
               </Select>
               <Input placeholder="Category (e.g. AI, Marketing)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+              <p className="text-sm font-semibold">Visibility placement</p>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium">Marketplace</p>
+                  <p className="text-xs text-muted-foreground">Show this item in the marketplace collection.</p>
+                </div>
+                <Switch checked={form.show_in_marketplace} onCheckedChange={(checked) => setForm({ ...form, show_in_marketplace: checked })} />
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium">Ebooks Library</p>
+                  <p className="text-xs text-muted-foreground">Show this item in the ebooks library page.</p>
+                </div>
+                <Switch checked={form.show_in_ebooks} onCheckedChange={(checked) => setForm({ ...form, show_in_ebooks: checked })} />
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium">Homepage Digital Products</p>
+                  <p className="text-xs text-muted-foreground">Show this item in the homepage digital products section.</p>
+                </div>
+                <Switch checked={form.show_on_homepage} onCheckedChange={(checked) => setForm({ ...form, show_on_homepage: checked })} />
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">File</label>
@@ -2161,6 +2247,7 @@ function FreebiesTab() {
               <TableHead>Title</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Visibility</TableHead>
               <TableHead>Audio</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -2177,6 +2264,21 @@ function FreebiesTab() {
                   </Badge>
                 </TableCell>
                 <TableCell className="capitalize">{item.category}</TableCell>
+                <TableCell>
+                  {(() => {
+                    const visibility = getFreebieVisibility(item, visibilityMap);
+                    return (
+                      <div className="flex flex-wrap gap-1.5">
+                        {visibility.homepage ? <Badge variant="outline">Homepage</Badge> : null}
+                        {visibility.marketplace ? <Badge variant="outline">Marketplace</Badge> : null}
+                        {visibility.ebooks ? <Badge variant="outline">Ebooks</Badge> : null}
+                        {!visibility.homepage && !visibility.marketplace && !visibility.ebooks ? (
+                          <span className="text-xs text-muted-foreground">Hidden</span>
+                        ) : null}
+                      </div>
+                    );
+                  })()}
+                </TableCell>
                 <TableCell className="text-muted-foreground text-xs">
                   {item.type === "podcast" ? "Primary audio" : item.audio_url ? "Companion audio" : "—"}
                 </TableCell>
@@ -2189,7 +2291,7 @@ function FreebiesTab() {
             ))}
             {items.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No freebies yet. Add your first ebook or podcast!</TableCell>
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">No freebies yet. Add your first ebook or podcast!</TableCell>
               </TableRow>
             )}
           </TableBody>

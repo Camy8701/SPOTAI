@@ -190,6 +190,30 @@ const buildNoCodeAutomationSections = (content: string): EditorialSection[] => {
   );
 };
 
+const splitMarkdownTableRow = (row: string) =>
+  row
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
+
+const parseMarkdownTable = (lines: string[]) => {
+  if (lines.length < 3) return null;
+  if (!lines[0].includes("|")) return null;
+  if (!/^\|?\s*[-:| ]+\|?\s*$/.test(lines[1])) return null;
+
+  const headers = splitMarkdownTableRow(lines[0]);
+  const rows = lines
+    .slice(2)
+    .filter((line) => line.includes("|"))
+    .map((line) => splitMarkdownTableRow(line))
+    .filter((row) => row.length > 0 && row.some((cell) => cell.length > 0));
+
+  if (headers.length === 0 || rows.length === 0) return null;
+  return { headers, rows };
+};
+
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user, profile } = useAuth();
@@ -670,15 +694,39 @@ const BlogPost = () => {
       );
     }
 
-    const isTableLike = lines.length >= 2 && lines.filter((line) => line.includes("|")).length >= 2;
-    if (isTableLike) {
+    const tableData = parseMarkdownTable(lines);
+    if (tableData) {
       return (
-        <pre
-          key={keyPrefix}
-          className="overflow-x-auto rounded-2xl border border-border bg-card p-4 text-sm leading-7 text-foreground/85"
-        >
-          {lines.join("\n")}
-        </pre>
+        <div key={keyPrefix} className="overflow-x-auto rounded-2xl border border-border bg-card">
+          <table className="min-w-full border-collapse text-left">
+            <thead className="bg-secondary">
+              <tr>
+                {tableData.headers.map((header, index) => (
+                  <th
+                    key={`${keyPrefix}-th-${index}`}
+                    className="border-b border-border px-4 py-3 text-sm font-semibold text-foreground"
+                  >
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tableData.rows.map((row, rowIndex) => (
+                <tr key={`${keyPrefix}-tr-${rowIndex}`} className="align-top">
+                  {tableData.headers.map((_, colIndex) => (
+                    <td
+                      key={`${keyPrefix}-td-${rowIndex}-${colIndex}`}
+                      className="border-b border-border px-4 py-3 text-sm leading-7 text-foreground/90"
+                    >
+                      {row[colIndex] || ""}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       );
     }
 
@@ -770,11 +818,11 @@ const BlogPost = () => {
               </div>
 
               {tocSections.length > 0 ? (
-                <div className="rounded-2xl border-2 border-indigo-300 bg-[#eef1ff] p-4 dark:border-indigo-500/40 dark:bg-indigo-500/15">
-                  <p className="text-xl font-black tracking-tight text-[#2f35ea] dark:text-indigo-100">
+                <div className="rounded-2xl border-2 border-[#5e69ff] bg-[#2f35ea] p-4">
+                  <p className="text-xl font-black tracking-tight text-white">
                     Table of contents
                   </p>
-                  <div className="mt-3 border-l-2 border-indigo-300 pl-3 dark:border-indigo-400/60">
+                  <div className="mt-3 border-l-2 border-white/35 pl-3">
                     <ul className="space-y-2">
                       {tocSections.map((section) => (
                         <li key={`toc-${section.id}`}>
@@ -787,9 +835,9 @@ const BlogPost = () => {
                               }
                             }}
                             className={`text-left leading-7 transition-colors ${
-                              /^\d+\.\s+/.test(section.title)
-                                ? "text-base font-extrabold text-[#2f35ea] hover:text-[#1f25c9] dark:text-indigo-200 dark:hover:text-indigo-100"
-                                : "text-[15px] font-semibold text-slate-700 hover:text-indigo-700 dark:text-slate-200 dark:hover:text-indigo-300"
+                              /^([1-9]|10)\.\s+/.test(section.title)
+                                ? "text-base font-extrabold text-white hover:text-white/90"
+                                : "text-[15px] font-semibold text-white/90 hover:text-white"
                             }`}
                           >
                             {section.title}
@@ -859,7 +907,7 @@ const BlogPost = () => {
                   <section key={section.id} id={section.id} className="scroll-mt-24">
                     <h2
                       className={`leading-tight tracking-tight text-foreground ${
-                        /^\d+\.\s+/.test(section.title)
+                        /^([1-9]|10)\.\s+/.test(section.title)
                           ? "text-5xl font-black"
                           : "text-4xl font-semibold"
                       }`}

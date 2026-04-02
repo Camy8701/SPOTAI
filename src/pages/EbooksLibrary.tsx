@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, BookOpen, Download, Headphones, Search } from "lucide-react";
+import { digitalProducts } from "@/data/digital-products";
+import { getFreebieVisibility, getFreebieVisibilityMap } from "@/lib/freebie-visibility";
 
 export default function EbooksLibrary() {
   const [ebooks, setEbooks] = useState<any[]>([]);
@@ -10,6 +12,11 @@ export default function EbooksLibrary() {
   const [category, setCategory] = useState("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [visibilityMap, setVisibilityMap] = useState<Record<string, { marketplace: boolean; ebooks: boolean; homepage: boolean }>>({});
+
+  useEffect(() => {
+    setVisibilityMap(getFreebieVisibilityMap());
+  }, []);
 
   useEffect(() => {
     supabase
@@ -29,13 +36,29 @@ export default function EbooksLibrary() {
 
   const filtered = useMemo(() => {
     return ebooks.filter((ebook) => {
+      const visibility = getFreebieVisibility(ebook, visibilityMap);
+      if (!visibility.ebooks) return false;
       const matchSearch =
         ebook.title.toLowerCase().includes(search.toLowerCase()) ||
         (ebook.description || "").toLowerCase().includes(search.toLowerCase());
       const matchCat = category === "all" || category === "free" || ebook.category === category;
       return matchSearch && matchCat;
     });
-  }, [ebooks, search, category]);
+  }, [ebooks, search, category, visibilityMap]);
+
+  const marketplaceCollection = useMemo(() => {
+    return digitalProducts.filter((item) => {
+      const text = `${item.title} ${item.subtitle} ${item.summary} ${item.tag} ${item.keywords.join(" ")}`.toLowerCase();
+      const matchSearch = text.includes(search.toLowerCase());
+      const normalizedCategory = category.toLowerCase();
+      const matchCat =
+        category === "all" ||
+        category === "free" ||
+        item.tag.toLowerCase().includes(normalizedCategory) ||
+        item.keywords.some((keyword) => keyword.toLowerCase().includes(normalizedCategory));
+      return matchSearch && matchCat;
+    });
+  }, [search, category]);
 
   const featured = filtered[0];
   const cards = filtered.slice(1);
@@ -241,6 +264,57 @@ export default function EbooksLibrary() {
                                 Listen
                               </a>
                             ) : null}
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {marketplaceCollection.length > 0 ? (
+                <div className="mt-12">
+                  <h3 className="text-4xl leading-none tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                    Marketplace Collection
+                  </h3>
+                  <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    {marketplaceCollection.map((item) => (
+                      <article key={item.id} className="overflow-hidden rounded-[1.7rem] border border-[#d6e2ff] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.05)] dark:border-blue-500/15 dark:bg-[#0f1728]">
+                        <div className="h-56 overflow-hidden">
+                          <img src={item.coverImage} alt={item.title} className="h-full w-full object-cover" loading="lazy" />
+                        </div>
+                        <div className="p-5">
+                          <span className="inline-flex rounded-full bg-blue-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-700 dark:bg-blue-500/10 dark:text-blue-200">
+                            {item.tag}
+                          </span>
+                          <h4 className="mt-3 text-2xl leading-tight text-foreground" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                            {item.title}
+                          </h4>
+                          <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                            {item.subtitle}
+                          </p>
+                          <div className="mt-5 flex items-center gap-3">
+                            <Link
+                              to={`/marketplace/${item.slug}`}
+                              className="inline-flex h-10 items-center rounded-full border border-blue-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/25 dark:text-blue-200 dark:hover:bg-blue-500/10"
+                            >
+                              Open
+                            </Link>
+                            <a
+                              href={item.fileUrl || "#"}
+                              download={Boolean(item.fileUrl)}
+                              onClick={(event) => {
+                                if (!item.fileUrl) event.preventDefault();
+                              }}
+                              className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
+                                item.fileUrl
+                                  ? "border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-500/25 dark:text-blue-200 dark:hover:bg-blue-500/10"
+                                  : "cursor-not-allowed border-border text-muted-foreground"
+                              }`}
+                              aria-label={`Download ${item.title}`}
+                            >
+                              <Download className="h-4 w-4" />
+                            </a>
                           </div>
                         </div>
                       </article>
