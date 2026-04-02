@@ -60,8 +60,7 @@ export default function EbooksLibrary() {
     });
   }, [search, category]);
 
-  const featured = filtered[0];
-  const cards = filtered.slice(1);
+  const cards = filtered;
 
   return (
     <Layout>
@@ -152,74 +151,17 @@ export default function EbooksLibrary() {
             </div>
           ) : (
             <>
-              {featured ? (
-                <div className="grid overflow-hidden rounded-[2rem] border border-[#d6e2ff] bg-card dark:border-blue-500/15 lg:grid-cols-2">
-                  <div className="min-h-[380px] bg-[#eef3ff] dark:bg-[#0f1627]">
-                    {featured.cover_image ? (
-                      <img
-                        src={featured.cover_image}
-                        alt={featured.title}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center">
-                        <BookOpen className="h-16 w-16 text-blue-600" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-center justify-center px-8 py-10 text-center">
-                    <span className="rounded-full border border-blue-200 bg-blue-100 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
-                      {featured.category || "Ebook"}
-                    </span>
-                    <h2 className="mt-5 text-4xl leading-tight tracking-tight text-foreground" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                      {featured.title}
-                    </h2>
-                    <p className="mt-4 max-w-md text-muted-foreground">{featured.description || "A featured ebook from the SPOTAI freebies library."}</p>
-                    <div className="mt-7 flex items-center gap-3">
-                      <a
-                        href={featured.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex h-11 items-center rounded-full border border-blue-600 bg-blue-600 px-6 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-blue-700"
-                      >
-                        Read
-                      </a>
-                      <a
-                        href={featured.file_url}
-                        download
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-blue-300 text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/25 dark:text-blue-200 dark:hover:bg-blue-500/10"
-                        aria-label={`Download ${featured.title}`}
-                      >
-                        <Download className="h-4 w-4" />
-                      </a>
-                      {featured.audio_url ? (
-                        <a
-                          href={featured.audio_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex h-11 items-center rounded-full border border-blue-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/25 dark:text-blue-200 dark:hover:bg-blue-500/10"
-                        >
-                          <Headphones className="mr-2 h-4 w-4" />
-                          Listen
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-                {cards.length > 0 ? (
-                  <div className="mt-12">
+              {cards.length > 0 ? (
+                  <div>
                     <h3 className="text-4xl leading-none tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
                       Featured Ebooks
                     </h3>
                     <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                       {cards.map((ebook) => (
                       <article key={ebook.id} className="overflow-hidden rounded-[1.7rem] border border-[#d6e2ff] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.05)] dark:border-blue-500/15 dark:bg-[#0f1728]">
-                        <div className="h-56 overflow-hidden">
+                        <div className="flex h-56 items-center justify-center overflow-hidden bg-[#eef3ff] dark:bg-[#0f1627]">
                           {ebook.cover_image ? (
-                            <img src={ebook.cover_image} alt={ebook.title} className="h-full w-full object-cover" loading="lazy" />
+                            <img src={ebook.cover_image} alt={ebook.title} className="h-full w-full object-contain p-2" loading="lazy" />
                           ) : (
                             <div className="flex h-full items-center justify-center">
                               <BookOpen className="h-14 w-14 text-blue-600" />
@@ -280,8 +222,8 @@ export default function EbooksLibrary() {
                   <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                     {marketplaceCollection.map((item) => (
                       <article key={item.id} className="overflow-hidden rounded-[1.7rem] border border-[#d6e2ff] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.05)] dark:border-blue-500/15 dark:bg-[#0f1728]">
-                        <div className="h-56 overflow-hidden">
-                          <img src={item.coverImage} alt={item.title} className="h-full w-full object-cover" loading="lazy" />
+                        <div className="flex h-56 items-center justify-center overflow-hidden bg-[#eef3ff] dark:bg-[#0f1627]">
+                          <img src={item.coverImage} alt={item.title} className="h-full w-full object-contain p-2" loading="lazy" />
                         </div>
                         <div className="p-5">
                           <span className="inline-flex rounded-full bg-blue-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-700 dark:bg-blue-500/10 dark:text-blue-200">

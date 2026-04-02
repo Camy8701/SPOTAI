@@ -12,6 +12,7 @@ interface ShowcaseCardProps {
   imageAlt?: string;
   className?: string;
   imageClassName?: string;
+  imageObjectClassName?: string;
 }
 
 const cardBody = ({
@@ -22,6 +23,7 @@ const cardBody = ({
   imageAlt,
   className,
   imageClassName,
+  imageObjectClassName,
 }: Omit<ShowcaseCardProps, "to" | "href">) => (
   <article
     className={cn(
@@ -39,7 +41,10 @@ const cardBody = ({
         <img
           src={image}
           alt={imageAlt || title}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          className={cn(
+            "h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]",
+            imageObjectClassName,
+          )}
           loading="lazy"
         />
       ) : null}

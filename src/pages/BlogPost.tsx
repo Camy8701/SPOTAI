@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { Heart, MessageCircle, Bookmark, Share2, ArrowLeft, Send, Trash2, Reply, ThumbsUp, Users, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { NEURALINK_STORY } from "@/data/fallback/neuralinkStory";
 import { NO_CODE_AUTOMATION_POST } from "@/data/fallback/noCodeAutomationPost";
+import { MANUS_AI_TOOL_POST } from "@/data/fallback/manusAiToolPost";
 import {
   Dialog,
   DialogContent,
@@ -214,6 +215,45 @@ const parseMarkdownTable = (lines: string[]) => {
   return { headers, rows };
 };
 
+const MANUS_REFERRAL_URL =
+  "https://manus.im/invitation/NCX3NE3ZNFW5MZH?utm_source=invitation&utm_medium=social&utm_campaign=copy_link";
+const MANUS_HIGHLIGHT_PATTERN = /\b(MANUS AI|MANUS)\b/gi;
+
+const renderManusReferralText = (text: string, enableHighlight: boolean): ReactNode => {
+  if (!enableHighlight || !text) return text;
+
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(MANUS_HIGHLIGHT_PATTERN)) {
+    const index = match.index ?? 0;
+    if (index > lastIndex) {
+      nodes.push(text.slice(lastIndex, index));
+    }
+
+    const label = match[0];
+    nodes.push(
+      <a
+        key={`manus-link-${index}-${label}`}
+        href={MANUS_REFERRAL_URL}
+        target="_blank"
+        rel="noreferrer"
+        className="font-semibold text-blue-600 underline decoration-blue-400 underline-offset-2 transition-colors hover:text-blue-700"
+      >
+        {label}
+      </a>,
+    );
+
+    lastIndex = index + label.length;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes.length > 0 ? nodes : text;
+};
+
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user, profile } = useAuth();
@@ -270,6 +310,14 @@ const BlogPost = () => {
     if (slug === NO_CODE_AUTOMATION_POST.slug) {
       setPost(NO_CODE_AUTOMATION_POST as unknown as BlogPostData);
       setAuthorName(NO_CODE_AUTOMATION_POST.author_name);
+      setRelatedPosts([]);
+      setLoading(false);
+      return;
+    }
+
+    if (slug === MANUS_AI_TOOL_POST.slug) {
+      setPost(MANUS_AI_TOOL_POST as unknown as BlogPostData);
+      setAuthorName(MANUS_AI_TOOL_POST.author_name);
       setRelatedPosts([]);
       setLoading(false);
       return;
@@ -624,9 +672,14 @@ const BlogPost = () => {
 
   const flatCommentCount = comments.reduce((sum, c) => sum + 1 + c.replies.length, 0);
   const isStaticFallbackPost =
-    post.id === NEURALINK_STORY.id || post.id === NO_CODE_AUTOMATION_POST.id;
+    post.id === NEURALINK_STORY.id ||
+    post.id === NO_CODE_AUTOMATION_POST.id ||
+    post.id === MANUS_AI_TOOL_POST.id;
+  const isManusSpotlightPost = post.id === MANUS_AI_TOOL_POST.id;
   const isEditorialNewsPost =
-    post.id === NO_CODE_AUTOMATION_POST.id || post.category?.toLowerCase() === "news";
+    post.id === NO_CODE_AUTOMATION_POST.id ||
+    post.id === MANUS_AI_TOOL_POST.id ||
+    post.category?.toLowerCase() === "news";
 
   const summaryPoints = (() => {
     if (post.id === NO_CODE_AUTOMATION_POST.id) {
@@ -634,6 +687,14 @@ const BlogPost = () => {
         "Traditional no-code tools are strongest for repetitive execution workflows and system handoffs.",
         "Context-aware AI agent layers add reasoning and planning where plain trigger-action automation hits limits.",
         "The practical strategy is layered: automate repeatable work first, then add AI context where judgment is required.",
+      ];
+    }
+
+    if (post.id === MANUS_AI_TOOL_POST.id) {
+      return [
+        "MANUS AI is positioned as an execution agent that combines planning, research, and implementation, not only code output.",
+        "The strongest fit appears when teams start with goals and ambiguity, not fully-detailed technical specs.",
+        "Lovable remains strong for clear-spec, fast-code scenarios, while MANUS AI is better for end-to-end delivery workflows.",
       ];
     }
 
@@ -677,7 +738,9 @@ const BlogPost = () => {
       return (
         <ul key={keyPrefix} className="list-disc space-y-2 pl-5 text-base leading-8 text-foreground/90">
           {lines.map((line, index) => (
-            <li key={`${keyPrefix}-li-${index}`}>{line.replace(/^[-*]\s+/, "")}</li>
+            <li key={`${keyPrefix}-li-${index}`}>
+              {renderManusReferralText(line.replace(/^[-*]\s+/, ""), isManusSpotlightPost)}
+            </li>
           ))}
         </ul>
       );
@@ -688,7 +751,9 @@ const BlogPost = () => {
       return (
         <ol key={keyPrefix} className="list-decimal space-y-2 pl-5 text-base leading-8 text-foreground/90">
           {lines.map((line, index) => (
-            <li key={`${keyPrefix}-ol-${index}`}>{line.replace(/^\d+\.\s+/, "")}</li>
+            <li key={`${keyPrefix}-ol-${index}`}>
+              {renderManusReferralText(line.replace(/^\d+\.\s+/, ""), isManusSpotlightPost)}
+            </li>
           ))}
         </ol>
       );
@@ -719,7 +784,7 @@ const BlogPost = () => {
                       key={`${keyPrefix}-td-${rowIndex}-${colIndex}`}
                       className="border-b border-border px-4 py-3 text-sm leading-7 text-foreground/90"
                     >
-                      {row[colIndex] || ""}
+                      {renderManusReferralText(row[colIndex] || "", isManusSpotlightPost)}
                     </td>
                   ))}
                 </tr>
@@ -730,13 +795,58 @@ const BlogPost = () => {
       );
     }
 
+    const imageLineMatches = lines
+      .map((line) => line.match(/^!\[(.*?)\]\((.*?)\)$/))
+      .filter((entry): entry is RegExpMatchArray => Boolean(entry));
+    if (imageLineMatches.length === lines.length) {
+      return (
+        <div key={keyPrefix} className="grid gap-4">
+          {imageLineMatches.map((match, index) => (
+            <figure
+              key={`${keyPrefix}-image-${index}`}
+              className="overflow-hidden rounded-2xl border border-border bg-card"
+            >
+              <img
+                src={match[2]}
+                alt={match[1] || "Article visual"}
+                className="h-auto w-full object-cover"
+                loading="lazy"
+              />
+              {match[1] ? (
+                <figcaption className="px-4 py-2 text-sm text-muted-foreground">{match[1]}</figcaption>
+              ) : null}
+            </figure>
+          ))}
+        </div>
+      );
+    }
+
     return (
       <div key={keyPrefix} className="space-y-4">
-        {lines.map((line, index) => (
-          <p key={`${keyPrefix}-p-${index}`} className="text-lg leading-8 text-foreground/90">
-            {line}
-          </p>
-        ))}
+        {lines.map((line, index) => {
+          const inlineImage = line.match(/^!\[(.*?)\]\((.*?)\)$/);
+          if (inlineImage) {
+            return (
+              <figure
+                key={`${keyPrefix}-inline-image-${index}`}
+                className="overflow-hidden rounded-2xl border border-border bg-card"
+              >
+                <img
+                  src={inlineImage[2]}
+                  alt={inlineImage[1] || "Article visual"}
+                  className="h-auto w-full object-cover"
+                  loading="lazy"
+                />
+              </figure>
+            );
+          }
+
+          return (
+            <p key={`${keyPrefix}-p-${index}`} className="text-lg leading-8 text-foreground/90">
+              {renderManusReferralText(line, isManusSpotlightPost)}
+            </p>
+          );
+        })}
       </div>
     );
   };
@@ -766,8 +876,14 @@ const BlogPost = () => {
               <span key={tag} className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs">{tag}</span>
             ))}
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold text-foreground leading-tight mb-4">{post.title}</h1>
-          {post.excerpt && <p className="text-lg text-muted-foreground mb-4">{post.excerpt}</p>}
+          <h1 className="text-3xl md:text-5xl font-bold text-foreground leading-tight mb-4">
+            {renderManusReferralText(post.title, isManusSpotlightPost)}
+          </h1>
+          {post.excerpt && (
+            <p className="text-lg text-muted-foreground mb-4">
+              {renderManusReferralText(post.excerpt, isManusSpotlightPost)}
+            </p>
+          )}
           {post.audio_url && (
             <div className="mb-5">
               <motion.button
@@ -803,8 +919,8 @@ const BlogPost = () => {
         <div className={isEditorialNewsPost ? "grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]" : ""}>
           {isEditorialNewsPost ? (
             <aside className="space-y-5 lg:sticky lg:top-24 self-start">
-              <div className="rounded-3xl border border-blue-600/40 bg-[#2f35ea] p-6 text-white">
-                <h3 className="text-3xl font-black leading-tight">
+              <div className="rounded-3xl border border-slate-200/80 bg-white/65 p-6 text-slate-900 shadow-[0_14px_34px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-white/15 dark:bg-[#0f1728]/55 dark:text-white dark:shadow-[0_18px_40px_rgba(2,6,23,0.35)]">
+                <h3 className="text-3xl font-black leading-tight text-slate-900 dark:text-white">
                   Want to learn more?
                   <br />
                   Click here.
@@ -818,11 +934,11 @@ const BlogPost = () => {
               </div>
 
               {tocSections.length > 0 ? (
-                <div className="rounded-2xl border-2 border-[#5e69ff] bg-[#2f35ea] p-4">
-                  <p className="text-xl font-black tracking-tight text-white">
+                <div className="rounded-2xl border border-slate-200/80 bg-white/65 p-4 shadow-[0_14px_34px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-white/15 dark:bg-[#0f1728]/55 dark:shadow-[0_18px_40px_rgba(2,6,23,0.35)]">
+                  <p className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
                     Table of contents
                   </p>
-                  <div className="mt-3 border-l-2 border-white/35 pl-3">
+                  <div className="mt-3 border-l-2 border-slate-300/90 pl-3 dark:border-white/35">
                     <ul className="space-y-2">
                       {tocSections.map((section) => (
                         <li key={`toc-${section.id}`}>
@@ -836,8 +952,8 @@ const BlogPost = () => {
                             }}
                             className={`text-left leading-7 transition-colors ${
                               /^([1-9]|10)\.\s+/.test(section.title)
-                                ? "text-base font-extrabold text-white hover:text-white/90"
-                                : "text-[15px] font-semibold text-white/90 hover:text-white"
+                                ? "text-base font-extrabold text-slate-900 hover:text-slate-700 dark:text-white dark:hover:text-white/90"
+                                : "text-[15px] font-semibold text-slate-800/90 hover:text-slate-900 dark:text-white/90 dark:hover:text-white"
                             }`}
                           >
                             {section.title}
@@ -895,7 +1011,9 @@ const BlogPost = () => {
                 <p className="text-sm font-semibold text-indigo-700">AI Summary by SpotAI</p>
                 <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-foreground/90">
                   {summaryPoints.map((point, index) => (
-                    <li key={`${point}-${index}`}>{point}</li>
+                    <li key={`${point}-${index}`}>
+                      {renderManusReferralText(point, isManusSpotlightPost)}
+                    </li>
                   ))}
                 </ul>
               </section>
@@ -913,7 +1031,7 @@ const BlogPost = () => {
                       }`}
                       style={{ fontFamily: '"Singo Sans", Georgia, serif' }}
                     >
-                      {section.title}
+                      {renderManusReferralText(section.title, isManusSpotlightPost)}
                     </h2>
                     <div className="mt-5 space-y-5">
                       {section.blocks.map((block, index) =>

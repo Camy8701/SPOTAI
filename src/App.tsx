@@ -45,6 +45,7 @@ import { hasCompletedOnboarding } from "@/lib/profile";
 import ProfileSettings from "./pages/ProfileSettings";
 import UserProfile from "./pages/UserProfile";
 import AccountRestricted from "./pages/AccountRestricted";
+import ScrollToTop from "@/components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <LearnAIProvider>
             <Routes>

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { shouldShowPostInLibrarySection } from "@/lib/publishing";
 import { addNeuralinkLead } from "@/data/fallback/neuralinkStory";
 import { addNoCodeLead } from "@/data/fallback/noCodeAutomationPost";
+import { addManusToolLead } from "@/data/fallback/manusAiToolPost";
 
 const SECTION_LABELS: Record<string, string> = {
   all: "All Posts",
@@ -109,7 +110,7 @@ const Library = () => {
         .order("created_at", { ascending: false });
 
       const { data } = await q;
-      setPosts(addNoCodeLead(addNeuralinkLead(data || [])));
+      setPosts(addManusToolLead(addNoCodeLead(addNeuralinkLead(data || []))));
       setLoading(false);
     };
     fetchPosts();

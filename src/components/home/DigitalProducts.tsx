@@ -62,8 +62,8 @@ const DigitalProducts = () => {
           <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3">
             {featuredProducts.map((product) => (
               <article key={product.id} className="flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-white">
-                <div className="relative h-44 overflow-hidden">
-                  <img src={product.coverImage} alt={product.title} className="h-full w-full object-cover" loading="lazy" />
+                <div className="relative flex h-44 items-center justify-center overflow-hidden bg-[#eef3ff]">
+                  <img src={product.coverImage} alt={product.title} className="h-full w-full object-contain p-2" loading="lazy" />
                   <span className="absolute left-3 top-3 rounded-full border border-white/35 bg-black/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white">
                     {product.tag}
                   </span>

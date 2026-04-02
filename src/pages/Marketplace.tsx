@@ -109,7 +109,8 @@ const Marketplace = () => {
                   to={"slug" in item && item.slug ? `/marketplace/${item.slug}` : undefined}
                   href={"href" in item ? item.href : undefined}
                   className="min-h-[32rem]"
-                  imageClassName="h-[21rem]"
+                  imageClassName="h-[21rem] bg-[#eef3ff] dark:bg-[#0f1627]"
+                  imageObjectClassName="object-contain p-3"
                 />
               ))}
             </div>

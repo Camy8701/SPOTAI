@@ -14,13 +14,15 @@ import NewsArticles from "@/components/home/NewsArticles";
 import GamesSection from "@/components/home/GamesSection";
 import ConnectSection from "@/components/home/ConnectSection";
 import { NEURALINK_STORY, addNeuralinkLead } from "@/data/fallback/neuralinkStory";
-import { NO_CODE_AUTOMATION_POST, addNoCodeLead } from "@/data/fallback/noCodeAutomationPost";
+import { addNoCodeLead } from "@/data/fallback/noCodeAutomationPost";
+import { addManusToolLead } from "@/data/fallback/manusAiToolPost";
 
 const getFallbackForSection = (section: string, limit: number) => {
   if (section === "hero") return [NEURALINK_STORY];
   if (section === "featured_stories") return addNeuralinkLead([], limit);
   if (section === "featured_collections") return addNeuralinkLead([], limit);
   if (section === "news_articles") return addNoCodeLead([], limit);
+  if (section === "best_ai_tools") return addManusToolLead([], limit);
   return [];
 };
 
@@ -52,6 +54,10 @@ const fetchPostsBySection = async (section: string, limit: number) => {
 
   if (section === "news_articles") {
     return addNoCodeLead(rows, limit);
+  }
+
+  if (section === "best_ai_tools") {
+    return addManusToolLead(rows, limit);
   }
 
   return rows;
