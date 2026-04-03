@@ -27,10 +27,11 @@ const CreatePost = () => {
   const [selectedCommunityId, setSelectedCommunityId] = useState<string>(initialCommunityId || "");
   const [selectedGroupId, setSelectedGroupId] = useState<string>(initialGroupId || "");
 
-  if (!user) {
-    navigate("/auth");
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+    }
+  }, [navigate, user]);
 
   useEffect(() => {
     const loadScopes = async () => {
@@ -98,6 +99,12 @@ const CreatePost = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast({ title: "Error", description: "Please sign in before posting.", variant: "destructive" });
+      navigate("/auth");
+      return;
+    }
+
     if (!title.trim() || !content.trim()) {
       toast({ title: "Error", description: "Title and content are required.", variant: "destructive" });
       return;
@@ -142,6 +149,10 @@ const CreatePost = () => {
       navigate(scopeType === "group" ? "/groups" : scopeType === "community" ? "/communities" : "/dashboard");
     }
   };
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <Layout>

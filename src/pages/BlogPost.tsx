@@ -259,10 +259,6 @@ const BlogPost = () => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
 
-  if (user && profile?.is_platform_banned) {
-    return <Navigate to="/account-restricted" replace />;
-  }
-
   const [post, setPost] = useState<BlogPostData | null>(null);
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -643,6 +639,10 @@ const BlogPost = () => {
       )}
     </motion.div>
   );
+
+  if (user && profile?.is_platform_banned) {
+    return <Navigate to="/account-restricted" replace />;
+  }
 
   if (loading) {
     return (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Award, CheckCircle2, RotateCcw, Trophy } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
@@ -16,21 +16,42 @@ const LearnAIResults = () => {
   const course = slug ? getLearnAiCourseBySlug(slug) : null;
   const { profile, user } = useAuth();
   const { getCourseState, submitAssessment, clearAssessment } = useLearnAI();
+  const courseState = course ? getCourseState(course.slug) : null;
+  const existingAssessment = courseState?.assessment ?? null;
+  const [answers, setAnswers] = useState<Record<string, string>>(existingAssessment?.answers || {});
+  const [showAnswers, setShowAnswers] = useState(Boolean(existingAssessment));
+
+  useEffect(() => {
+    if (existingAssessment) {
+      setAnswers((current) => {
+        const next = existingAssessment.answers;
+        const same =
+          Object.keys(current).length === Object.keys(next).length &&
+          Object.entries(next).every(([key, value]) => current[key] === value);
+        return same ? current : next;
+      });
+      setShowAnswers((current) => (current ? current : true));
+      return;
+    }
+
+    setAnswers((current) => (Object.keys(current).length === 0 ? current : {}));
+    setShowAnswers((current) => (current ? false : current));
+  }, [existingAssessment]);
 
   if (!course) {
     return <Navigate to="/learn-ai" replace />;
   }
 
-  const courseState = getCourseState(course.slug);
+  if (!courseState) {
+    return <Navigate to="/learn-ai" replace />;
+  }
+
   const allLessonsComplete = courseState.completedLessonIds.length === course.lessons.length;
 
   if (!allLessonsComplete) {
     return <Navigate to={`/learn-ai/${course.slug}`} replace />;
   }
 
-  const existingAssessment = courseState.assessment;
-  const [answers, setAnswers] = useState<Record<string, string>>(existingAssessment?.answers || {});
-  const [showAnswers, setShowAnswers] = useState(Boolean(existingAssessment));
   const scorePercent = existingAssessment
     ? Math.round((existingAssessment.score / existingAssessment.total) * 100)
     : 0;
