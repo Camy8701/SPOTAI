@@ -27,6 +27,8 @@ import Library from "./pages/Library";
 import CreatePost from "./pages/CreatePost";
 import Marketplace from "./pages/Marketplace";
 import MarketplaceProductDetail from "./pages/MarketplaceProductDetail";
+import MarketplaceTemplateDetail from "./pages/MarketplaceTemplateDetail";
+import MarketplaceTemplateCode from "./pages/MarketplaceTemplateCode";
 import Popular from "./pages/Popular";
 import Messages from "./pages/Messages";
 import Communities from "./pages/Communities";
@@ -129,6 +131,8 @@ const App = () => (
               <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
               <Route path="/create-post" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
               <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
+              <Route path="/marketplace/templates/:slug" element={<ProtectedRoute><MarketplaceTemplateDetail /></ProtectedRoute>} />
+              <Route path="/marketplace/templates/:slug/code" element={<ProtectedRoute><MarketplaceTemplateCode /></ProtectedRoute>} />
               <Route path="/marketplace/:slug" element={<ProtectedRoute><MarketplaceProductDetail /></ProtectedRoute>} />
               <Route path="/popular" element={<ProtectedRoute><Popular /></ProtectedRoute>} />
               <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />

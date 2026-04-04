@@ -90,10 +90,17 @@ import {
   type HomepagePlacementChoice,
 } from "@/lib/publishing";
 import { learnAiCourses } from "@/data/learn-ai-courses";
+import { websiteTemplates } from "@/data/website-templates";
 import { getLearnAICourseProgress, getLearnAIMetrics } from "@/lib/learn-ai-metrics";
 import { getFreebieVisibility, getFreebieVisibilityMap, upsertFreebieVisibility } from "@/lib/freebie-visibility";
+import {
+  getWebsiteTemplateAccess,
+  getWebsiteTemplateAccessMap,
+  upsertWebsiteTemplateAccess,
+  type WebsiteTemplateAccess,
+} from "@/lib/website-template-access";
 
-type Tab = "analytics" | "posts" | "users" | "quiz" | "social" | "freebies" | "images" | "prompts" | "learning";
+type Tab = "analytics" | "posts" | "users" | "quiz" | "social" | "freebies" | "templates" | "images" | "prompts" | "learning";
 
 // ─── Analytics / Overview Tab ───
 function AnalyticsOverviewTab() {
@@ -2301,6 +2308,86 @@ function FreebiesTab() {
   );
 }
 
+function TemplatesTab() {
+  const { toast } = useToast();
+  const [accessMap, setAccessMap] = useState<Record<string, WebsiteTemplateAccess>>({});
+
+  useEffect(() => {
+    const sync = () => setAccessMap(getWebsiteTemplateAccessMap());
+    sync();
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+
+  const updateAccess = (id: string, access: WebsiteTemplateAccess) => {
+    upsertWebsiteTemplateAccess(id, access);
+    setAccessMap(getWebsiteTemplateAccessMap());
+    toast({
+      title: "Template access updated",
+      description: `This template is now marked as ${access}.`,
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-black uppercase tracking-tight">Website Templates ({websiteTemplates.length})</h2>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-4 text-sm leading-6 text-muted-foreground">
+        Template access is managed here independently from digital products. Right now this access map is stored in local admin browser storage, so it is safe to test without changing the existing Supabase freebies flow.
+      </div>
+
+      <div className="overflow-hidden rounded-xl border-2 border-dashed border-border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Template</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Author</TableHead>
+              <TableHead>Preview Label</TableHead>
+              <TableHead>Access</TableHead>
+              <TableHead>Route</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {websiteTemplates.map((template) => {
+              const access = getWebsiteTemplateAccess(template, accessMap);
+              return (
+                <TableRow key={template.id}>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{template.title}</p>
+                      <p className="mt-1 max-w-[26rem] text-xs text-muted-foreground">{template.shortDescription}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>{template.category}</TableCell>
+                  <TableCell>{template.author}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{template.previewLabel}</TableCell>
+                  <TableCell>
+                    <Select value={access} onValueChange={(value) => updateAccess(template.id, value as WebsiteTemplateAccess)}>
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="free">Free</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    /marketplace/templates/{template.slug}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Image Library Tab ───
 function ImagesTab() {
   const { toast } = useToast();
@@ -3010,7 +3097,7 @@ export default function AdminDashboard() {
 
     if (
       requestedTab &&
-      ["analytics", "posts", "users", "quiz", "social", "freebies", "images", "prompts", "learning"].includes(requestedTab)
+      ["analytics", "posts", "users", "quiz", "social", "freebies", "templates", "images", "prompts", "learning"].includes(requestedTab)
     ) {
       setTab(requestedTab as Tab);
     }
@@ -3036,6 +3123,7 @@ export default function AdminDashboard() {
     { label: "Quiz", key: "quiz", icon: HelpCircle, visible: permissions.manage_quiz },
     { label: "Social", key: "social", icon: UsersRound, visible: permissions.manage_social },
     { label: "Freebies", key: "freebies", icon: Gift, visible: permissions.manage_media || permissions.manage_tools },
+    { label: "Templates", key: "templates", icon: Globe, visible: permissions.manage_media || permissions.manage_tools },
     { label: "Images", key: "images", icon: Images, visible: permissions.manage_media },
     { label: "Prompts", key: "prompts", icon: Sparkles, visible: permissions.manage_media },
     { label: "Learning", key: "learning", icon: GraduationCap, visible: true },
@@ -3051,6 +3139,7 @@ export default function AdminDashboard() {
     quiz: <QuizTab />,
     social: <SocialTab />,
     freebies: <FreebiesTab />,
+    templates: <TemplatesTab />,
     images: <ImagesTab />,
     prompts: <PromptsTab />,
     learning: <LearningTab />,

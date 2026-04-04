@@ -53,38 +53,6 @@ const SECTION_ACCENTS: Record<string, { tint: string; active: string; hover: str
   },
 };
 
-const FILTER_OPTIONS = {
-  team: [
-    { label: "All teams", value: "all" },
-    { label: "Product", value: "product" },
-    { label: "Engineering", value: "engineering" },
-    { label: "Marketing", value: "marketing" },
-  ],
-  industry: [
-    { label: "All industries", value: "all" },
-    { label: "SaaS", value: "saas" },
-    { label: "Finance", value: "finance" },
-    { label: "Healthcare", value: "healthcare" },
-  ],
-  area: [
-    { label: "All product areas", value: "all" },
-    { label: "Automation", value: "automation" },
-    { label: "AI Agents", value: "ai-agents" },
-    { label: "Integrations", value: "integrations" },
-    { label: "Security", value: "security" },
-  ],
-  topic: [
-    { label: "All topics", value: "all" },
-    { label: "AI Assistant", value: "ai-assistant" },
-    { label: "AI Agents", value: "ai-agents" },
-    { label: "Enterprise Search", value: "enterprise-search" },
-    { label: "Security", value: "security" },
-    { label: "Integrations", value: "integrations" },
-    { label: "Data", value: "data" },
-    { label: "APIs", value: "apis" },
-  ],
-};
-
 const Library = () => {
   const [params] = useSearchParams();
   const section = params.get("section") || "all";
@@ -93,10 +61,6 @@ const Library = () => {
   const [loading, setLoading] = useState(true);
   const [audio, setAudio] = useState<{ src: string; title: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [teamFilter, setTeamFilter] = useState("all");
-  const [industryFilter, setIndustryFilter] = useState("all");
-  const [areaFilter, setAreaFilter] = useState("all");
-  const [topicFilter, setTopicFilter] = useState("all");
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -121,36 +85,15 @@ const Library = () => {
   const accent = SECTION_ACCENTS[section] || SECTION_ACCENTS[category] || SECTION_ACCENTS.featured_collections;
   const newsBackClassName =
     "border-orange-200 bg-white px-4 py-2 text-sm font-semibold text-orange-700 hover:border-orange-300 hover:text-orange-800";
-  const resetNewsFilters = () => {
-    setTeamFilter("all");
-    setIndustryFilter("all");
-    setAreaFilter("all");
-    setTopicFilter("all");
-    setSearchTerm("");
-  };
 
   const visiblePosts = useMemo(() => {
     return posts.filter((post) => {
       const text = `${post.title} ${post.excerpt || ""} ${post.category || ""} ${post.post_kind || ""}`.toLowerCase();
       const matchesSearch = text.includes(searchTerm.toLowerCase());
       const matchesSection = shouldShowPostInLibrarySection(post, section, category);
-      const tags = Array.isArray(post.tags)
-        ? post.tags.map((tag: string) => tag.toLowerCase())
-        : [];
-
-      const matchFilter = (scope: "team" | "industry" | "area" | "topic", value: string) => {
-        if (value === "all") return true;
-        return tags.includes(`${scope}:${value}`) || tags.includes(value);
-      };
-
-      const matchesTeam = matchFilter("team", teamFilter);
-      const matchesIndustry = matchFilter("industry", industryFilter);
-      const matchesArea = matchFilter("area", areaFilter);
-      const matchesTopic = matchFilter("topic", topicFilter);
-
-      return matchesSearch && matchesSection && matchesTeam && matchesIndustry && matchesArea && matchesTopic;
+      return matchesSearch && matchesSection;
     });
-  }, [posts, searchTerm, section, category, teamFilter, industryFilter, areaFilter, topicFilter]);
+  }, [posts, searchTerm, section, category]);
 
   const featuredNews = isNewsView ? visiblePosts[0] : null;
   const secondaryNews = isNewsView ? visiblePosts.slice(1) : [];
@@ -204,59 +147,6 @@ const Library = () => {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <select
-                value={teamFilter}
-                onChange={(event) => setTeamFilter(event.target.value)}
-                className="h-10 rounded-full border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-orange-400"
-              >
-                {FILTER_OPTIONS.team.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={industryFilter}
-                onChange={(event) => setIndustryFilter(event.target.value)}
-                className="h-10 rounded-full border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-orange-400"
-              >
-                {FILTER_OPTIONS.industry.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={areaFilter}
-                onChange={(event) => setAreaFilter(event.target.value)}
-                className="h-10 rounded-full border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-orange-400"
-              >
-                {FILTER_OPTIONS.area.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={topicFilter}
-                onChange={(event) => setTopicFilter(event.target.value)}
-                className="h-10 rounded-full border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-orange-400"
-              >
-                {FILTER_OPTIONS.topic.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={resetNewsFilters}
-                className="inline-flex h-10 items-center rounded-full border border-orange-300 px-4 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-50"
-              >
-                Reset Filters
-              </button>
-            </div>
           </CatalogHeroHeader>
 
           <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
