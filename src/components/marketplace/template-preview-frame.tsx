@@ -25,7 +25,6 @@ const DEVICE_CONFIG: Record<WebsiteTemplateDevice, { label: string; icon: typeof
 type TemplatePreviewFrameProps = {
   code: string;
   title: string;
-  previewLabel: string;
   device: WebsiteTemplateDevice;
   onDeviceChange?: (device: WebsiteTemplateDevice) => void;
   actions?: ReactNode;
@@ -37,7 +36,6 @@ type TemplatePreviewFrameProps = {
 export function TemplatePreviewFrame({
   code,
   title,
-  previewLabel,
   device,
   onDeviceChange,
   actions,
@@ -57,12 +55,6 @@ export function TemplatePreviewFrame({
           <span className="h-2.5 w-2.5 rounded-full bg-[#d6d8dd]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#d6d8dd]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#d6d8dd]" />
-        </div>
-
-        <div className="hidden min-w-0 flex-1 justify-center md:flex">
-          <div className="max-w-[18rem] truncate rounded-full border border-black/8 bg-white px-4 py-1 text-center text-[11px] font-medium text-slate-500 shadow-sm">
-            {previewLabel}
-          </div>
         </div>
 
         <div className="ml-auto flex items-center gap-2">

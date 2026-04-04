@@ -19,7 +19,6 @@ export function WebsiteTemplateCard({ template, access }: WebsiteTemplateCardPro
       <TemplatePreviewFrame
         code={template.code}
         title={template.title}
-        previewLabel={template.previewLabel}
         device="desktop"
         compact
         interactive={false}
