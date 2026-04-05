@@ -297,7 +297,7 @@ const BlogPost = () => {
   const fetchPost = async () => {
     if (slug === NEURALINK_STORY.slug) {
       setPost(NEURALINK_STORY as BlogPostData);
-      setAuthorName("Elena Vasquez");
+      setAuthorName("Elena Marole");
       setRelatedPosts([]);
       setLoading(false);
       return;

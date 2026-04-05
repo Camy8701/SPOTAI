@@ -153,7 +153,7 @@ Because in the end, what makes us human isn't our bodies or our biology - it's o
 
 And sometimes, to choose resistance when the whole world demands surrender.
 
-This is Elena Vasquez, forty-nine years old for one more day, signing off. If someone finds this recording, remember us not as we became, but as we were: flawed, mortal, beautiful, and irreplaceably human.
+This is Elena Marole, forty-nine years old for one more day, signing off. If someone finds this recording, remember us not as we became, but as we were: flawed, mortal, beautiful, and irreplaceably human.
 
 The future is still unwritten, and as long as someone remembers what we were, perhaps someone can still choose what we might become.
 
@@ -165,7 +165,7 @@ export const NEURALINK_STORY: FallbackStoryPost = {
   slug: "neuralink",
   content: NEURALINK_STORY_CONTENT,
   excerpt:
-    "In 2035, Elena Vasquez faces Europe's Neuralink Transition Program and chooses resistance over surrender in a world replacing humanity with synthetic eternity.",
+    "In 2035, Elena Marole faces Europe's Neuralink Transition Program and chooses resistance over surrender in a world replacing humanity with synthetic eternity.",
   featured_image: "/images/neuralink-thumbnail-v2.png",
   category: "story",
   tags: ["ai-story", "dystopia", "neuralink"],
