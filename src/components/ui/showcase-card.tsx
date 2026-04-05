@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,7 @@ interface ShowcaseCardProps {
   className?: string;
   imageClassName?: string;
   imageObjectClassName?: string;
+  imageOverlay?: ReactNode;
 }
 
 const cardBody = ({
@@ -24,6 +26,7 @@ const cardBody = ({
   className,
   imageClassName,
   imageObjectClassName,
+  imageOverlay,
 }: Omit<ShowcaseCardProps, "to" | "href">) => (
   <article
     className={cn(
@@ -48,6 +51,8 @@ const cardBody = ({
           loading="lazy"
         />
       ) : null}
+
+      {imageOverlay ? <div className="absolute inset-0">{imageOverlay}</div> : null}
 
       <span className="absolute bottom-4 left-4 rounded-full bg-[#151515] px-4 py-1 text-xs font-semibold tracking-wide text-white">
         {tag}

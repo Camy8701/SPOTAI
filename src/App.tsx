@@ -39,6 +39,7 @@ import LearnAILesson from "./pages/LearnAILesson";
 import LearnAIResults from "./pages/LearnAIResults";
 import EbooksLibrary from "./pages/EbooksLibrary";
 import PodcastLibrary from "./pages/PodcastLibrary";
+import PodcastCollectionDetail from "./pages/PodcastCollectionDetail";
 import ImageLibrary from "./pages/ImageLibrary";
 import PromptLibrary from "./pages/PromptLibrary";
 import PromptLibraryDetail from "./pages/PromptLibraryDetail";
@@ -144,6 +145,7 @@ const App = () => (
               <Route path="/learn-ai/:slug/results" element={<ProtectedRoute><LearnAIResults /></ProtectedRoute>} />
               <Route path="/freebies/ebooks" element={<ProtectedRoute><EbooksLibrary /></ProtectedRoute>} />
               <Route path="/freebies/podcasts" element={<ProtectedRoute><PodcastLibrary /></ProtectedRoute>} />
+              <Route path="/freebies/podcasts/:slug" element={<ProtectedRoute><PodcastCollectionDetail /></ProtectedRoute>} />
               <Route path="/image-library" element={<ProtectedRoute><ImageLibrary /></ProtectedRoute>} />
               <Route path="/prompt-library" element={<ProtectedRoute><PromptLibrary /></ProtectedRoute>} />
               <Route path="/prompt-library/:id" element={<ProtectedRoute><PromptLibraryDetail /></ProtectedRoute>} />

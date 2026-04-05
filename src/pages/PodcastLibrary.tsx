@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Download, Headphones, Search } from "lucide-react";
+import { ArrowLeft, Headphones, Play, Search } from "lucide-react";
+import ShowcaseCard from "@/components/ui/showcase-card";
+import { buildPodcastCollections } from "@/data/podcast-library";
 
 export default function PodcastLibrary() {
   const [podcasts, setPodcasts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,27 +19,30 @@ export default function PodcastLibrary() {
       .eq("type", "podcast")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
-        if (data) {
-          setPodcasts(data);
-          const cats = [...new Set(data.map((item) => item.category).filter(Boolean))] as string[];
-          setCategories(cats);
-        }
+        if (data) setPodcasts(data);
         setLoading(false);
       });
   }, []);
 
+  const libraryItems = useMemo(() => {
+    return buildPodcastCollections(podcasts);
+  }, [podcasts]);
+
+  const categories = useMemo(() => {
+    return [...new Set(libraryItems.map((item) => item.category).filter(Boolean))] as string[];
+  }, [libraryItems]);
+
   const filtered = useMemo(() => {
-    return podcasts.filter((podcast) => {
+    return libraryItems.filter((podcast) => {
       const matchSearch =
         podcast.title.toLowerCase().includes(search.toLowerCase()) ||
-        (podcast.description || "").toLowerCase().includes(search.toLowerCase());
+        podcast.description.toLowerCase().includes(search.toLowerCase()) ||
+        podcast.summary.toLowerCase().includes(search.toLowerCase()) ||
+        podcast.keywords.some((keyword) => keyword.includes(search.toLowerCase()));
       const matchCat = category === "all" || podcast.category === category;
       return matchSearch && matchCat;
     });
-  }, [podcasts, search, category]);
-
-  const featured = filtered[0];
-  const cards = filtered.slice(1);
+  }, [libraryItems, search, category]);
 
   return (
     <Layout>
@@ -88,7 +92,7 @@ export default function PodcastLibrary() {
                 >
                   All
                 </button>
-                {categories.slice(0, 4).map((cat) => (
+                {categories.slice(0, 6).map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setCategory(cat)}
@@ -118,105 +122,41 @@ export default function PodcastLibrary() {
               <p className="mt-2 text-muted-foreground">Try another search or category.</p>
             </div>
           ) : (
-            <>
-              {featured ? (
-                <div className="grid overflow-hidden rounded-[2rem] border border-[#dfd8ff] bg-card dark:border-violet-500/15 lg:grid-cols-2">
-                  <div className="min-h-[380px] bg-[#f2efff] dark:bg-[#101425]">
-                    {featured.cover_image ? (
-                      <img
-                        src={featured.cover_image}
-                        alt={featured.title}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center">
-                        <Headphones className="h-16 w-16 text-violet-600" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-center justify-center px-8 py-10 text-center">
-                    <span className="rounded-full border border-violet-200 bg-violet-100 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-violet-700 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-200">
-                      {featured.category || "Podcast"}
-                    </span>
-                    <h2 className="mt-5 text-4xl leading-tight tracking-tight text-foreground" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                      {featured.title}
-                    </h2>
-                    <p className="mt-4 max-w-md text-muted-foreground">{featured.description || "A featured episode from the SPOTAI audio library."}</p>
-                    <div className="mt-7 flex items-center gap-3">
-                      <a
-                        href={featured.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex h-11 items-center rounded-full border border-violet-600 bg-violet-600 px-6 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-violet-700"
-                      >
-                        Listen
-                      </a>
-                      <a
-                        href={featured.file_url}
-                        download
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-violet-300 text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-500/25 dark:text-violet-200 dark:hover:bg-violet-500/10"
-                        aria-label={`Download ${featured.title}`}
-                      >
-                        <Download className="h-4 w-4" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-                {cards.length > 0 ? (
-                  <div className="mt-12">
-                    <h3 className="text-4xl leading-none tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                      Featured Podcasts
-                    </h3>
-                    <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                      {cards.map((podcast) => (
-                      <article key={podcast.id} className="overflow-hidden rounded-[1.7rem] border border-[#dfd8ff] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.05)] dark:border-violet-500/15 dark:bg-[#0f1728]">
-                        <div className="h-56 overflow-hidden">
-                          {podcast.cover_image ? (
-                            <img src={podcast.cover_image} alt={podcast.title} className="h-full w-full object-cover" loading="lazy" />
-                          ) : (
-                            <div className="flex h-full items-center justify-center">
-                              <Headphones className="h-14 w-14 text-violet-600" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-5">
-                          <span className="inline-flex rounded-full bg-violet-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-700 dark:bg-violet-500/10 dark:text-violet-200">
-                            {podcast.category || "Podcast"}
-                          </span>
-                          <h4 className="mt-3 text-2xl leading-tight text-foreground" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
-                            {podcast.title}
-                          </h4>
-                          <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                            {podcast.description || "Free audio resource from the SPOTAI library."}
-                          </p>
-                          <div className="mt-5 flex items-center gap-3">
-                            <a
-                              href={podcast.file_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex h-10 items-center rounded-full border border-violet-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-500/25 dark:text-violet-200 dark:hover:bg-violet-500/10"
-                            >
-                              Open
-                            </a>
-                            <a
-                              href={podcast.file_url}
-                              download
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-violet-300 text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-500/25 dark:text-violet-200 dark:hover:bg-violet-500/10"
-                              aria-label={`Download ${podcast.title}`}
-                            >
-                              <Download className="h-4 w-4" />
-                            </a>
+            <div>
+              <h3 className="text-4xl leading-none tracking-tight" style={{ fontFamily: '"Singo Sans", Georgia, serif' }}>
+                Featured Podcasts
+              </h3>
+              <p className="mt-3 max-w-2xl text-muted-foreground">
+                Audio-first episodes presented with the same marketplace card system used across digital products.
+              </p>
+              <div className="mt-6 grid grid-cols-1 gap-8 xl:grid-cols-2">
+                {filtered.map((podcast) => (
+                  <ShowcaseCard
+                    key={podcast.id}
+                    title={podcast.title}
+                    subtitle={`${podcast.episodes.length} episode${podcast.episodes.length > 1 ? "s" : ""}. ${podcast.description}`}
+                    tag={podcast.tagLabel}
+                    image={podcast.coverImage || undefined}
+                    to={`/freebies/podcasts/${podcast.slug}`}
+                    className="min-h-[32rem]"
+                    imageClassName="h-[21rem] bg-[#f2efff] dark:bg-[#101425]"
+                    imageObjectClassName="object-cover"
+                    imageOverlay={
+                      <>
+                        <div className="pointer-events-none flex h-full items-center justify-center">
+                          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/40 bg-black/45 text-white shadow-[0_18px_30px_rgba(15,23,42,0.28)] backdrop-blur">
+                            <Play className="ml-1 h-6 w-6 fill-current" />
                           </div>
                         </div>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </>
+                        <div className="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-900 shadow-sm">
+                          {podcast.episodes.length} Episode{podcast.episodes.length > 1 ? "s" : ""}
+                        </div>
+                      </>
+                    }
+                  />
+                ))}
+              </div>
+            </div>
           )}
         </section>
       </div>
