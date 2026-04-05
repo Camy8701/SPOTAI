@@ -4,8 +4,9 @@ import { ArrowLeft, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import Layout from "@/components/layout/Layout";
 import AnimateInView from "@/components/AnimateInView";
-import AudioPlayer from "@/components/AudioPlayer";
+import { type AudioQueueItem } from "@/components/AudioPlayer";
 import CatalogHeroHeader from "@/components/ui/catalog-hero-header";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { shouldShowPostInLibrarySection } from "@/lib/publishing";
@@ -59,8 +60,8 @@ const Library = () => {
   const category = params.get("category") || "";
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [audio, setAudio] = useState<{ src: string; title: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const { playAudio } = useAudioPlayer();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -97,6 +98,21 @@ const Library = () => {
 
   const featuredNews = isNewsView ? visiblePosts[0] : null;
   const secondaryNews = isNewsView ? visiblePosts.slice(1) : [];
+  const audioQueue = useMemo<AudioQueueItem[]>(
+    () =>
+      visiblePosts
+        .filter((post) => post.audio_url)
+        .map((post) => ({
+          id: post.id,
+          src: post.audio_url as string,
+          title: post.title,
+        })),
+    [visiblePosts],
+  );
+  const queueItemLabel =
+    section === "featured_stories" || section === "featured_collections" || category === "story"
+      ? "story"
+      : "article";
 
   return (
     <Layout>
@@ -196,7 +212,17 @@ const Library = () => {
                         </Link>
                         {post.audio_url ? (
                           <button
-                            onClick={() => setAudio({ src: post.audio_url, title: post.title })}
+                            onClick={() =>
+                              playAudio({
+                                track: {
+                                  id: post.id,
+                                  src: post.audio_url,
+                                  title: post.title,
+                                },
+                                queue: audioQueue,
+                                queueItemLabel,
+                              })
+                            }
                             className="inline-flex h-10 items-center rounded-full border border-orange-300 px-5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition-colors hover:bg-orange-100 dark:border-orange-500/25 dark:text-orange-200 dark:hover:bg-orange-500/10"
                           >
                             Listen
@@ -290,7 +316,17 @@ const Library = () => {
                           className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-medium"
                           whileHover={{ scale: 1.03 }}
                           whileTap={{ scale: 0.97 }}
-                          onClick={() => setAudio({ src: post.audio_url, title: post.title })}
+                          onClick={() =>
+                            playAudio({
+                              track: {
+                                id: post.id,
+                                src: post.audio_url,
+                                title: post.title,
+                              },
+                              queue: audioQueue,
+                              queueItemLabel,
+                            })
+                          }
                         >
                           Listen
                         </motion.button>
@@ -303,8 +339,6 @@ const Library = () => {
           )}
         </div>
       )}
-
-      {audio && <AudioPlayer src={audio.src} title={audio.title} onClose={() => setAudio(null)} />}
     </Layout>
   );
 };

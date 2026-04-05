@@ -1,16 +1,17 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { useParams, Link, Navigate } from "react-router-dom";
+import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import { Heart, MessageCircle, Bookmark, Share2, ArrowLeft, Send, Trash2, Reply, ThumbsUp, Users, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Layout from "@/components/layout/Layout";
-import AudioPlayer from "@/components/AudioPlayer";
+import { type AudioQueueItem } from "@/components/AudioPlayer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { NEURALINK_STORY } from "@/data/fallback/neuralinkStory";
+import { NEURALINK_STORY, addNeuralinkLead } from "@/data/fallback/neuralinkStory";
 import { NO_CODE_AUTOMATION_POST } from "@/data/fallback/noCodeAutomationPost";
 import { MANUS_AI_TOOL_POST } from "@/data/fallback/manusAiToolPost";
 import {
@@ -256,8 +257,10 @@ const renderManusReferralText = (text: string, enableHighlight: boolean): ReactN
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const { currentTrack, playAudio } = useAudioPlayer();
 
   const [post, setPost] = useState<BlogPostData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -274,7 +277,8 @@ const BlogPost = () => {
   const [likersOpen, setLikersOpen] = useState(false);
   const [likers, setLikers] = useState<LikerProfile[]>([]);
   const [likersLoading, setLikersLoading] = useState(false);
-  const [audio, setAudio] = useState<{ src: string; title: string } | null>(null);
+  const [storyAudioQueue, setStoryAudioQueue] = useState<AudioQueueItem[]>([]);
+  const [storySlugMap, setStorySlugMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (slug) fetchPost();
@@ -283,6 +287,15 @@ const BlogPost = () => {
   useEffect(() => {
     if (post) {
       if (post.id === NEURALINK_STORY.id) {
+        if (post.audio_url) {
+          setStoryAudioQueue([
+            {
+              id: post.id,
+              src: post.audio_url,
+              title: post.title,
+            },
+          ]);
+        }
         return;
       }
       fetchComments();
@@ -293,6 +306,85 @@ const BlogPost = () => {
       }
     }
   }, [post, user]);
+
+  useEffect(() => {
+    if (!post?.audio_url || post.category !== "story") {
+      setStoryAudioQueue([]);
+      setStorySlugMap({});
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchStoryQueue = async () => {
+      const { data } = await supabase
+        .from("blog_posts")
+        .select("id,title,slug,audio_url")
+        .eq("status", "published")
+        .eq("category", "story")
+        .not("audio_url", "is", null)
+        .order("created_at", { ascending: false });
+
+      const merged = addNeuralinkLead(data || []);
+      const queue = merged
+        .filter(
+          (
+            item,
+          ): item is {
+            id: string;
+            title: string;
+            slug: string;
+            audio_url: string;
+          } => Boolean(item.audio_url),
+        )
+        .filter(
+          (item, index, collection) =>
+            collection.findIndex((entry) => entry.slug === item.slug) === index,
+        )
+        .map((item) => ({
+          id: item.id,
+          src: item.audio_url,
+          title: item.title,
+        }));
+      const slugMap = merged.reduce<Record<string, string>>((acc, item) => {
+        if (item.audio_url) {
+          acc[item.id] = item.slug;
+        }
+        return acc;
+      }, {});
+
+      const currentItem = {
+        id: post.id,
+        src: post.audio_url,
+        title: post.title,
+      };
+
+      if (!queue.some((item) => item.id === currentItem.id)) {
+        queue.unshift(currentItem);
+      }
+
+      if (!cancelled) {
+        setStoryAudioQueue(queue);
+        setStorySlugMap(slugMap);
+      }
+    };
+
+    void fetchStoryQueue();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [post?.audio_url, post?.category, post?.id, post?.title]);
+
+  useEffect(() => {
+    if (!post || post.category !== "story" || !currentTrack) return;
+    if (currentTrack.id === post.id) return;
+
+    const nextSlug = storySlugMap[currentTrack.id];
+    if (nextSlug && nextSlug !== slug) {
+      navigate(`/post/${nextSlug}`);
+    }
+  }, [currentTrack, navigate, post, slug, storySlugMap]);
 
   const fetchPost = async () => {
     if (slug === NEURALINK_STORY.slug) {
@@ -890,7 +982,17 @@ const BlogPost = () => {
                 className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg"
                 whileHover={{ scale: 1.03, y: -1 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => setAudio({ src: post.audio_url!, title: post.title })}
+                onClick={() =>
+                  playAudio({
+                    track: {
+                      id: post.id,
+                      src: post.audio_url!,
+                      title: post.title,
+                    },
+                    queue: storyAudioQueue,
+                    queueItemLabel: "story",
+                  })
+                }
               >
                 Listen
               </motion.button>
@@ -1189,7 +1291,6 @@ const BlogPost = () => {
           </>
         )}
       </article>
-      {audio && <AudioPlayer src={audio.src} title={audio.title} onClose={() => setAudio(null)} />}
     </Layout>
   );
 };

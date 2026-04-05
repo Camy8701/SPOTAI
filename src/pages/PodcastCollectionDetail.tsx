@@ -10,7 +10,8 @@ import {
   Waves,
 } from "lucide-react";
 
-import AudioPlayer from "@/components/AudioPlayer";
+import { type AudioQueueItem } from "@/components/AudioPlayer";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { buildPodcastCollections, getBundledPodcastCollectionBySlug, type PodcastCollection, type PodcastEpisode } from "@/data/podcast-library";
@@ -22,7 +23,7 @@ const PodcastCollectionDetail = () => {
   const [collection, setCollection] = useState<PodcastCollection | null>(bundled);
   const [loading, setLoading] = useState(!bundled);
   const [activeEpisodeId, setActiveEpisodeId] = useState(bundled?.episodes[0]?.id || "");
-  const [audio, setAudio] = useState<{ src: string; title: string } | null>(null);
+  const { currentTrack, playAudio } = useAudioPlayer();
 
   useEffect(() => {
     if (bundled) {
@@ -51,12 +52,37 @@ const PodcastCollectionDetail = () => {
     return collection.episodes.find((episode) => episode.id === activeEpisodeId) || collection.episodes[0] || null;
   }, [activeEpisodeId, collection]);
 
-  const playEpisode = (episode: PodcastEpisode) => {
-    if (!collection) return;
-    setActiveEpisodeId(episode.id);
-    setAudio({
+  const audioQueue = useMemo(() => {
+    if (!collection) return [];
+    return collection.episodes.map((episode) => ({
+      id: episode.id,
       src: episode.fileUrl,
       title: `${collection.title} — ${episode.title}`,
+    }));
+  }, [collection]);
+
+  useEffect(() => {
+    if (!collection || !currentTrack) return;
+    if (collection.episodes.some((episode) => episode.id === currentTrack.id)) {
+      setActiveEpisodeId(currentTrack.id);
+    }
+  }, [collection, currentTrack]);
+
+  const selectAudioItem = (item: AudioQueueItem) => {
+    setActiveEpisodeId(item.id);
+  };
+
+  const playEpisode = (episode: PodcastEpisode) => {
+    const nextItem = {
+      id: episode.id,
+      src: episode.fileUrl,
+      title: `${collection.title} — ${episode.title}`,
+    };
+    selectAudioItem(nextItem);
+    playAudio({
+      track: nextItem,
+      queue: audioQueue,
+      queueItemLabel: "episode",
     });
   };
 
@@ -309,8 +335,6 @@ const PodcastCollectionDetail = () => {
             </div>
           </div>
         </section>
-
-        {audio ? <AudioPlayer src={audio.src} title={audio.title} onClose={() => setAudio(null)} /> : null}
       </div>
     </Layout>
   );

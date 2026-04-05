@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import { LearnAIProvider } from "@/contexts/LearnAIContext";
 import Index from "./pages/Index";
 import LandingPage from "./pages/LandingPage";
@@ -109,52 +110,54 @@ const App = () => (
         <ScrollToTop />
         <AuthProvider>
           <LearnAIProvider>
-            <Routes>
-              <Route path="/" element={<LandingRoute />} />
-              <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/auth" element={<AuthRoute />} />
-              <Route path="/onboarding" element={<OnboardingRoute />} />
-              <Route path="/account-restricted" element={<RestrictedRoute />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/quiz" element={<ProtectedRoute><Games /></ProtectedRoute>} />
-              <Route path="/games" element={<ProtectedRoute><Games /></ProtectedRoute>} />
-              <Route path="/quiz/levels" element={<ProtectedRoute><QuizLevels /></ProtectedRoute>} />
-              <Route path="/quiz/arena" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
-              <Route path="/tip-calculator" element={<ProtectedRoute><TipCalculator /></ProtectedRoute>} />
-              <Route path="/character-counter" element={<ProtectedRoute><CharacterCounter /></ProtectedRoute>} />
-              <Route path="/file-converter" element={<ProtectedRoute><FileConverter /></ProtectedRoute>} />
-              <Route path="/pdf-brander" element={<ProtectedRoute><PdfBrander /></ProtectedRoute>} />
-              <Route path="/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
-              <Route path="/post/:slug" element={<BlogPost />} />
-              <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
-              <Route path="/create-post" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
-              <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
-              <Route path="/marketplace/templates/:slug" element={<ProtectedRoute><MarketplaceTemplateDetail /></ProtectedRoute>} />
-              <Route path="/marketplace/templates/:slug/code" element={<ProtectedRoute><MarketplaceTemplateCode /></ProtectedRoute>} />
-              <Route path="/marketplace/:slug" element={<ProtectedRoute><MarketplaceProductDetail /></ProtectedRoute>} />
-              <Route path="/popular" element={<ProtectedRoute><Popular /></ProtectedRoute>} />
-              <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-              <Route path="/communities" element={<ProtectedRoute><Communities /></ProtectedRoute>} />
-              <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
-              <Route path="/learn-ai" element={<ProtectedRoute><LearnAI /></ProtectedRoute>} />
-              <Route path="/learn-ai/:slug" element={<ProtectedRoute><LearnAIDetail /></ProtectedRoute>} />
-              <Route path="/learn-ai/:slug/lessons/:lessonId" element={<ProtectedRoute><LearnAILesson /></ProtectedRoute>} />
-              <Route path="/learn-ai/:slug/results" element={<ProtectedRoute><LearnAIResults /></ProtectedRoute>} />
-              <Route path="/freebies/ebooks" element={<ProtectedRoute><EbooksLibrary /></ProtectedRoute>} />
-              <Route path="/freebies/podcasts" element={<ProtectedRoute><PodcastLibrary /></ProtectedRoute>} />
-              <Route path="/freebies/podcasts/:slug" element={<ProtectedRoute><PodcastCollectionDetail /></ProtectedRoute>} />
-              <Route path="/image-library" element={<ProtectedRoute><ImageLibrary /></ProtectedRoute>} />
-              <Route path="/prompt-library" element={<ProtectedRoute><PromptLibrary /></ProtectedRoute>} />
-              <Route path="/prompt-library/:id" element={<ProtectedRoute><PromptLibraryDetail /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
-              <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AudioPlayerProvider>
+              <Routes>
+                <Route path="/" element={<LandingRoute />} />
+                <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/auth" element={<AuthRoute />} />
+                <Route path="/onboarding" element={<OnboardingRoute />} />
+                <Route path="/account-restricted" element={<RestrictedRoute />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/quiz" element={<ProtectedRoute><Games /></ProtectedRoute>} />
+                <Route path="/games" element={<ProtectedRoute><Games /></ProtectedRoute>} />
+                <Route path="/quiz/levels" element={<ProtectedRoute><QuizLevels /></ProtectedRoute>} />
+                <Route path="/quiz/arena" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
+                <Route path="/tip-calculator" element={<ProtectedRoute><TipCalculator /></ProtectedRoute>} />
+                <Route path="/character-counter" element={<ProtectedRoute><CharacterCounter /></ProtectedRoute>} />
+                <Route path="/file-converter" element={<ProtectedRoute><FileConverter /></ProtectedRoute>} />
+                <Route path="/pdf-brander" element={<ProtectedRoute><PdfBrander /></ProtectedRoute>} />
+                <Route path="/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
+                <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+                <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
+                <Route path="/post/:slug" element={<BlogPost />} />
+                <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+                <Route path="/create-post" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
+                <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
+                <Route path="/marketplace/templates/:slug" element={<ProtectedRoute><MarketplaceTemplateDetail /></ProtectedRoute>} />
+                <Route path="/marketplace/templates/:slug/code" element={<ProtectedRoute><MarketplaceTemplateCode /></ProtectedRoute>} />
+                <Route path="/marketplace/:slug" element={<ProtectedRoute><MarketplaceProductDetail /></ProtectedRoute>} />
+                <Route path="/popular" element={<ProtectedRoute><Popular /></ProtectedRoute>} />
+                <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+                <Route path="/communities" element={<ProtectedRoute><Communities /></ProtectedRoute>} />
+                <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+                <Route path="/learn-ai" element={<ProtectedRoute><LearnAI /></ProtectedRoute>} />
+                <Route path="/learn-ai/:slug" element={<ProtectedRoute><LearnAIDetail /></ProtectedRoute>} />
+                <Route path="/learn-ai/:slug/lessons/:lessonId" element={<ProtectedRoute><LearnAILesson /></ProtectedRoute>} />
+                <Route path="/learn-ai/:slug/results" element={<ProtectedRoute><LearnAIResults /></ProtectedRoute>} />
+                <Route path="/freebies/ebooks" element={<ProtectedRoute><EbooksLibrary /></ProtectedRoute>} />
+                <Route path="/freebies/podcasts" element={<ProtectedRoute><PodcastLibrary /></ProtectedRoute>} />
+                <Route path="/freebies/podcasts/:slug" element={<ProtectedRoute><PodcastCollectionDetail /></ProtectedRoute>} />
+                <Route path="/image-library" element={<ProtectedRoute><ImageLibrary /></ProtectedRoute>} />
+                <Route path="/prompt-library" element={<ProtectedRoute><PromptLibrary /></ProtectedRoute>} />
+                <Route path="/prompt-library/:id" element={<ProtectedRoute><PromptLibraryDetail /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
+                <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AudioPlayerProvider>
           </LearnAIProvider>
         </AuthProvider>
       </BrowserRouter>

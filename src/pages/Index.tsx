@@ -1,10 +1,9 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
 import SectionNavigation from "@/components/SectionNavigation";
 import AnimateInView from "@/components/AnimateInView";
 import AutoScrollCarousel from "@/components/AutoScrollCarousel";
-import AudioPlayer from "@/components/AudioPlayer";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";
 import HeroSection from "@/components/home/HeroSection";
 import FeaturedCollections from "@/components/home/FeaturedCollections";
@@ -64,7 +63,7 @@ const fetchPostsBySection = async (section: string, limit: number) => {
 };
 
 const Index = () => {
-  const [audio, setAudio] = useState<{ src: string; title: string } | null>(null);
+  const { playAudio } = useAudioPlayer();
 
   const { data: heroPosts = [] } = useQuery({
     queryKey: ["homepage", "hero"],
@@ -97,7 +96,15 @@ const Index = () => {
   });
 
   const hero = heroPosts[0];
-  const handleListen = (src: string, title: string) => setAudio({ src, title });
+  const handleListen = (src: string, title: string) =>
+    playAudio({
+      track: {
+        id: src,
+        src,
+        title,
+      },
+      queueItemLabel: "audio",
+    });
 
   return (
     <Layout>
@@ -127,8 +134,6 @@ const Index = () => {
       <NewsArticles posts={newsArticles} loading={newsLoading} onListen={handleListen} />
       <GamesSection />
       <ConnectSection />
-
-      {audio && <AudioPlayer src={audio.src} title={audio.title} onClose={() => setAudio(null)} />}
     </Layout>
   );
 };
